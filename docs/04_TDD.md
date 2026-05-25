@@ -141,13 +141,13 @@ Jika `d <= office.radius_meters`, maka user dianggap dalam area kantor.
 erDiagram
     USERS ||--o{ ATTENDANCES : has
     USERS ||--o{ LEAVE_REQUESTS : submits
-    USERS ||--o{ USER_ROLES : assigned
+    USERS ||--o{ USER_HAS_ROLES : assigned
     USERS ||--o| USER_PROFILES : has
     USERS ||--o{ EMPLOYEE_SHIFTS : assigned
     
-    ROLES ||--o{ USER_ROLES : contains
-    ROLES ||--o{ ROLE_PERMISSIONS : contains
-    PERMISSIONS ||--o{ ROLE_PERMISSIONS : belongs
+    ROLES ||--o{ USER_HAS_ROLES : contains
+    ROLES ||--o{ ROLE_HAS_PERMISSIONS : contains
+    PERMISSIONS ||--o{ ROLE_HAS_PERMISSIONS : belongs
     
     SHIFTS ||--o{ EMPLOYEE_SHIFTS : assigned
     SHIFTS ||--o{ SHIFT_LOCATIONS : has
@@ -203,18 +203,18 @@ erDiagram
         bigint id PK
         string name UK
         string description
-        string category
         datetime created_at
+        datetime updated_at
     }
     
-    USER_ROLES {
+    USER_HAS_ROLES {
         bigint id PK
         bigint user_id FK
         bigint role_id FK
         datetime created_at
     }
     
-    ROLE_PERMISSIONS {
+    ROLE_HAS_PERMISSIONS {
         bigint id PK
         bigint role_id FK
         bigint permission_id FK
@@ -445,16 +445,16 @@ erDiagram
 
 ### UAM (Role & Permissions)
 
-| Endpoint | Method | Request Payload | Success Response |
-|----------|--------|-----------------|------------------|
-| `/api/v1/roles` | POST | `{ "name": "string", "description": "string" }` | `{ "id": 1, "name": "string", "description": "string" }` |
-| `/api/v1/roles` | GET | `?page=1&limit=20` | `{ "data": [{ "id": 1, "name": "string", "description": "string", "permissions_count": 10 }], "pagination": {...} }` |
-| `/api/v1/roles/:id` | GET | - | `{ "id": 1, "name": "string", "description": "string", "permissions": [{ "id": 1, "name": "attendance:checkin" }] }` |
-| `/api/v1/roles/:id` | PUT | `{ "name": "string", "description": "string" }` | `{ "id": 1, "name": "string", ... }` |
-| `/api/v1/roles/:id` | DELETE | - | `{ "message": "Role deleted successfully" }` |
-| `/api/v1/roles/:id/permissions` | PUT | `{ "permission_ids": [1, 2, 3] }` | `{ "message": "Permissions assigned successfully" }` |
-| `/api/v1/permissions` | GET | - | `{ "data": [{ "id": 1, "name": "attendance:checkin", "category": "attendance", "description": "Can check-in attendance" }] }` |
-| `/api/v1/users/:id/roles` | POST | `{ "role_ids": [1, 2] }` | `{ "message": "Roles assigned successfully" }` |
+| Endpoint | Method | Auth Required | Permission | Request Payload | Success Response |
+|----------|--------|---------------|------------|-----------------|------------------|
+| `/api/v1/roles` | POST | ✅ | `role.create` | `{ "name": "string", "description": "string" }` | `{ "id": 1, "name": "string", "description": "string" }` |
+| `/api/v1/roles` | GET | ✅ | `role.index` | `?page=1&limit=20` | `{ "data": [{ "id": 1, "name": "string", "description": "string", "permissions_count": 10 }], "pagination": {...} }` |
+| `/api/v1/roles/:id` | GET | ✅ | `role.index` | - | `{ "id": 1, "name": "string", "description": "string", "permissions": [{ "id": 1, "name": "user.index" }] }` |
+| `/api/v1/roles/:id` | PUT | ✅ | `role.update` | `{ "name": "string", "description": "string" }` | `{ "id": 1, "name": "string", ... }` |
+| `/api/v1/roles/:id` | DELETE | ✅ | `role.delete` | - | `{ "message": "Role deleted successfully" }` |
+| `/api/v1/roles/:id/permissions` | PUT | ✅ | `role.assign-permission` | `{ "permission_ids": [1, 2, 3] }` | `{ "message": "Permissions assigned successfully" }` |
+| `/api/v1/permissions` | GET | ✅ | `role.index` | - | `{ "data": [{ "id": 1, "name": "user.index", "description": "Can view user list" }] }` |
+| `/api/v1/users/:id/roles` | POST | ✅ | `user.assign-role` | `{ "role_ids": [1, 2] }` | `{ "message": "Roles assigned successfully" }` |
 
 ### Location
 
@@ -510,43 +510,54 @@ erDiagram
 
 | Permission | Protected Endpoints |
 |------------|---------------------|
-| `attendance:checkin` | POST /api/v1/attendance/checkin, POST /api/v1/attendance/checkin/qr |
-| `attendance:checkout` | POST /api/v1/attendance/checkout, POST /api/v1/attendance/checkout/qr |
-| `attendance:view:self` | GET /api/v1/attendance/history (self), GET /api/v1/attendance/today |
-| `attendance:view:all` | GET /api/v1/attendance/history (all users) |
-| `attendance:export` | GET /api/v1/reports/attendance/export/* |
-| `attendance:correct` | PUT /api/v1/attendance/:id/correct |
-| `shift:create` | POST /api/v1/shifts |
-| `shift:read` | GET /api/v1/shifts, GET /api/v1/shifts/:id, GET /api/v1/shifts/schedule |
-| `shift:update` | PUT /api/v1/shifts/:id |
-| `shift:delete` | DELETE /api/v1/shifts/:id |
-| `shift:assign` | POST /api/v1/shifts/assign |
-| `leave:submit` | POST /api/v1/leave |
-| `leave:view:self` | GET /api/v1/leave (self), GET /api/v1/leave/balance |
-| `leave:view:all` | GET /api/v1/leave (all users) |
-| `leave:manage_types` | CRUD /api/v1/leave/types |
-| `user:create` | POST /api/v1/users |
-| `user:read` | GET /api/v1/users, GET /api/v1/users/:id |
-| `user:update` | PUT /api/v1/users/:id |
-| `user:delete` | DELETE /api/v1/users/:id |
-| `user:assign_role` | POST /api/v1/users/:id/roles |
-| `role:*` | CRUD /api/v1/roles, PUT /api/v1/roles/:id/permissions, GET /api/v1/permissions |
-| `location:*` | CRUD /api/v1/locations |
-| `qrcode:generate` | POST /api/v1/qr-codes/generate |
-| `qrcode:view` | GET /api/v1/qr-codes/active |
-| `qrcode:revoke` | POST /api/v1/qr-codes/:id/revoke |
-| `dashboard:view:self` | GET /api/v1/dashboard/employee |
-| `dashboard:view:hr` | GET /api/v1/dashboard/hr |
-| `dashboard:view:admin` | GET /api/v1/dashboard/admin |
-| `report:view` | GET /api/v1/reports/* |
-| `report:export_excel` | GET /api/v1/reports/*/export/excel |
-| `report:export_pdf` | GET /api/v1/reports/*/export/pdf |
-| `audit:view` | GET /api/v1/audit-logs |
-| `auth:forgot_password` | POST /api/v1/auth/forgot-password |
-| `auth:reset_password` | POST /api/v1/auth/reset-password |
-| `profile:view:self`    | GET /api/v1/profile |
-| `profile:update:self`  | PUT /api/v1/profile |
-| `profile:upload_face`  | POST /api/v1/profile/face-photo |
+| `auth.login` | POST /api/v1/auth/login |
+| `auth.logout` | POST /api/v1/auth/logout |
+| `auth.forgot-password` | POST /api/v1/auth/forgot-password |
+| `auth.reset-password` | POST /api/v1/auth/reset-password |
+| `auth.change-password` | POST /api/v1/auth/change-password |
+| `profile.view` | GET /api/v1/profile |
+| `profile.update` | PUT /api/v1/profile |
+| `profile.upload-face` | POST /api/v1/profile/face-photo, POST /api/v1/users/:id/face-photo |
+| `attendance.checkin` | POST /api/v1/attendance/checkin, POST /api/v1/attendance/checkin/qr |
+| `attendance.checkout` | POST /api/v1/attendance/checkout, POST /api/v1/attendance/checkout/qr |
+| `attendance.view` | GET /api/v1/attendance/history, GET /api/v1/attendance/today, GET /api/v1/attendance/stats |
+| `attendance.view-all` | GET /api/v1/attendance/history?user_id=all |
+| `attendance.export` | GET /api/v1/reports/attendance/export/* |
+| `attendance.correct` | PUT /api/v1/attendance/:id/correct |
+| `shift.index` | GET /api/v1/shifts, GET /api/v1/shifts/:id, GET /api/v1/shifts/schedule |
+| `shift.create` | POST /api/v1/shifts |
+| `shift.update` | PUT /api/v1/shifts/:id |
+| `shift.delete` | DELETE /api/v1/shifts/:id |
+| `shift.assign` | POST /api/v1/shifts/assign |
+| `leave.submit` | POST /api/v1/leave |
+| `leave.view` | GET /api/v1/leave, GET /api/v1/leave/balance |
+| `leave.view-all` | GET /api/v1/leave?user_id=all |
+| `leave.manage-types` | CRUD /api/v1/leave/types |
+| `user.index` | GET /api/v1/users, GET /api/v1/users/:id |
+| `user.create` | POST /api/v1/users |
+| `user.update` | PUT /api/v1/users/:id |
+| `user.delete` | DELETE /api/v1/users/:id |
+| `user.assign-role` | POST /api/v1/users/:id/roles |
+| `role.index` | GET /api/v1/roles, GET /api/v1/roles/:id |
+| `role.create` | POST /api/v1/roles |
+| `role.update` | PUT /api/v1/roles/:id |
+| `role.delete` | DELETE /api/v1/roles/:id |
+| `role.assign-permission` | PUT /api/v1/roles/:id/permissions |
+| `location.index` | GET /api/v1/locations, GET /api/v1/locations/:id |
+| `location.create` | POST /api/v1/locations |
+| `location.update` | PUT /api/v1/locations/:id |
+| `location.delete` | DELETE /api/v1/locations/:id |
+| `dashboard.view` | GET /api/v1/dashboard/employee |
+| `dashboard.view-hr` | GET /api/v1/dashboard/hr |
+| `dashboard.view-admin` | GET /api/v1/dashboard/admin |
+| `report.view` | GET /api/v1/reports/* |
+| `report.export-excel` | GET /api/v1/reports/*/export/excel |
+| `report.export-pdf` | GET /api/v1/reports/*/export/pdf |
+| `qrcode.generate` | POST /api/v1/qr-codes/generate |
+| `qrcode.view` | GET /api/v1/qr-codes/active |
+| `qrcode.revoke` | POST /api/v1/qr-codes/:id/revoke |
+| `audit.view` | GET /api/v1/audit-logs |
+| `late-statistic.view` | GET /api/v1/attendance/late-statistics |
 
 ## 5. Infrastructure & Security
 

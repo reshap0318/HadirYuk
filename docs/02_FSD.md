@@ -289,16 +289,17 @@ HadirYuk
 - **Business Logic:**
   - Input: role name, description
   - Validasi: nama role unik
-  - Simpan role
-- **Post-condition:** Role baru tersimpan
+  - Simpan role ke tabel `roles`
+- **Post-condition:** Role baru tersimpan di database
 
 #### 2.7.2 Assign Permissions to Role
 
 - **Pre-condition:** Super Admin login, role ada
 - **Business Logic:**
-  - Tampilkan list semua permission
+  - Tampilkan list semua permission dari tabel `permissions`
   - Pilih permission yang akan diassign (checkbox)
-  - Simpan mapping role-permission
+  - Simpan mapping role-permission ke tabel `role_has_permissions`
+  - Format permission: `{module}.{action}` (contoh: `user.index`, `user.create`, `attendance.view-all`)
 - **Post-condition:** Permission terassign ke role
 
 #### 2.7.3 Assign Role to User
@@ -307,7 +308,7 @@ HadirYuk
 - **Business Logic:**
   - Pilih user dan role
   - Satu user bisa punya multiple role
-  - Simpan mapping user-role
+  - Simpan mapping user-role ke tabel `user_has_roles`
 - **Post-condition:** User terassign ke role
 
 ### 2.8 Dashboard

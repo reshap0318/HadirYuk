@@ -2,98 +2,128 @@
 
 ## 1. User Roles Definition
 
-### Super Admin
-Administrator tertinggi sistem yang memiliki akses penuh ke semua fitur termasuk manajemen user, role, dan permission. Role ini biasanya dipegang oleh IT Administrator atau System Owner.
+| Role Name | Description | Access Level |
+|-----------|-------------|--------------|
+| **Super Admin** | Administrator tertinggi sistem yang memiliki akses penuh ke semua fitur termasuk manajemen user, role, dan permission. Role ini biasanya dipegang oleh IT Administrator atau System Owner. | Full Access |
+| **HR Admin** | Administrator yang bertanggung jawab atas manajemen operasional HR seperti pengelolaan karyawan, shift, absensi, cuti, dan laporan. Role ini dipegang oleh staf HR atau manager. | HR Operations |
+| **Karyawan** | Pengguna biasa yang menggunakan sistem untuk melakukan absensi, melihat jadwal, mengajukan cuti, dan melihat riwayat kehadiran mereka sendiri. | Self Service |
 
-### HR Admin
-Administrator yang bertanggung jawab atas manajemen operasional HR seperti pengelolaan karyawan, shift, absensi, cuti, dan laporan. Role ini dipegang oleh staf HR atau manager.
+## 2. Permissions List
 
-### Karyawan
-Pengguna biasa yang menggunakan sistem untuk melakukan absensi, melihat jadwal, mengajukan cuti, dan melihat riwayat kehadiran mereka sendiri.
-
-## 2. Access Levels
-
-### CRUD Definitions
-| Level | Deskripsi |
-|-------|-----------|
-| **Create** | Bisa membuat data baru |
-| **Read** | Bisa melihat/membaca data |
-| **Update** | Bisa mengedit/mengubah data |
-| **Delete** | Bisa menghapus data |
-| **None** | Tidak memiliki akses |
-| **Self** | Hanya bisa akses data milik sendiri |
-
-### Permission Categories
-| Category | Permissions |
-|----------|-------------|
-| **Attendance** | attendance:checkin, attendance:checkout, attendance:view:self, attendance:view:all, attendance:export, attendance:correct |
-| **Shift** | shift:create, shift:read, shift:update, shift:delete, shift:assign |
-| **Leave** | leave:submit, leave:view:self, leave:view:all, leave:manage_types |
-| **User** | user:create, user:read, user:update, user:delete, user:assign_role |
-| **Role** | role:create, role:read, role:update, role:delete, role:assign_permission |
-| **Location** | location:create, location:read, location:update, location:delete |
-| **Dashboard** | dashboard:view:self, dashboard:view:hr, dashboard:view:admin |
-| **Report** | report:view, report:export_excel, report:export_pdf |
-| **Profile** | profile:view:self, profile:update:self, profile:upload_face |
-| **QR Code** | qrcode:generate, qrcode:view, qrcode:revoke |
-| **Audit** | audit:view |
-| **Auth** | auth:forgot_password, auth:reset_password |
+| Permission | Module | Action | Description |
+|------------|--------|--------|-------------|
+| `auth.login` | auth | login | Can login to system |
+| `auth.logout` | auth | logout | Can logout from system |
+| `auth.forgot-password` | auth | forgot-password | Can request password reset |
+| `auth.reset-password` | auth | reset-password | Can reset password with token |
+| `auth.change-password` | auth | change-password | Can change own password |
+| `profile.view` | profile | view | Can view own profile |
+| `profile.update` | profile | update | Can update own profile |
+| `profile.upload-face` | profile | upload-face | Can upload face photo |
+| `attendance.checkin` | attendance | checkin | Can check-in attendance |
+| `attendance.checkout` | attendance | checkout | Can check-out attendance |
+| `attendance.view` | attendance | view | Can view own attendance history |
+| `attendance.view-all` | attendance | view-all | Can view all attendance history |
+| `attendance.export` | attendance | export | Can export attendance report |
+| `attendance.correct` | attendance | correct | Can correct attendance record |
+| `shift.index` | shift | index | Can view shift list |
+| `shift.create` | shift | create | Can create new shift |
+| `shift.update` | shift | update | Can update shift |
+| `shift.delete` | shift | delete | Can delete shift |
+| `shift.assign` | shift | assign | Can assign shift to employee |
+| `leave.submit` | leave | submit | Can submit leave request |
+| `leave.view` | leave | view | Can view own leave history |
+| `leave.view-all` | leave | view-all | Can view all leave history |
+| `leave.manage-types` | leave | manage-types | Can manage leave types |
+| `user.index` | user | index | Can view user list |
+| `user.create` | user | create | Can create new user |
+| `user.update` | user | update | Can update user |
+| `user.delete` | user | delete | Can delete/deactivate user |
+| `user.assign-role` | user | assign-role | Can assign role to user |
+| `role.index` | role | index | Can view role list |
+| `role.create` | role | create | Can create new role |
+| `role.update` | role | update | Can update role |
+| `role.delete` | role | delete | Can delete role |
+| `role.assign-permission` | role | assign-permission | Can assign permission to role |
+| `location.index` | location | index | Can view location list |
+| `location.create` | location | create | Can create new location |
+| `location.update` | location | update | Can update location |
+| `location.delete` | location | delete | Can delete location |
+| `dashboard.view` | dashboard | view | Can view own dashboard |
+| `dashboard.view-hr` | dashboard | view-hr | Can view HR dashboard |
+| `dashboard.view-admin` | dashboard | view-admin | Can view admin dashboard |
+| `report.view` | report | view | Can view reports |
+| `report.export-excel` | report | export-excel | Can export report to Excel |
+| `report.export-pdf` | report | export-pdf | Can export report to PDF |
+| `qrcode.generate` | qrcode | generate | Can generate QR code |
+| `qrcode.view` | qrcode | view | Can view active QR codes |
+| `qrcode.revoke` | qrcode | revoke | Can revoke QR code |
+| `audit.view` | audit | view | Can view audit log |
+| `late-statistic.view` | late-statistic | view | Can view late statistics |
 
 ## 3. The Matrix Table
 
-| Feature Name | Super Admin | HR Admin | Karyawan |
-|--------------|-------------|----------|----------|
-| **Login/Logout** | CRUD | CRUD | CRUD |
-| **Change Password** | Self | Self | Self |
-| **View Profile** | Self | Self | Self |
-| **Update Profile** | Self | Self | Self |
-| **Upload Face Photo** | Self | Self | Self |
-| **Check-in (Geotagging)** | ✅ | ✅ | ✅ |
-| **Check-in (QR Code)** | ✅ | ✅ | ✅ |
-| **Check-out** | ✅ | ✅ | ✅ |
-| **View Attendance History (Self)** | Self | Self | Self |
-| **View Attendance History (All)** | ✅ | ✅ | None |
-| **Export Attendance Report** | ✅ | ✅ | None |
-| **Create Shift** | ✅ | ✅ | None |
-| **View Shift List** | ✅ | ✅ | Self (assigned only) |
-| **Update Shift** | ✅ | ✅ | None |
-| **Delete Shift** | ✅ | ✅ | None |
-| **Assign Shift to Employee** | ✅ | ✅ | None |
-| **View Shift Schedule (Self)** | Self | Self | Self |
-| **View Shift Schedule (All)** | ✅ | ✅ | None |
-| **Submit Leave Request** | ✅ | ✅ | ✅ |
-| **View Leave History (Self)** | Self | Self | Self |
-| **View Leave History (All)** | ✅ | ✅ | None |
-| **View Leave Balance** | Self | Self | Self |
-| **Manage Leave Types** | ✅ | ✅ | None |
-| **Create Employee** | ✅ | ✅ | None |
-| **View Employee List** | ✅ | ✅ | None |
-| **Update Employee** | ✅ | ✅ | None |
-| **Delete Employee** | ✅ | None | None |
-| **View Employee Detail** | ✅ | ✅ | Self |
-| **Create Role** | ✅ | None | None |
-| **View Role List** | ✅ | None | None |
-| **Update Role** | ✅ | None | None |
-| **Delete Role** | ✅ | None | None |
-| **Assign Permissions to Role** | ✅ | None | None |
-| **Assign Role to User** | ✅ | None | None |
-| **Create Office Location** | ✅ | ✅ | None |
-| **View Office Location** | ✅ | ✅ | Self (assigned only) |
-| **Update Office Location** | ✅ | ✅ | None |
-| **Delete Office Location** | ✅ | ✅ | None |
-| **View Karyawan Dashboard** | Self | Self | Self |
-| **View HR Dashboard** | ✅ | ✅ | None |
-| **View Admin Dashboard** | ✅ | None | None |
-| **View Audit Log** | ✅ | None | None |
-| **Export Report (Excel)** | ✅ | ✅ | None |
-| **Export Report (PDF)** | ✅ | ✅ | None |
-| **Correct Attendance** | ✅ | ✅ | None |
-| **View Late Statistics** | ✅ | ✅ | None |
-| **Generate QR Code** | ✅ | ✅ | None |
-| **View Active QR Codes** | ✅ | ✅ | None |
-| **Revoke QR Code** | ✅ | ✅ | None |
-| **Forgot Password** | ✅ | ✅ | ✅ |
-| **Reset Password** | ✅ | ✅ | ✅ |
+| Permission | Super Admin | HR Admin | Karyawan |
+|------------|-------------|----------|----------|
+| **Authentication & Profile** | | | |
+| `auth.login` | ✅ | ✅ | ✅ |
+| `auth.logout` | ✅ | ✅ | ✅ |
+| `auth.forgot-password` | ✅ | ✅ | ✅ |
+| `auth.reset-password` | ✅ | ✅ | ✅ |
+| `auth.change-password` | ✅ | ✅ | ✅ |
+| `profile.view` | ✅ | ✅ | ✅ |
+| `profile.update` | ✅ | ✅ | ✅ |
+| `profile.upload-face` | ✅ | ✅ | ✅ |
+| **Attendance** | | | |
+| `attendance.checkin` | ✅ | ✅ | ✅ |
+| `attendance.checkout` | ✅ | ✅ | ✅ |
+| `attendance.view` | ✅ | ✅ | ✅ |
+| `attendance.view-all` | ✅ | ✅ | ❌ |
+| `attendance.export` | ✅ | ✅ | ❌ |
+| `attendance.correct` | ✅ | ✅ | ❌ |
+| **Shift** | | | |
+| `shift.index` | ✅ | ✅ | ✅ |
+| `shift.create` | ✅ | ✅ | ❌ |
+| `shift.update` | ✅ | ✅ | ❌ |
+| `shift.delete` | ✅ | ✅ | ❌ |
+| `shift.assign` | ✅ | ✅ | ❌ |
+| **Leave** | | | |
+| `leave.submit` | ✅ | ✅ | ✅ |
+| `leave.view` | ✅ | ✅ | ✅ |
+| `leave.view-all` | ✅ | ✅ | ❌ |
+| `leave.manage-types` | ✅ | ✅ | ❌ |
+| **User Management** | | | |
+| `user.index` | ✅ | ✅ | ❌ |
+| `user.create` | ✅ | ✅ | ❌ |
+| `user.update` | ✅ | ✅ | ❌ |
+| `user.delete` | ✅ | ❌ | ❌ |
+| `user.assign-role` | ✅ | ❌ | ❌ |
+| **Role Management** | | | |
+| `role.index` | ✅ | ❌ | ❌ |
+| `role.create` | ✅ | ❌ | ❌ |
+| `role.update` | ✅ | ❌ | ❌ |
+| `role.delete` | ✅ | ❌ | ❌ |
+| `role.assign-permission` | ✅ | ❌ | ❌ |
+| **Location** | | | |
+| `location.index` | ✅ | ✅ | ❌ |
+| `location.create` | ✅ | ✅ | ❌ |
+| `location.update` | ✅ | ✅ | ❌ |
+| `location.delete` | ✅ | ✅ | ❌ |
+| **Dashboard** | | | |
+| `dashboard.view` | ✅ | ✅ | ✅ |
+| `dashboard.view-hr` | ✅ | ✅ | ❌ |
+| `dashboard.view-admin` | ✅ | ❌ | ❌ |
+| **Report** | | | |
+| `report.view` | ✅ | ✅ | ❌ |
+| `report.export-excel` | ✅ | ✅ | ❌ |
+| `report.export-pdf` | ✅ | ✅ | ❌ |
+| **QR Code** | | | |
+| `qrcode.generate` | ✅ | ✅ | ❌ |
+| `qrcode.view` | ✅ | ✅ | ❌ |
+| `qrcode.revoke` | ✅ | ✅ | ❌ |
+| **Audit & Statistics** | | | |
+| `audit.view` | ✅ | ❌ | ❌ |
+| `late-statistic.view` | ✅ | ✅ | ❌ |
 
 ## 4. Role Hierarchy Diagram
 
