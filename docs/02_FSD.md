@@ -76,6 +76,7 @@ HadirYuk
 ### 2.1 Authentication & Authorization
 
 #### 2.1.1 Login
+
 - **Pre-condition:** User sudah terdaftar di sistem
 - **Business Logic:**
   - User input email dan password
@@ -86,6 +87,7 @@ HadirYuk
 - **Post-condition:** User mendapat token dan redirect ke dashboard sesuai role
 
 #### 2.1.2 Logout
+
 - **Pre-condition:** User sudah login
 - **Business Logic:**
   - Invalidate JWT token
@@ -93,6 +95,7 @@ HadirYuk
 - **Post-condition:** User kembali ke halaman login
 
 #### 2.1.3 Password Change
+
 - **Pre-condition:** User sudah login
 - **Business Logic:**
   - User input current password, new password, confirm password
@@ -103,6 +106,7 @@ HadirYuk
 - **Post-condition:** Password berhasil diubah, user perlu login ulang
 
 #### 2.1.4 Forgot Password
+
 - **Pre-condition:** User terdaftar di sistem
 - **Business Logic:**
   - User input email terdaftar
@@ -113,6 +117,7 @@ HadirYuk
 - **Post-condition:** Email reset terkirim, token tersimpan
 
 #### 2.1.5 Reset Password
+
 - **Pre-condition:** User memiliki valid reset token
 - **Business Logic:**
   - User input token, new password, confirm password
@@ -125,6 +130,7 @@ HadirYuk
 ### 2.2 Attendance (Absensi)
 
 #### 2.2.1 Check-in (Geotagging + Face Recognition)
+
 - **Pre-condition:** User login, belum check-in hari ini
 - **Business Logic:**
   - User klik tombol Check-in
@@ -139,6 +145,7 @@ HadirYuk
 - **Post-condition:** Record absensi tersimpan, status check-in tercatat
 
 #### 2.2.2 Check-in (QR Code)
+
 - **Pre-condition:** User login, belum check-in hari ini, QR Code tersedia di kantor
 - **Business Logic:**
   - User klik tombol Scan QR
@@ -151,6 +158,7 @@ HadirYuk
 - **Post-condition:** Record absensi tersimpan, status check-in tercatat
 
 #### 2.2.3 Check-out
+
 - **Pre-condition:** User sudah check-in hari ini, belum check-out
 - **Business Logic:**
   - Sama seperti check-in dengan validasi yang sama
@@ -159,6 +167,7 @@ HadirYuk
 - **Post-condition:** Record absensi diupdate dengan check-out time
 
 #### 2.2.4 Attendance History
+
 - **Pre-condition:** User login
 - **Business Logic:**
   - Karyawan: hanya bisa melihat riwayat sendiri
@@ -169,6 +178,7 @@ HadirYuk
 - **Post-condition:** Data riwayat ditampilkan
 
 #### 2.2.5 Attendance Correction
+
 - **Pre-condition:** HR Admin login, attendance record ada
 - **Business Logic:**
   - HR Admin pilih attendance record yang perlu dikoreksi
@@ -181,6 +191,7 @@ HadirYuk
 ### 2.3 Shift Management
 
 #### 2.3.1 Create Shift
+
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Input: shift name, start time, end time, break duration, color code
@@ -190,6 +201,7 @@ HadirYuk
 - **Post-condition:** Shift baru tersimpan
 
 #### 2.3.2 Assign Shift to Employee
+
 - **Pre-condition:** HR Admin login, shift dan employee ada
 - **Business Logic:**
   - Pilih employee dan shift
@@ -199,6 +211,7 @@ HadirYuk
 - **Post-condition:** Employee ter-assign ke shift
 
 #### 2.3.3 Shift Schedule View
+
 - **Pre-condition:** User login
 - **Business Logic:**
   - Tampilkan kalender dengan shift yang diassign
@@ -210,6 +223,7 @@ HadirYuk
 ### 2.4 Leave Management
 
 #### 2.4.1 Submit Leave Request
+
 - **Pre-condition:** Karyawan login, sisa cuti > 0
 - **Business Logic:**
   - Input: leave type, start date, end date, reason
@@ -222,6 +236,7 @@ HadirYuk
 - **Post-condition:** Leave request tersimpan, sisa cuti berkurang
 
 #### 2.4.2 View Leave Balance
+
 - **Pre-condition:** User login
 - **Business Logic:**
   - Tampilkan total cuti tahunan
@@ -233,6 +248,7 @@ HadirYuk
 ### 2.5 Late Statistics
 
 #### 2.5.1 View Late Statistics
+
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Filter: date range, employee, department
@@ -244,6 +260,7 @@ HadirYuk
 ### 2.6 User Management
 
 #### 2.6.1 Create Employee
+
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Input: name, email, phone, department, position, join date, shift
@@ -254,6 +271,7 @@ HadirYuk
 - **Post-condition:** Employee baru tersimpan
 
 #### 2.6.2 Upload Face Photo
+
 - **Pre-condition:** User login
 - **Business Logic:**
   - User upload foto atau capture dari kamera
@@ -266,6 +284,7 @@ HadirYuk
 ### 2.7 UAM (Role & Permissions)
 
 #### 2.7.1 Create Role
+
 - **Pre-condition:** Super Admin login
 - **Business Logic:**
   - Input: role name, description
@@ -274,6 +293,7 @@ HadirYuk
 - **Post-condition:** Role baru tersimpan
 
 #### 2.7.2 Assign Permissions to Role
+
 - **Pre-condition:** Super Admin login, role ada
 - **Business Logic:**
   - Tampilkan list semua permission
@@ -282,6 +302,7 @@ HadirYuk
 - **Post-condition:** Permission terassign ke role
 
 #### 2.7.3 Assign Role to User
+
 - **Pre-condition:** Super Admin login, user dan role ada
 - **Business Logic:**
   - Pilih user dan role
@@ -292,6 +313,7 @@ HadirYuk
 ### 2.8 Dashboard
 
 #### 2.8.1 Karyawan Dashboard
+
 - **Pre-condition:** Karyawan login
 - **Business Logic:**
   - Tampilkan status kehadiran hari ini (checked-in, checked-out, absent)
@@ -302,6 +324,7 @@ HadirYuk
 - **Post-condition:** Dashboard ditampilkan
 
 #### 2.8.2 HR Dashboard
+
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Tampilkan statistik hari ini: hadir, telat, belum absen, cuti
@@ -314,6 +337,7 @@ HadirYuk
 ### 2.9 Location Management
 
 #### 2.9.1 Add Office Location
+
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Input: office name, address, latitude, longitude, radius (meter)
@@ -325,6 +349,7 @@ HadirYuk
 ### 2.10 Reporting
 
 #### 2.10.1 Attendance Report
+
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Filter: date range, employee, department, status
@@ -333,6 +358,7 @@ HadirYuk
 - **Post-condition:** Report ditampilkan
 
 #### 2.10.2 Export to Excel
+
 - **Pre-condition:** HR Admin login, report sudah di-generate
 - **Business Logic:**
   - Convert report data ke format Excel (.xlsx)
@@ -341,6 +367,7 @@ HadirYuk
 - **Post-condition:** File Excel terdownload
 
 #### 2.10.3 Export to PDF
+
 - **Pre-condition:** HR Admin login, report sudah di-generate
 - **Business Logic:**
   - Convert report data ke format PDF
@@ -351,6 +378,7 @@ HadirYuk
 ### 2.11 QR Code Management
 
 #### 2.11.1 Generate QR Code
+
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Pilih office location
@@ -361,6 +389,7 @@ HadirYuk
 - **Post-condition:** QR code tersimpan dan siap ditampilkan
 
 #### 2.11.2 View Active QR Codes
+
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Tampilkan list QR codes yang masih aktif
@@ -369,6 +398,7 @@ HadirYuk
 - **Post-condition:** List QR codes aktif ditampilkan
 
 #### 2.11.3 Revoke QR Code
+
 - **Pre-condition:** HR Admin login, QR code ada
 - **Business Logic:**
   - Pilih QR code yang akan di-revoke
@@ -379,6 +409,7 @@ HadirYuk
 ### 2.12 Audit Log (Could Have)
 
 #### 2.12.1 View Audit Log
+
 - **Pre-condition:** Super Admin login
 - **Business Logic:**
   - Filter: date range, user, entity type
@@ -390,148 +421,166 @@ HadirYuk
 ## 3. User Interaction & Screen Elements
 
 ### Login Page
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Email | Input text | Required, valid email format |
-| Password | Input password | Required, min 8 characters |
-| Login Button | Button | Disabled if form invalid |
-| Forgot Password | Link | Navigate to reset password |
+
+| Element Name    | Type           | Validation Rules             |
+| --------------- | -------------- | ---------------------------- |
+| Email           | Input text     | Required, valid email format |
+| Password        | Input password | Required, min 8 characters   |
+| Login Button    | Button         | Disabled if form invalid     |
+| Forgot Password | Link           | Navigate to reset password   |
 
 ### Forgot Password Page
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Email | Input text | Required, valid email format |
-| Send Reset Link | Button | Disabled if email invalid |
-| Back to Login | Link | Navigate to login |
+
+| Element Name    | Type       | Validation Rules             |
+| --------------- | ---------- | ---------------------------- |
+| Email           | Input text | Required, valid email format |
+| Send Reset Link | Button     | Disabled if email invalid    |
+| Back to Login   | Link       | Navigate to login            |
 
 ### Reset Password Page
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| New Password | Input password | Required, min 8 chars, alphanumeric |
-| Confirm Password | Input password | Required, must match new password |
-| Reset Button | Button | Disabled if form invalid |
+
+| Element Name     | Type           | Validation Rules                    |
+| ---------------- | -------------- | ----------------------------------- |
+| New Password     | Input password | Required, min 8 chars, alphanumeric |
+| Confirm Password | Input password | Required, must match new password   |
+| Reset Button     | Button         | Disabled if form invalid            |
 
 ### Karyawan Dashboard
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Check-in Button | Button | Disabled if already checked-in |
-| Check-out Button | Button | Disabled if not checked-in |
-| Attendance Status | Badge | Present/Late/Absent |
-| Monthly Summary | Card | Auto-calculated |
-| Shift Schedule | Calendar | Current week only |
+
+| Element Name      | Type     | Validation Rules               |
+| ----------------- | -------- | ------------------------------ |
+| Check-in Button   | Button   | Disabled if already checked-in |
+| Check-out Button  | Button   | Disabled if not checked-in     |
+| Attendance Status | Badge    | Present/Late/Absent            |
+| Monthly Summary   | Card     | Auto-calculated                |
+| Shift Schedule    | Calendar | Current week only              |
 
 ### Attendance Check-in (Geotagging)
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Location Status | Badge | In-range/Out-of-range |
-| Camera Preview | Video | Required for face capture |
-| Capture Button | Button | Enabled only if location valid |
-| Result Message | Alert | Success/Error message |
+
+| Element Name    | Type   | Validation Rules               |
+| --------------- | ------ | ------------------------------ |
+| Location Status | Badge  | In-range/Out-of-range          |
+| Camera Preview  | Video  | Required for face capture      |
+| Capture Button  | Button | Enabled only if location valid |
+| Result Message  | Alert  | Success/Error message          |
 
 ### Attendance Check-in (QR Code)
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| QR Scanner | Camera | Required |
-| Scan Result | Alert | Valid/Invalid QR |
-| Retry Button | Button | If scan failed |
+
+| Element Name | Type   | Validation Rules |
+| ------------ | ------ | ---------------- |
+| QR Scanner   | Camera | Required         |
+| Scan Result  | Alert  | Valid/Invalid QR |
+| Retry Button | Button | If scan failed   |
 
 ### Shift Management
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Shift Name | Input text | Required, unique |
-| Start Time | Time picker | Required |
-| End Time | Time picker | Required, > start time |
-| Break Duration | Number | Required, in minutes |
-| Color Code | Color picker | Required |
-| Save Button | Button | Disabled if form invalid |
+
+| Element Name   | Type         | Validation Rules         |
+| -------------- | ------------ | ------------------------ |
+| Shift Name     | Input text   | Required, unique         |
+| Start Time     | Time picker  | Required                 |
+| End Time       | Time picker  | Required, > start time   |
+| Break Duration | Number       | Required, in minutes     |
+| Color Code     | Color picker | Required                 |
+| Save Button    | Button       | Disabled if form invalid |
 
 ### Leave Request
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Leave Type | Dropdown | Required |
-| Start Date | Date picker | Required, >= today |
-| End Date | Date picker | Required, >= start date |
-| Reason | Textarea | Required, max 500 chars |
-| Submit Button | Button | Disabled if form invalid |
+
+| Element Name  | Type        | Validation Rules         |
+| ------------- | ----------- | ------------------------ |
+| Leave Type    | Dropdown    | Required                 |
+| Start Date    | Date picker | Required, >= today       |
+| End Date      | Date picker | Required, >= start date  |
+| Reason        | Textarea    | Required, max 500 chars  |
+| Submit Button | Button      | Disabled if form invalid |
 
 ### User Management
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Name | Input text | Required |
-| Email | Input text | Required, unique, valid format |
-| Phone | Input text | Required, valid phone format |
-| Department | Dropdown | Required |
-| Position | Input text | Required |
-| Join Date | Date picker | Required |
-| Face Photo | File upload | JPG/PNG, max 2MB |
-| Save Button | Button | Disabled if form invalid |
+
+| Element Name | Type        | Validation Rules               |
+| ------------ | ----------- | ------------------------------ |
+| Name         | Input text  | Required                       |
+| Email        | Input text  | Required, unique, valid format |
+| Phone        | Input text  | Required, valid phone format   |
+| Department   | Dropdown    | Required                       |
+| Position     | Input text  | Required                       |
+| Join Date    | Date picker | Required                       |
+| Face Photo   | File upload | JPG/PNG, max 2MB               |
+| Save Button  | Button      | Disabled if form invalid       |
 
 ### Role Management
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Role Name | Input text | Required, unique |
-| Description | Textarea | Required |
-| Permission List | Checkbox group | At least 1 selected |
-| Save Button | Button | Disabled if form invalid |
+
+| Element Name    | Type           | Validation Rules         |
+| --------------- | -------------- | ------------------------ |
+| Role Name       | Input text     | Required, unique         |
+| Description     | Textarea       | Required                 |
+| Permission List | Checkbox group | At least 1 selected      |
+| Save Button     | Button         | Disabled if form invalid |
 
 ### Attendance Correction
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Check-in Time | DateTime picker | Required |
-| Check-out Time | DateTime picker | Required, >= check-in time |
-| Correction Reason | Textarea | Required, max 500 chars |
-| Submit Button | Button | Disabled if form invalid |
+
+| Element Name      | Type            | Validation Rules           |
+| ----------------- | --------------- | -------------------------- |
+| Check-in Time     | DateTime picker | Required                   |
+| Check-out Time    | DateTime picker | Required, >= check-in time |
+| Correction Reason | Textarea        | Required, max 500 chars    |
+| Submit Button     | Button          | Disabled if form invalid   |
 
 ### QR Code Management
-| Element Name | Type | Validation Rules |
-|--------------|------|------------------|
-| Office Location | Dropdown | Required |
-| Expiry Minutes | Number | Required, 1-60 minutes |
-| Generate Button | Button | Disabled if form invalid |
-| QR Image Preview | Image | Auto-generated |
-| Active QR List | Table | Shows active codes |
-| Revoke Button | Button | Per QR code row |
+
+| Element Name     | Type     | Validation Rules         |
+| ---------------- | -------- | ------------------------ |
+| Office Location  | Dropdown | Required                 |
+| Expiry Minutes   | Number   | Required, 1-60 minutes   |
+| Generate Button  | Button   | Disabled if form invalid |
+| QR Image Preview | Image    | Auto-generated           |
+| Active QR List   | Table    | Shows active codes       |
+| Revoke Button    | Button   | Per QR code row          |
 
 ## 4. Use Case Diagram
 
 ```mermaid
-usecaseDiagram
-    actor Karyawan as K
-    actor HRAdmin as HR
-    actor SuperAdmin as SA
-    
-    package "HadirYuk System" {
-        usecase "Login" as UC1
-        usecase "Check-in (Geotagging)" as UC2
-        usecase "Check-in (QR Code)" as UC3
-        usecase "Check-out" as UC4
-        usecase "View Attendance History" as UC5
-        usecase "Submit Leave Request" as UC6
-        usecase "View Leave Balance" as UC7
-        usecase "View Dashboard" as UC8
-        usecase "Update Profile" as UC9
-        usecase "Upload Face Photo" as UC10
-        
-        usecase "Manage Shifts" as UC11
-        usecase "Assign Shift" as UC12
-        usecase "Manage Employees" as UC13
-        usecase "View HR Dashboard" as UC14
-        usecase "Export Reports" as UC15
-        usecase "Manage Leave Types" as UC16
-        usecase "Manage Locations" as UC17
-        
-        usecase "Manage Roles" as UC18
-        usecase "Assign Permissions" as UC19
-        usecase "Assign Roles to Users" as UC20
-        usecase "View Audit Log" as UC21
-        usecase "Forgot Password" as UC22
-        usecase "Reset Password" as UC23
-        usecase "Correct Attendance" as UC24
-        usecase "View Late Statistics" as UC25
-        usecase "Generate QR Code" as UC26
-        usecase "Revoke QR Code" as UC27
-    }
-    
+graph LR
+    subgraph Actors
+        K["Karyawan"]
+        HR["HR Admin"]
+        SA["Super Admin"]
+    end
+
+    subgraph Karyawan_Use_Cases["Karyawan Use Cases"]
+        UC1["Login"]
+        UC2["Check-in Geotagging"]
+        UC3["Check-in QR Code"]
+        UC4["Check-out"]
+        UC5["View Attendance History"]
+        UC6["Submit Leave Request"]
+        UC7["View Leave Balance"]
+        UC8["View Dashboard"]
+        UC9["Update Profile"]
+        UC10["Upload Face Photo"]
+        UC22["Forgot Password"]
+        UC23["Reset Password"]
+    end
+
+    subgraph HR_Admin_Use_Cases["HR Admin Use Cases"]
+        UC11["Manage Shifts"]
+        UC12["Assign Shift"]
+        UC13["Manage Employees"]
+        UC14["View HR Dashboard"]
+        UC15["Export Reports"]
+        UC16["Manage Leave Types"]
+        UC17["Manage Locations"]
+        UC24["Correct Attendance"]
+        UC25["View Late Statistics"]
+        UC26["Generate QR Code"]
+        UC27["Revoke QR Code"]
+    end
+
+    subgraph Super_Admin_Use_Cases["Super Admin Use Cases"]
+        UC18["Manage Roles"]
+        UC19["Assign Permissions"]
+        UC20["Assign Roles to Users"]
+        UC21["View Audit Log"]
+    end
+
     K --> UC1
     K --> UC2
     K --> UC3
@@ -544,7 +593,7 @@ usecaseDiagram
     K --> UC10
     K --> UC22
     K --> UC23
-    
+
     HR --> UC1
     HR --> UC5
     HR --> UC8
@@ -561,7 +610,7 @@ usecaseDiagram
     HR --> UC25
     HR --> UC26
     HR --> UC27
-    
+
     SA --> UC1
     SA --> UC18
     SA --> UC19
@@ -575,88 +624,88 @@ usecaseDiagram
 
 ```mermaid
 flowchart TD
-    A[User klik Check-in] --> B{Sudah check-in hari ini?}
-    B -->|Ya| C[Tampilkan error: Sudah check-in]
-    B -->|Tidak| D[Minta akses lokasi]
-    D --> E{Lokasi tersedia?}
-    E -->|Tidak| F[Tampilkan error: Aktifkan GPS]
-    E -->|Ya| G[Validasi radius kantor]
-    G --> H{Dalam radius?}
-    H -->|Tidak| I[Tampilkan error: Di luar area kantor]
-    H -->|Ya| J[Buka kamera]
-    J --> K[Capture foto wajah]
-    K --> L[Face recognition processing]
-    L --> M{Match > 85%?}
-    M -->|Tidak| N[Tampilkan error: Wajah tidak dikenali]
-    M -->|Ya| O[Simpan record absensi]
-    O --> P[Tampilkan success message]
-    P --> Q[Update dashboard]
+    A["User klik Check-in"] --> B{"Sudah check-in hari ini?"}
+    B -->|"Ya"| C["Tampilkan error: Sudah check-in"]
+    B -->|"Tidak"| D["Minta akses lokasi"]
+    D --> E{"Lokasi tersedia?"}
+    E -->|"Tidak"| F["Tampilkan error: Aktifkan GPS"]
+    E -->|"Ya"| G["Validasi radius kantor"]
+    G --> H{"Dalam radius?"}
+    H -->|"Tidak"| I["Tampilkan error: Di luar area kantor"]
+    H -->|"Ya"| J["Buka kamera"]
+    J --> K["Capture foto wajah"]
+    K --> L["Face recognition processing"]
+    L --> M{"Match threshold 85%?"}
+    M -->|"Tidak"| N["Tampilkan error: Wajah tidak dikenali"]
+    M -->|"Ya"| O["Simpan record absensi"]
+    O --> P["Tampilkan success message"]
+    P --> Q["Update dashboard"]
 ```
 
 ### Check-in (QR Code) Flow
 
 ```mermaid
 flowchart TD
-    A[User klik Scan QR] --> B{Sudah check-in hari ini?}
-    B -->|Ya| C[Tampilkan error: Sudah check-in]
-    B -->|Tidak| D[Buka QR Scanner]
-    D --> E[Scan QR Code]
-    E --> F{QR valid?}
-    F -->|Tidak| G[Tampilkan error: QR tidak valid]
-    F -->|Ya| H{QR expired?}
-    H -->|Ya| I[Tampilkan error: QR sudah expired]
-    H -->|Tidak| J[Simpan record absensi]
-    J --> K[Tampilkan success message]
-    K --> L[Update dashboard]
+    A["User klik Scan QR"] --> B{"Sudah check-in hari ini?"}
+    B -->|"Ya"| C["Tampilkan error: Sudah check-in"]
+    B -->|"Tidak"| D["Buka QR Scanner"]
+    D --> E["Scan QR Code"]
+    E --> F{"QR valid?"}
+    F -->|"Tidak"| G["Tampilkan error: QR tidak valid"]
+    F -->|"Ya"| H{"QR expired?"}
+    H -->|"Ya"| I["Tampilkan error: QR sudah expired"]
+    H -->|"Tidak"| J["Simpan record absensi"]
+    J --> K["Tampilkan success message"]
+    K --> L["Update dashboard"]
 ```
 
 ### Leave Request Flow
 
 ```mermaid
 flowchart TD
-    A[User klik Ajukan Cuti] --> B[Isi form leave request]
-    B --> C{Form valid?}
-    C -->|Tidak| D[Tampilkan error validation]
-    C -->|Ya| E{Sisa cuti cukup?}
-    E -->|Tidak| F[Tampilkan error: Sisa cuti tidak cukup]
-    E -->|Ya| G{Overlap dengan cuti lain?}
-    G -->|Ya| H[Tampilkan error: Overlap dengan cuti lain]
-    G -->|Tidak| I[Hitung duration]
-    I --> J[Kurangi sisa cuti]
-    J --> K[Simpan leave request]
-    K --> L[Tampilkan success message]
-    L --> M[Update leave balance]
+    A["User klik Ajukan Cuti"] --> B["Isi form leave request"]
+    B --> C{"Form valid?"}
+    C -->|"Tidak"| D["Tampilkan error validation"]
+    C -->|"Ya"| E{"Sisa cuti cukup?"}
+    E -->|"Tidak"| F["Tampilkan error: Sisa cuti tidak cukup"]
+    E -->|"Ya"| G{"Overlap dengan cuti lain?"}
+    G -->|"Ya"| H["Tampilkan error: Overlap dengan cuti lain"]
+    G -->|"Tidak"| I["Hitung duration"]
+    I --> J["Kurangi sisa cuti"]
+    J --> K["Simpan leave request"]
+    K --> L["Tampilkan success message"]
+    L --> M["Update leave balance"]
 ```
 
 ## 6. Error Handling & Validation
 
-| Trigger | Error Message | System Resolution |
-|---------|---------------|-------------------|
-| Invalid email/password saat login | "Email atau password salah" | Tidak ada aksi, user bisa retry |
-| Rate limit login exceeded | "Terlalu banyak percobaan. Coba lagi dalam 15 menit" | Block login selama 15 menit |
-| GPS tidak tersedia | "Aktifkan GPS untuk absensi" | Redirect ke settings |
-| Lokasi di luar radius | "Anda berada di luar area kantor" | Tidak simpan absensi |
-| Face recognition gagal | "Wajah tidak dikenali. Pastikan pencahayaan cukup" | Retry capture |
-| Sudah check-in hari ini | "Anda sudah check-in hari ini" | Disable check-in button |
-| Belum check-out saat check-in | "Silakan check-out terlebih dahulu" | Redirect ke check-out |
-| QR Code invalid | "QR Code tidak valid" | Retry scan |
-| QR Code expired | "QR Code sudah expired. Scan ulang" | Request new QR |
-| Sisa cuti tidak cukup | "Sisa cuti tidak mencukupi" | Disable submit |
-| Leave overlap | "Tanggal cuti overlap dengan cuti yang sudah ada" | Highlight tanggal conflict |
-| Email sudah terdaftar | "Email sudah digunakan" | Disable submit |
-| File upload terlalu besar | "Ukuran file maksimal 2MB" | Reject upload |
-| Format foto tidak valid | "Format file harus JPG/PNG" | Reject upload |
-| Wajah tidak terdeteksi di foto | "Wajah tidak terdeteksi. Pastikan wajah terlihat jelas" | Retry upload |
-| Permission denied | "Anda tidak memiliki akses ke fitur ini" | Redirect ke dashboard |
-| Session expired | "Session expired. Silakan login ulang" | Redirect ke login |
-| Network error | "Koneksi internet bermasalah" | Retry request |
-| Server error | "Terjadi kesalahan. Silakan coba lagi" | Log error, retry |
-| Invalid shift time | "Jam selesai harus lebih dari jam mulai" | Disable submit |
-| Shift name duplicate | "Nama shift sudah ada" | Disable submit |
-| Role name duplicate | "Nama role sudah ada" | Disable submit |
-| Reset token expired | "Link reset sudah expired. Request ulang" | Redirect ke forgot password |
-| Reset token invalid | "Token tidak valid" | Redirect ke forgot password |
-| Reset token already used | "Token sudah digunakan" | Redirect ke login |
-| Attendance correction reason empty | "Alasan koreksi harus diisi" | Disable submit |
-| QR code generation failed | "Gagal generate QR code" | Retry request |
-| No active QR code | "Tidak ada QR code aktif" | Generate new QR |
+| Trigger                            | Error Message                                           | System Resolution               |
+| ---------------------------------- | ------------------------------------------------------- | ------------------------------- |
+| Invalid email/password saat login  | "Email atau password salah"                             | Tidak ada aksi, user bisa retry |
+| Rate limit login exceeded          | "Terlalu banyak percobaan. Coba lagi dalam 15 menit"    | Block login selama 15 menit     |
+| GPS tidak tersedia                 | "Aktifkan GPS untuk absensi"                            | Redirect ke settings            |
+| Lokasi di luar radius              | "Anda berada di luar area kantor"                       | Tidak simpan absensi            |
+| Face recognition gagal             | "Wajah tidak dikenali. Pastikan pencahayaan cukup"      | Retry capture                   |
+| Sudah check-in hari ini            | "Anda sudah check-in hari ini"                          | Disable check-in button         |
+| Belum check-out saat check-in      | "Silakan check-out terlebih dahulu"                     | Redirect ke check-out           |
+| QR Code invalid                    | "QR Code tidak valid"                                   | Retry scan                      |
+| QR Code expired                    | "QR Code sudah expired. Scan ulang"                     | Request new QR                  |
+| Sisa cuti tidak cukup              | "Sisa cuti tidak mencukupi"                             | Disable submit                  |
+| Leave overlap                      | "Tanggal cuti overlap dengan cuti yang sudah ada"       | Highlight tanggal conflict      |
+| Email sudah terdaftar              | "Email sudah digunakan"                                 | Disable submit                  |
+| File upload terlalu besar          | "Ukuran file maksimal 2MB"                              | Reject upload                   |
+| Format foto tidak valid            | "Format file harus JPG/PNG"                             | Reject upload                   |
+| Wajah tidak terdeteksi di foto     | "Wajah tidak terdeteksi. Pastikan wajah terlihat jelas" | Retry upload                    |
+| Permission denied                  | "Anda tidak memiliki akses ke fitur ini"                | Redirect ke dashboard           |
+| Session expired                    | "Session expired. Silakan login ulang"                  | Redirect ke login               |
+| Network error                      | "Koneksi internet bermasalah"                           | Retry request                   |
+| Server error                       | "Terjadi kesalahan. Silakan coba lagi"                  | Log error, retry                |
+| Invalid shift time                 | "Jam selesai harus lebih dari jam mulai"                | Disable submit                  |
+| Shift name duplicate               | "Nama shift sudah ada"                                  | Disable submit                  |
+| Role name duplicate                | "Nama role sudah ada"                                   | Disable submit                  |
+| Reset token expired                | "Link reset sudah expired. Request ulang"               | Redirect ke forgot password     |
+| Reset token invalid                | "Token tidak valid"                                     | Redirect ke forgot password     |
+| Reset token already used           | "Token sudah digunakan"                                 | Redirect ke login               |
+| Attendance correction reason empty | "Alasan koreksi harus diisi"                            | Disable submit                  |
+| QR code generation failed          | "Gagal generate QR code"                                | Retry request                   |
+| No active QR code                  | "Tidak ada QR code aktif"                               | Generate new QR                 |
