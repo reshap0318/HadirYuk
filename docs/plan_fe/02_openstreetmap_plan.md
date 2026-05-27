@@ -60,4 +60,4 @@ yarn add -D @types/leaflet @types/leaflet-draw
 
 ## Estimated Effort
 
-~2 days (1 day BE + FE integration, 1 day testing + polish)
+~1-2 days (FE only: component creation, integration, testing + polish)
