@@ -26,7 +26,7 @@ func (s *Services) AuthValidateToken(tokenString string) (*helpers.JWTClaims, er
 	// Try to get cached session from Redis with fallback to DB
 	if s.RedisClient.IsCacheAvailable() {
 		sessionKey := fmt.Sprintf("session:%d", claims.UserID)
-		var cachedUserDTO dtos.UserDTO
+		var cachedUserDTO dtos.UserLiteDTO
 		if err := s.RedisClient.GetJSON(sessionKey, &cachedUserDTO); err == nil {
 			// Cache hit - user data is valid, return claims
 			return claims, nil
@@ -103,7 +103,15 @@ func (s *Services) AuthLogin(ctx context.Context, email, password string) (*dtos
 	return &dtos.LoginResponse{
 		Token:        token,
 		RefreshToken: refreshToken,
-		User:         dtos.ToUserDTO(userWithRoles),
+		User:         dtos.UserLiteDTO{
+			ID:          userWithRoles.ID,
+			Email:       userWithRoles.Email,
+			Name:        userWithRoles.Name,
+			Avatar:      userWithRoles.Avatar,
+			CreatedAt:   userWithRoles.CreatedAt,
+			Roles:       dtos.ToRoleMiniDTOList(userWithRoles.Roles),
+			Permissions: collectPermissions(userWithRoles.Roles),
+		},
 	}, nil
 }
 
@@ -147,7 +155,15 @@ func (s *Services) AuthRefreshToken(ctx context.Context, refreshToken string) (*
 	return &dtos.LoginResponse{
 		Token:        token,
 		RefreshToken: newRefreshToken,
-		User:         dtos.ToUserDTO(user),
+		User:         dtos.UserLiteDTO{
+			ID:          user.ID,
+			Email:       user.Email,
+			Name:        user.Name,
+			Avatar:      user.Avatar,
+			CreatedAt:   user.CreatedAt,
+			Roles:       dtos.ToRoleMiniDTOList(user.Roles),
+			Permissions: collectPermissions(user.Roles),
+		},
 	}, nil
 }
 
@@ -216,6 +232,20 @@ func (s *Services) generateRefreshTokenWithClaims(user *models.User) (string, er
 		s.JWKSManager.GetKeyID(),
 		helpers.GetEnvInt("JWT_REFRESH_EXPIRATION", 168),
 	)
+}
+
+func collectPermissions(roles []models.Role) []dtos.PermissionDTO {
+	permSet := make(map[uint]bool)
+	var perms []dtos.PermissionDTO
+	for _, r := range roles {
+		for _, p := range r.Permissions {
+			if !permSet[p.ID] {
+				permSet[p.ID] = true
+				perms = append(perms, dtos.ToPermissionDTO(&p))
+			}
+		}
+	}
+	return perms
 }
 
 // AuthForgetPassword generates a reset token and sends it via email.

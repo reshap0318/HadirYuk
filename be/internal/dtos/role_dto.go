@@ -57,3 +57,12 @@ func ToRoleMiniDTO(r *models.Role) RoleMiniDTO {
 		Description: r.Description,
 	}
 }
+
+// ToRoleMiniDTOList converts a slice of Role models to RoleMiniDTOs.
+func ToRoleMiniDTOList(roles []models.Role) []RoleMiniDTO {
+	result := make([]RoleMiniDTO, len(roles))
+	for i, r := range roles {
+		result[i] = ToRoleMiniDTO(&r)
+	}
+	return result
+}

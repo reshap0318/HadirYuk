@@ -8,6 +8,18 @@ const router = useRouter()
 const authStore = useAuthStore()
 const isOpen = ref(false)
 
+const apiBaseUrl = computed(() => {
+  const url = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+  return url.replace(/\/api$/, '')
+})
+
+const avatarUrl = computed(() => {
+  const avatar = authStore.user?.avatar
+  if (!avatar) return null
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar
+  return `${apiBaseUrl.value}/${avatar}`
+})
+
 const userInitials = computed(() => {
   const name = authStore.user?.name || 'User'
   return name
@@ -68,11 +80,7 @@ onUnmounted(() => {
         <div
           class="w-7 h-7 rounded-full overflow-hidden ring-2 ring-emerald-400 ring-offset-1 transition-transform duration-200 group-hover:scale-105"
         >
-          <img
-            v-if="authStore.user?.avatar"
-            :src="authStore.user.avatar"
-            class="w-full h-full object-cover"
-          />
+          <img v-if="avatarUrl" :src="avatarUrl" class="w-full h-full object-cover" />
           <div
             v-else
             class="w-full h-full bg-linear-to-br from-blue-500 to-violet-500 flex items-center justify-center"
@@ -110,11 +118,7 @@ onUnmounted(() => {
               <div
                 class="w-11 h-11 rounded-full overflow-hidden ring-2 ring-emerald-400 ring-offset-2"
               >
-                <img
-                  v-if="authStore.user?.avatar"
-                  :src="authStore.user.avatar"
-                  class="w-full h-full object-cover"
-                />
+                <img v-if="avatarUrl" :src="avatarUrl" class="w-full h-full object-cover" />
                 <div
                   v-else
                   class="w-full h-full bg-linear-to-br from-blue-500 to-violet-500 flex items-center justify-center"

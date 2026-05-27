@@ -2,7 +2,15 @@
 import SidebarMenu from '@/components/layouts/SidebarMenu.vue'
 import TopBar from '@/components/layouts/TopBar.vue'
 import { ref } from 'vue'
-import { PhList, PhHouse, PhShieldCheck, PhUsers } from '@phosphor-icons/vue'
+import {
+  PhList,
+  PhHouse,
+  PhShieldCheck,
+  PhUsers,
+  PhClock,
+  PhMapPin,
+  PhCalendarBlank,
+} from '@phosphor-icons/vue'
 import type { IMenuItem } from '@/components/layouts/SidebarMenu.vue'
 
 const sidebarOpen = ref(false)
@@ -21,6 +29,10 @@ const menuItems: IMenuItem[] = [
       { label: 'Permissions', to: '/uam/permissions' },
     ],
   },
+  { isTitle: true, label: 'Data Master' },
+  { icon: PhClock, label: 'Shifts', to: '/master/shifts' },
+  { icon: PhMapPin, label: 'Lokasi Kantor', to: '/master/locations' },
+  { icon: PhCalendarBlank, label: 'Jenis Cuti', to: '/master/leave-types' },
 ]
 
 const toggleSidebar = () => {

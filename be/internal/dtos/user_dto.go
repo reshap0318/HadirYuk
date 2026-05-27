@@ -39,8 +39,11 @@ type UserStatusUpdateRequest struct {
 
 // ProfileUpdateRequest represents the request to update profile.
 type ProfileUpdateRequest struct {
-	Name  string `json:"name" validate:"required,min=2,max=100"`
-	Phone string `json:"phone" validate:"omitempty"`
+	Name       string `json:"name" validate:"required,min=2,max=100"`
+	Phone      string `json:"phone" validate:"omitempty"`
+	Department string `json:"department" validate:"omitempty"`
+	Position   string `json:"position" validate:"omitempty"`
+	Avatar     string `json:"avatar"`
 }
 
 // FacePhotoRequest represents the request to upload face photo.
@@ -52,9 +55,6 @@ type FacePhotoRequest struct {
 type UserDTO struct {
 	ID          uint            `json:"id"`
 	Email       string          `json:"email"`
-	EmployeeID  string          `json:"employee_id"`
-	Status      string          `json:"status"`
-	LastLoginAt *time.Time      `json:"last_login_at"`
 	Name        string          `json:"name"`
 	Phone       string          `json:"phone"`
 	Department  string          `json:"department"`
@@ -72,39 +72,34 @@ type UserDTO struct {
 type ProfileDTO struct {
 	ID         uint       `json:"id"`
 	Email      string     `json:"email"`
-	EmployeeID string     `json:"employee_id"`
 	Name       string     `json:"name"`
 	Phone      string     `json:"phone"`
 	Department string     `json:"department"`
 	Position   string     `json:"position"`
 	JoinDate   *time.Time `json:"join_date"`
 	Avatar     string     `json:"avatar"`
-	FacePhoto  string     `json:"face_photo_url"`
-	Roles      []string   `json:"roles"`
+	CreatedAt  time.Time  `json:"created_at"`
+	Roles      []RoleMiniDTO   `json:"roles"`
+	Permissions []PermissionDTO `json:"permissions"`
 }
 
-// ToUserDTO converts User model to UserDTO.
-func ToUserDTO(u *models.User) UserDTO {
-	dto := UserDTO{
-		ID:          u.ID,
-		Email:       u.Email,
-		EmployeeID:  u.EmployeeID,
-		Status:      u.Status,
-		LastLoginAt: u.LastLoginAt,
-		CreatedAt:   u.CreatedAt,
-		UpdatedAt:   u.UpdatedAt,
-		Roles:       []RoleMiniDTO{},
+// ToProfileDTO converts User model to ProfileDTO.
+func ToProfileDTO(u *models.User) ProfileDTO {
+	dto := ProfileDTO{
+		ID:        u.ID,
+		Email:     u.Email,
+		Name:      u.Name,
+		Avatar:    helpers.GetFileURL(u.Avatar),
+		CreatedAt: u.CreatedAt,
+		Roles:     []RoleMiniDTO{},
 		Permissions: []PermissionDTO{},
 	}
 
 	if u.Profile != nil {
-		dto.Name = u.Profile.Name
 		dto.Phone = u.Profile.Phone
 		dto.Department = u.Profile.Department
 		dto.Position = u.Profile.Position
 		dto.JoinDate = u.Profile.JoinDate
-		dto.Avatar = helpers.GetFileURL(u.Profile.Avatar)
-		dto.FacePhoto = helpers.GetFileURL(u.Profile.FacePhotoURL)
 	}
 
 	permSet := make(map[uint]bool)
@@ -121,27 +116,36 @@ func ToUserDTO(u *models.User) UserDTO {
 	return dto
 }
 
-// ToProfileDTO converts User model to ProfileDTO.
-func ToProfileDTO(u *models.User) ProfileDTO {
-	dto := ProfileDTO{
-		ID:         u.ID,
-		Email:      u.Email,
-		EmployeeID: u.EmployeeID,
-		Roles:      []string{},
+// ToUserDTO converts User model to UserDTO.
+func ToUserDTO(u *models.User) UserDTO {
+	dto := UserDTO{
+		ID:          u.ID,
+		Email:       u.Email,
+		Name:        u.Name,
+		Avatar:      helpers.GetFileURL(u.Avatar),
+		CreatedAt:   u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
+		Roles:       []RoleMiniDTO{},
+		Permissions: []PermissionDTO{},
 	}
 
 	if u.Profile != nil {
-		dto.Name = u.Profile.Name
 		dto.Phone = u.Profile.Phone
 		dto.Department = u.Profile.Department
 		dto.Position = u.Profile.Position
 		dto.JoinDate = u.Profile.JoinDate
-		dto.Avatar = helpers.GetFileURL(u.Profile.Avatar)
 		dto.FacePhoto = helpers.GetFileURL(u.Profile.FacePhotoURL)
 	}
 
+	permSet := make(map[uint]bool)
 	for _, r := range u.Roles {
-		dto.Roles = append(dto.Roles, r.Name)
+		dto.Roles = append(dto.Roles, ToRoleMiniDTO(&r))
+		for _, p := range r.Permissions {
+			if !permSet[p.ID] {
+				permSet[p.ID] = true
+				dto.Permissions = append(dto.Permissions, ToPermissionDTO(&p))
+			}
+		}
 	}
 
 	return dto

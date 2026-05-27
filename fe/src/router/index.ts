@@ -52,6 +52,21 @@ const routes: RouteRecordRaw[] = [
         name: 'Roles',
         component: () => import('@/pages/uam/roles/IndexView.vue'),
       },
+      {
+        path: 'master/shifts',
+        name: 'MasterShifts',
+        component: () => import('@/pages/master/shifts/IndexView.vue'),
+      },
+      {
+        path: 'master/locations',
+        name: 'MasterLocations',
+        component: () => import('@/pages/master/locations/IndexView.vue'),
+      },
+      {
+        path: 'master/leave-types',
+        name: 'MasterLeaveTypes',
+        component: () => import('@/pages/master/leave-types/IndexView.vue'),
+      },
     ],
   },
   // Catch-all route for 404 - must be last

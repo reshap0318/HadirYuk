@@ -8,11 +8,22 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required,min=6"`
 }
 
+// UserLiteDTO represents a lightweight user data transfer object for auth responses.
+type UserLiteDTO struct {
+	ID          uint            `json:"id"`
+	Email       string          `json:"email"`
+	Name        string          `json:"name"`
+	Avatar      string          `json:"avatar"`
+	CreatedAt   time.Time       `json:"created_at"`
+	Roles       []RoleMiniDTO   `json:"roles"`
+	Permissions []PermissionDTO `json:"permissions"`
+}
+
 // LoginResponse represents the login response payload.
 type LoginResponse struct {
-	Token        string  `json:"token"`
-	RefreshToken string  `json:"refresh_token"`
-	User         UserDTO `json:"user"`
+	Token        string      `json:"token"`
+	RefreshToken string      `json:"refresh_token"`
+	User         UserLiteDTO `json:"user"`
 }
 
 // RefreshTokenRequest represents the refresh token request payload.
@@ -25,17 +36,6 @@ type RegisterRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=6"`
 	Name     string `json:"name" validate:"required,min=3"`
-}
-
-// UserDTO represents user data transfer object.
-type UserDTO struct {
-	ID          uint            `json:"id"`
-	Email       string          `json:"email"`
-	Name        string          `json:"name"`
-	Avatar      string          `json:"avatar"`
-	CreatedAt   time.Time       `json:"created_at"`
-	Roles       []RoleMiniDTO   `json:"roles"`
-	Permissions []PermissionDTO `json:"permissions"`
 }
 
 // ForgetPasswordRequest represents the forget password request payload.

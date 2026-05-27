@@ -15,7 +15,7 @@ func RegisterUserRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, acc *he
 		users.POST("", middleware.RequirePermission(acc, "user.create"), handlers.UserCreate)
 		users.GET("", middleware.RequirePermission(acc, "user.index"), handlers.UserGetAll)
 		users.GET("/:id", middleware.RequirePermission(acc, "user.index"), handlers.UserGetByID)
-		users.PUT("/:id", middleware.RequirePermission(acc, "user.edit"), handlers.UserUpdate)
+		users.PUT("/:id", middleware.RequirePermission(acc, "user.update"), handlers.UserUpdate)
 		users.DELETE("/:id", middleware.RequirePermission(acc, "user.delete"), handlers.UserDelete)
 	}
 

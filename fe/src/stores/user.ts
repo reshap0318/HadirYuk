@@ -9,6 +9,9 @@ export interface IUser {
   email: string
   name: string
   avatar: string | null
+  phone: string | null
+  department: string | null
+  position: string | null
   created_at: string
   roles: IRole[]
   permissions: IPermission[]
@@ -22,6 +25,9 @@ export interface IUserPayload {
   password_confirmation: string
   roles: number[]
   avatar: File | null
+  phone: string
+  department: string
+  position: string
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -35,6 +41,9 @@ export const useUserStore = defineStore('user', () => {
       password_confirmation: '',
       roles: [],
       avatar: null,
+      phone: '',
+      department: '',
+      position: '',
     },
     formRules: {
       name: { required, minLength: minLength(2) },

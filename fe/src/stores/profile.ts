@@ -4,6 +4,7 @@ import { get, put, type IApiResponse } from '@/plugins/axios'
 import { required, email, minLength, helpers } from '@vuelidate/validators'
 import { uploadFile } from '@/helpers/upload'
 import swal from '@/plugins/swal'
+import storage from '@/helpers/storage'
 import { useAuthStore } from './auth'
 import type { IRole } from './role'
 import type { IPermission } from './permission'
@@ -13,6 +14,10 @@ export interface IProfile {
   email: string
   name: string
   avatar: string | null
+  phone: string | null
+  department: string | null
+  position: string | null
+  join_date: string | null
   created_at: string
   roles: IRole[]
   permissions: IPermission[]
@@ -21,6 +26,9 @@ export interface IProfile {
 export interface IProfilePayload {
   name: string
   email: string
+  phone: string
+  department: string
+  position: string
   password: string
   password_confirmation: string
   avatar: File | null
@@ -36,6 +44,9 @@ export const useProfileStore = defineStore('profile', () => {
   const form = reactive<IProfilePayload>({
     name: '',
     email: '',
+    phone: '',
+    department: '',
+    position: '',
     password: '',
     password_confirmation: '',
     avatar: null,
@@ -61,6 +72,9 @@ export const useProfileStore = defineStore('profile', () => {
       if (profile.value) {
         form.name = profile.value.name
         form.email = profile.value.email
+        form.phone = profile.value.phone ?? ''
+        form.department = profile.value.department ?? ''
+        form.position = profile.value.position ?? ''
       }
     } catch (error: any) {
       console.error('Failed to fetch profile', error)
@@ -76,6 +90,9 @@ export const useProfileStore = defineStore('profile', () => {
       const payload: Record<string, any> = {
         name: form.name,
         email: form.email,
+        phone: form.phone,
+        department: form.department,
+        position: form.position,
       }
 
       if (form.avatar) {
@@ -88,12 +105,28 @@ export const useProfileStore = defineStore('profile', () => {
         payload.password_confirmation = form.password_confirmation
       }
 
-      const { data } = await put<IApiResponse<IProfile>>('/me', payload)
+      await put<IApiResponse<IProfile>>('/me', payload)
+
+      const { data } = await get<IApiResponse<IProfile>>('/me')
       profile.value = data.data || null
 
       const authStore = useAuthStore()
       if (profile.value) {
-        authStore.user = profile.value
+        form.name = profile.value.name
+        form.email = profile.value.email
+        form.phone = profile.value.phone ?? ''
+        form.department = profile.value.department ?? ''
+        form.position = profile.value.position ?? ''
+        authStore.user = {
+          id: profile.value.id,
+          name: profile.value.name,
+          email: profile.value.email,
+          avatar: profile.value.avatar,
+          created_at: profile.value.created_at,
+          roles: authStore.user?.roles ?? [],
+          permissions: authStore.user?.permissions ?? [],
+        }
+        storage.setItem('user', authStore.user)
       }
 
       form.password = ''

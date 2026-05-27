@@ -13,6 +13,7 @@ import { useUserStore } from '@/stores/user'
 import { useRoleStore } from '@/stores/role'
 import type { IRole } from '@/stores/role'
 import { required, email, minLength, helpers } from '@vuelidate/validators'
+import { PhPhone, PhBuildingOffice, PhBriefcase } from '@phosphor-icons/vue'
 
 const userStore = useUserStore()
 const roleStore = useRoleStore()
@@ -75,6 +76,9 @@ async function show(data?: {
   name: string
   email: string
   avatar?: string | null
+  phone?: string | null
+  department?: string | null
+  position?: string | null
   roles?: { id: number }[]
 }) {
   if (data) {
@@ -85,6 +89,9 @@ async function show(data?: {
     userStore.form.password_confirmation = ''
     userStore.form.roles = data.roles?.map((r) => r.id) || []
     userStore.form.avatar = null
+    userStore.form.phone = data.phone ?? ''
+    userStore.form.department = data.department ?? ''
+    userStore.form.position = data.position ?? ''
     currentAvatar.value = data.avatar || null
   } else {
     userStore.form.id = undefined
@@ -94,6 +101,9 @@ async function show(data?: {
     userStore.form.password_confirmation = ''
     userStore.form.roles = []
     userStore.form.avatar = null
+    userStore.form.phone = ''
+    userStore.form.department = ''
+    userStore.form.position = ''
     currentAvatar.value = null
   }
   v$.value.$reset()
@@ -154,21 +164,23 @@ defineExpose({ show, close })
           :validation="v$.email"
         />
 
-        <FormPassword
-          v-model="userStore.form.password"
-          name="password"
-          label="Password"
-          :placeholder="isEdit ? 'Kosongkan jika tidak ingin mengubah' : 'password123'"
-          :validation="v$.password"
-        />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormPassword
+            v-model="userStore.form.password"
+            name="password"
+            label="Password"
+            :placeholder="isEdit ? 'Kosongkan jika tidak ingin mengubah' : 'password123'"
+            :validation="v$.password"
+          />
 
-        <FormPassword
-          v-model="userStore.form.password_confirmation"
-          name="password_confirmation"
-          label="Konfirmasi Password"
-          placeholder="password123"
-          :validation="v$.password_confirmation"
-        />
+          <FormPassword
+            v-model="userStore.form.password_confirmation"
+            name="password_confirmation"
+            label="Konfirmasi Password"
+            placeholder="password123"
+            :validation="v$.password_confirmation"
+          />
+        </div>
 
         <FormSelect
           v-model="userStore.form.roles"
@@ -179,6 +191,32 @@ defineExpose({ show, close })
           mode="tags"
           :searchable="true"
           :loading="rolesLoading"
+        />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormInput
+            v-model="userStore.form.phone"
+            name="phone"
+            label="Telepon"
+            placeholder="08123456789"
+            :prefix-icon="PhPhone"
+          />
+
+          <FormInput
+            v-model="userStore.form.department"
+            name="department"
+            label="Departemen"
+            placeholder="e.g. Engineering"
+            :prefix-icon="PhBuildingOffice"
+          />
+        </div>
+
+        <FormInput
+          v-model="userStore.form.position"
+          name="position"
+          label="Jabatan"
+          placeholder="e.g. Software Engineer"
+          :prefix-icon="PhBriefcase"
         />
       </div>
 

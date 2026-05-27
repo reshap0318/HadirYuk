@@ -14,20 +14,42 @@ func SeedRolePermissions(db *gorm.DB, roleIDs map[string]uint, permIDs map[strin
 
 	rolePerms := map[string][]string{
 		"Super Admin": {},
-		"Admin": {
-			"user.index", "user.create", "user.edit", "user.delete",
-			"role.index", "role.create", "role.edit", "role.delete",
-			"permission.index",
+		"HR Admin": {
+			// Auth & Profile
+			"auth.login", "auth.logout", "auth.forgot-password", "auth.reset-password", "auth.change-password",
+			"profile.view", "profile.update", "profile.upload-face",
+			// Attendance
+			"attendance.checkin", "attendance.checkout", "attendance.view", "attendance.view-all",
+			"attendance.export", "attendance.correct",
+			// Shift
+			"shift.index", "shift.create", "shift.update", "shift.delete", "shift.assign",
+			// Leave
+			"leave.submit", "leave.view", "leave.view-all", "leave.manage-types",
+			// User
+			"user.index", "user.create", "user.update",
+			// Location
+			"location.index", "location.create", "location.update", "location.delete",
+			// Dashboard
+			"dashboard.view", "dashboard.view-hr",
+			// Report
+			"report.view", "report.export-excel", "report.export-pdf",
+			// QR Code
+			"qrcode.generate", "qrcode.view", "qrcode.revoke",
+			// Statistics
+			"late-statistic.view",
 		},
-		"Editor": {
-			"user.index", "user.create", "user.edit",
-			"role.index",
-			"permission.index",
-		},
-		"Viewer": {
-			"user.index",
-			"role.index",
-			"permission.index",
+		"Karyawan": {
+			// Auth & Profile
+			"auth.login", "auth.logout", "auth.forgot-password", "auth.reset-password", "auth.change-password",
+			"profile.view", "profile.update", "profile.upload-face",
+			// Attendance
+			"attendance.checkin", "attendance.checkout", "attendance.view",
+			// Shift
+			"shift.index",
+			// Leave
+			"leave.submit", "leave.view",
+			// Dashboard
+			"dashboard.view",
 		},
 	}
 

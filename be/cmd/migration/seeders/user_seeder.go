@@ -3,6 +3,7 @@ package seeders
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/reshap0318/hadirYuk/internal/helpers"
 	"github.com/reshap0318/hadirYuk/internal/models"
@@ -14,14 +15,41 @@ func SeedUsers(db *gorm.DB) map[string]uint {
 	fmt.Println("Seeding users...")
 
 	defaultUsers := []struct {
-		Email    string
-		Password string
-		Name     string
+		Email      string
+		Password   string
+		Name       string
+		Phone      string
+		Department string
+		Position   string
+		JoinDate   time.Time
 	}{
-		{"suAdmin@app.com", "@dmin#123", "Super Admin"},
-		{"admin@app.com", "Admin#123", "Admin"},
-		{"editor@app.com", "Editor#123", "Editor"},
-		{"viewer@app.com", "Viewer#123", "Viewer"},
+		{
+			Email:      "suAdmin@app.com",
+			Password:   "@dmin#123",
+			Name:       "Super Administrator",
+			Phone:      "081234567890",
+			Department: "IT",
+			Position:   "System Administrator",
+			JoinDate:   time.Now(),
+		},
+		{
+			Email:      "hradmin@app.com",
+			Password:   "HrAdmin#123",
+			Name:       "HR Administrator",
+			Phone:      "081234567891",
+			Department: "Human Resources",
+			Position:   "HR Manager",
+			JoinDate:   time.Now(),
+		},
+		{
+			Email:      "karyawan@app.com",
+			Password:   "Karyawan#123",
+			Name:       "Karyawan Demo",
+			Phone:      "081234567892",
+			Department: "Engineering",
+			Position:   "Software Engineer",
+			JoinDate:   time.Now(),
+		},
 	}
 
 	resultMap := make(map[string]uint)
@@ -41,6 +69,12 @@ func SeedUsers(db *gorm.DB) map[string]uint {
 				Email:    userData.Email,
 				Password: hashedPassword,
 				Name:     userData.Name,
+				Profile: &models.UserProfile{
+					Phone:      userData.Phone,
+					Department: userData.Department,
+					Position:   userData.Position,
+					JoinDate:   &userData.JoinDate,
+				},
 			}
 
 			if err := db.Create(&user).Error; err != nil {
@@ -53,6 +87,22 @@ func SeedUsers(db *gorm.DB) map[string]uint {
 		} else {
 			resultMap[userData.Email] = existing.ID
 			fmt.Printf("  ⊘ User %s already exists, skipping\n", userData.Email)
+
+			var profile models.UserProfile
+			if db.Where("user_id = ?", existing.ID).First(&profile).Error == gorm.ErrRecordNotFound {
+				profile = models.UserProfile{
+					UserID:     existing.ID,
+					Phone:      userData.Phone,
+					Department: userData.Department,
+					Position:   userData.Position,
+					JoinDate:   &userData.JoinDate,
+				}
+				if err := db.Create(&profile).Error; err != nil {
+					log.Printf("Failed to create profile for %s: %v", userData.Email, err)
+				} else {
+					fmt.Printf("    + Created profile for %s\n", userData.Email)
+				}
+			}
 		}
 	}
 

@@ -46,6 +46,12 @@ func (s *Services) UserCreate(ctx context.Context, req dtos.UserCreateRequest) (
 		Name:     req.Name,
 		Password: string(hashedPassword),
 		Avatar:   avatarPath,
+		Profile: &models.UserProfile{
+			Department: req.Department,
+			Position:   req.Position,
+			Phone:      req.Phone,
+			JoinDate:   req.JoinDate,
+		},
 	}
 
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
@@ -62,7 +68,7 @@ func (s *Services) UserCreate(ctx context.Context, req dtos.UserCreateRequest) (
 			s.Logger.LogStep("UserCreate", "Failed to assign roles: %v", err)
 		}
 
-		reloaded, err := s.repo.User.FindByID(tx, result.ID, "Roles")
+		reloaded, err := s.repo.User.FindByID(tx, result.ID, "Roles", "Profile")
 		if err != nil {
 			return nil, err
 		}
@@ -80,9 +86,9 @@ func (s *Services) UserCreate(ctx context.Context, req dtos.UserCreateRequest) (
 	return &dto, nil
 }
 
-// UserGetAll returns all users with roles (no pagination).
+// UserGetAll returns all users with roles and profiles (no pagination).
 func (s *Services) UserGetAll(ctx context.Context) ([]dtos.UserDTO, error) {
-	users, err := s.repo.User.FindAll(nil, "Roles")
+	users, err := s.repo.User.FindAll(nil, "Roles", "Profile")
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +111,7 @@ func (s *Services) UserGetAllPaginated(ctx context.Context, opts *repositories.Q
 	if opts.Order == "" {
 		opts.Order = "ASC"
 	}
-	opts.Preloads = []string{"Roles"}
+	opts.Preloads = []string{"Roles", "Profile"}
 
 	result, err := s.repo.User.FindAllWithOpts(nil, opts)
 	if err != nil {
@@ -128,7 +134,7 @@ func (s *Services) UserGetAllPaginated(ctx context.Context, opts *repositories.Q
 
 // UserGetByID returns a user by ID with roles.
 func (s *Services) UserGetByID(ctx context.Context, id uint) (*dtos.UserDTO, error) {
-	user, err := s.repo.User.FindByID(nil, id, "Roles")
+	user, err := s.repo.User.FindByID(nil, id, "Roles", "Profile")
 	if err != nil {
 		return nil, helpers.ErrNotFound
 	}
@@ -141,7 +147,7 @@ func (s *Services) UserGetByID(ctx context.Context, id uint) (*dtos.UserDTO, err
 func (s *Services) ProfileGet(ctx context.Context, userID uint) (*dtos.UserDTO, error) {
 	s.Logger.LogStart("ProfileGet", "Fetching profile for user ID: %d", userID)
 
-	user, err := s.repo.User.FindByID(nil, userID, "Roles")
+	user, err := s.repo.User.FindByID(nil, userID, "Roles", "Profile")
 	if err != nil {
 		s.Logger.LogEndWithError("ProfileGet", "User not found: %v", err)
 		return nil, helpers.ErrNotFound
@@ -156,7 +162,7 @@ func (s *Services) ProfileGet(ctx context.Context, userID uint) (*dtos.UserDTO, 
 func (s *Services) ProfileUpdate(ctx context.Context, userID uint, req dtos.ProfileUpdateRequest) (*dtos.UserDTO, error) {
 	s.Logger.LogStart("ProfileUpdate", "Updating profile for user ID: %d", userID)
 
-	existing, err := s.repo.User.FindByID(nil, userID)
+	existing, err := s.repo.User.FindByID(nil, userID, "Profile")
 	if err != nil {
 		s.Logger.LogEndWithError("ProfileUpdate", "User not found: %v", err)
 		return nil, helpers.ErrNotFound
@@ -165,24 +171,28 @@ func (s *Services) ProfileUpdate(ctx context.Context, userID uint, req dtos.Prof
 	updates := map[string]interface{}{
 		"name": req.Name,
 	}
-	if req.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			s.Logger.LogEndWithError("ProfileUpdate", "Failed to hash password: %v", err)
-			return nil, err
-		}
-		updates["password"] = string(hashedPassword)
-	}
 
-	oldAvatar := ""
 	if req.Avatar != "" {
 		avatarPath, err := helpers.MoveFile(req.Avatar, "storage/tmp", "storage/avatars")
 		if err != nil {
 			s.Logger.LogStep("ProfileUpdate", "Failed to move avatar: %v", err)
 		} else {
+			if existing.Avatar != "" {
+				helpers.DeleteFile(existing.Avatar)
+			}
 			updates["avatar"] = avatarPath
-			oldAvatar = existing.Avatar
 		}
+	}
+
+	profileUpdates := map[string]interface{}{}
+	if req.Phone != "" {
+		profileUpdates["phone"] = req.Phone
+	}
+	if req.Department != "" {
+		profileUpdates["department"] = req.Department
+	}
+	if req.Position != "" {
+		profileUpdates["position"] = req.Position
 	}
 
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
@@ -191,7 +201,21 @@ func (s *Services) ProfileUpdate(ctx context.Context, userID uint, req dtos.Prof
 			return nil, err
 		}
 
-		reloaded, err := s.repo.User.FindByID(tx, result.ID, "Roles")
+		if len(profileUpdates) > 0 {
+			if result.Profile == nil {
+				result.Profile = &models.UserProfile{UserID: userID}
+				if _, err := s.repo.UserProfile.Create(tx, result.Profile); err != nil {
+					s.Logger.LogStep("ProfileUpdate", "Failed to create profile: %v", err)
+					return nil, err
+				}
+			}
+			if _, err := s.repo.UserProfile.UpdateMap(tx, &models.UserProfile{UserID: userID}, profileUpdates); err != nil {
+				s.Logger.LogStep("ProfileUpdate", "Failed to update profile fields: %v", err)
+				return nil, err
+			}
+		}
+
+		reloaded, err := s.repo.User.FindByID(tx, result.ID, "Roles", "Profile")
 		if err != nil {
 			return nil, err
 		}
@@ -203,10 +227,6 @@ func (s *Services) ProfileUpdate(ctx context.Context, userID uint, req dtos.Prof
 		return nil, err
 	}
 
-	if oldAvatar != "" {
-		helpers.DeleteFile(oldAvatar)
-	}
-
 	result := res.(*models.User)
 	dto := dtos.ToUserDTO(result)
 
@@ -216,11 +236,11 @@ func (s *Services) ProfileUpdate(ctx context.Context, userID uint, req dtos.Prof
 	return &dto, nil
 }
 
-// UserUpdate updates an existing user with optional roles.
+// UserUpdate updates an existing user with optional roles and profile.
 func (s *Services) UserUpdate(ctx context.Context, id uint, req dtos.UserUpdateRequest) (*dtos.UserDTO, error) {
 	s.Logger.LogStart("UserUpdate", "Updating user ID: %d", id)
 
-	existing, err := s.repo.User.FindByID(nil, id)
+	existing, err := s.repo.User.FindByID(nil, id, "Profile")
 	if err != nil {
 		s.Logger.LogEndWithError("UserUpdate", "User not found: %v", err)
 		return nil, helpers.ErrNotFound
@@ -242,30 +262,48 @@ func (s *Services) UserUpdate(ctx context.Context, id uint, req dtos.UserUpdateR
 		"name":  req.Name,
 		"email": req.Email,
 	}
-	if req.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			s.Logger.LogEndWithError("UserUpdate", "Failed to hash password: %v", err)
-			return nil, err
-		}
-		updates["password"] = string(hashedPassword)
-	}
 
-	oldAvatar := ""
 	if req.Avatar != "" {
 		avatarPath, err := helpers.MoveFile(req.Avatar, "storage/tmp", "storage/avatars")
 		if err != nil {
 			s.Logger.LogStep("UserUpdate", "Failed to move avatar: %v", err)
 		} else {
+			if existing.Avatar != "" {
+				helpers.DeleteFile(existing.Avatar)
+			}
 			updates["avatar"] = avatarPath
-			oldAvatar = existing.Avatar
 		}
+	}
+
+	profileUpdates := map[string]interface{}{}
+	if req.Phone != "" {
+		profileUpdates["phone"] = req.Phone
+	}
+	if req.Department != "" {
+		profileUpdates["department"] = req.Department
+	}
+	if req.Position != "" {
+		profileUpdates["position"] = req.Position
 	}
 
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
 		result, err := s.repo.User.UpdateMap(tx, &models.User{ID: id}, updates)
 		if err != nil {
 			return nil, err
+		}
+
+		if len(profileUpdates) > 0 {
+			if result.Profile == nil {
+				result.Profile = &models.UserProfile{UserID: id}
+				if _, err := s.repo.UserProfile.Create(tx, result.Profile); err != nil {
+					s.Logger.LogStep("UserUpdate", "Failed to create profile: %v", err)
+					return nil, err
+				}
+			}
+			if _, err := s.repo.UserProfile.UpdateMap(tx, &models.UserProfile{UserID: id}, profileUpdates); err != nil {
+				s.Logger.LogStep("UserUpdate", "Failed to update profile fields: %v", err)
+				return nil, err
+			}
 		}
 
 		if err := tx.Model(&result).Association("Roles").Clear(); err != nil {
@@ -278,9 +316,10 @@ func (s *Services) UserUpdate(ctx context.Context, id uint, req dtos.UserUpdateR
 		}
 		if err := tx.Model(&result).Association("Roles").Append(roles); err != nil {
 			s.Logger.LogStep("UserUpdate", "Failed to assign roles: %v", err)
+			return nil, err
 		}
 
-		reloaded, err := s.repo.User.FindByID(tx, result.ID, "Roles")
+		reloaded, err := s.repo.User.FindByID(tx, result.ID, "Roles", "Profile")
 		if err != nil {
 			return nil, err
 		}
@@ -290,10 +329,6 @@ func (s *Services) UserUpdate(ctx context.Context, id uint, req dtos.UserUpdateR
 	if err != nil {
 		s.Logger.LogEndWithError("UserUpdate", "Failed to update user: %v", err)
 		return nil, err
-	}
-
-	if oldAvatar != "" {
-		helpers.DeleteFile(oldAvatar)
 	}
 
 	result := res.(*models.User)

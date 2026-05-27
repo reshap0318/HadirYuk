@@ -45,6 +45,10 @@
 | `role.update` | role | update | Can update role |
 | `role.delete` | role | delete | Can delete role |
 | `role.assign-permission` | role | assign-permission | Can assign permission to role |
+| `permission.index` | permission | index | Can view permission list |
+| `permission.create` | permission | create | Can create new permission |
+| `permission.update` | permission | update | Can update permission |
+| `permission.delete` | permission | delete | Can delete permission |
 | `location.index` | location | index | Can view location list |
 | `location.create` | location | create | Can create new location |
 | `location.update` | location | update | Can update location |
@@ -104,6 +108,11 @@
 | `role.update` | ✅ | ❌ | ❌ |
 | `role.delete` | ✅ | ❌ | ❌ |
 | `role.assign-permission` | ✅ | ❌ | ❌ |
+| **Permission** | | | |
+| `permission.index` | ✅ | ❌ | ❌ |
+| `permission.create` | ✅ | ❌ | ❌ |
+| `permission.update` | ✅ | ❌ | ❌ |
+| `permission.delete` | ✅ | ❌ | ❌ |
 | **Location** | | | |
 | `location.index` | ✅ | ✅ | ❌ |
 | `location.create` | ✅ | ✅ | ❌ |

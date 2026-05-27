@@ -10,6 +10,9 @@ import {
   PhPencilSimple,
   PhLock,
   PhUploadSimple,
+  PhPhone,
+  PhBuildingOffice,
+  PhBriefcase,
 } from '@phosphor-icons/vue'
 import { useProfileStore } from '@/stores'
 
@@ -40,6 +43,9 @@ onMounted(() => {
 function openEditModal() {
   profileStore.form.name = profileStore.profile?.name ?? ''
   profileStore.form.email = profileStore.profile?.email ?? ''
+  profileStore.form.phone = profileStore.profile?.phone ?? ''
+  profileStore.form.department = profileStore.profile?.department ?? ''
+  profileStore.form.position = profileStore.profile?.position ?? ''
   profileStore.form.avatar = null
   profileStore.form.password = ''
   profileStore.form.password_confirmation = ''
@@ -187,9 +193,54 @@ function getInitials(name: string): string {
           </div>
 
           <!-- Info Cards Grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div class="grid grid-cols-1 sm:grid-cols-6 gap-4 mb-6">
+            <!-- Phone -->
+            <div class="col-span-2 bg-white rounded-xl shadow p-5">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <PhPhone class="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">Telepon</p>
+                  <p class="text-sm font-semibold text-gray-900">
+                    {{ profileStore.profile.phone || '-' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Department -->
+            <div class="col-span-2 bg-white rounded-xl shadow p-5">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <PhBuildingOffice class="w-5 h-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">Departemen</p>
+                  <p class="text-sm font-semibold text-gray-900">
+                    {{ profileStore.profile.department || '-' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Position -->
+            <div class="col-span-2 bg-white rounded-xl shadow p-5">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <PhBriefcase class="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">Jabatan</p>
+                  <p class="text-sm font-semibold text-gray-900">
+                    {{ profileStore.profile.position || '-' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <!-- Member Since -->
-            <div class="bg-white rounded-xl shadow p-5">
+            <div class="col-span-3 bg-white rounded-xl shadow p-5">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center">
                   <PhCalendar class="w-5 h-5 text-violet-500" />
@@ -204,11 +255,11 @@ function getInitials(name: string): string {
             </div>
 
             <!-- Change Password Card -->
-            <div class="bg-white rounded-xl shadow p-5">
+            <div class="col-span-3 bg-white rounded-xl shadow p-5">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                    <PhLock class="w-5 h-5 text-amber-500" />
+                  <div class="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+                    <PhLock class="w-5 h-5 text-rose-500" />
                   </div>
                   <div>
                     <p class="text-xs text-gray-500 uppercase tracking-wide">Password</p>
@@ -272,6 +323,34 @@ function getInitials(name: string): string {
           :prefix-icon="PhEnvelope"
           :validation="v$.email"
         />
+
+        <!-- Phone -->
+        <FormInput
+          v-model="profileStore.form.phone"
+          name="phone"
+          label="Telepon"
+          placeholder="Masukkan nomor telepon"
+          :prefix-icon="PhPhone"
+        />
+
+        <!-- Department & Position -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormInput
+            v-model="profileStore.form.department"
+            name="department"
+            label="Departemen"
+            placeholder="e.g. Engineering"
+            :prefix-icon="PhBuildingOffice"
+          />
+
+          <FormInput
+            v-model="profileStore.form.position"
+            name="position"
+            label="Jabatan"
+            placeholder="e.g. Software Engineer"
+            :prefix-icon="PhBriefcase"
+          />
+        </div>
       </div>
 
       <template #footer>

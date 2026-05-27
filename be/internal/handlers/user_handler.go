@@ -97,10 +97,6 @@ func (h *Handlers) UserUpdate(c *gin.Context) {
 		return
 	}
 
-	if req.Password == "" {
-		req.PasswordConfirmation = ""
-	}
-
 	if err := h.Validate.Struct(req); err != nil {
 		helpers.ValidationResponse(c, h.getErrorsMap(err))
 		return
@@ -151,10 +147,6 @@ func (h *Handlers) ProfileUpdate(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		helpers.BadRequest(c, "Invalid JSON payload")
 		return
-	}
-
-	if req.Password == "" {
-		req.PasswordConfirmation = ""
 	}
 
 	if err := h.Validate.Struct(req); err != nil {

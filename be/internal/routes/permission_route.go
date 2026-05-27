@@ -15,7 +15,7 @@ func RegisterPermissionRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, a
 		permissions.POST("", middleware.RequirePermission(acc, "permission.create"), handlers.PermissionCreate)
 		permissions.GET("", middleware.RequirePermission(acc, "permission.index"), handlers.PermissionGetAll)
 		permissions.GET("/:id", middleware.RequirePermission(acc, "permission.index"), handlers.PermissionGetByID)
-		permissions.PUT("/:id", middleware.RequirePermission(acc, "permission.edit"), handlers.PermissionUpdate)
+		permissions.PUT("/:id", middleware.RequirePermission(acc, "permission.update"), handlers.PermissionUpdate)
 		permissions.DELETE("/:id", middleware.RequirePermission(acc, "permission.delete"), handlers.PermissionDelete)
 	}
 }
