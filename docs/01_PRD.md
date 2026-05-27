@@ -177,6 +177,21 @@ flowchart TD
 - Minimal training untuk pengguna baru
 - Accessibility WCAG 2.1 Level AA
 
+### Timezone & Localization
+
+- Semua timestamp disimpan dalam UTC di database
+- Konversi ke WIB (UTC+7) dilakukan di layer presentation (frontend)
+- Format tanggal: DD/MM/YYYY untuk tampilan Indonesia
+- Format waktu: 24-hour format (HH:mm)
+
+### Data Retention
+
+- Attendance records: retained indefinitely (audit requirement)
+- Audit logs: retained for 12 months
+- Password reset tokens: deleted after use or expiry (1 hour)
+- QR codes: soft-deleted after expiry, hard-deleted after 30 days
+- Face photos: retained while employee is active, archived 30 days after deactivation
+
 ## 7. Success Metrics
 
 | KPI                             | Target               |
@@ -202,5 +217,9 @@ flowchart TD
 - Karyawan memiliki smartphone dengan kamera dan GPS
 - Koneksi internet tersedia di lokasi kantor
 - Admin HR memiliki akses komputer untuk manajemen
-- Browser modern (Chrome, Firefox, Safari, Edge) digunakan
+- Browser support minimum:
+  - Chrome 100+ (Primary target)
+  - Firefox 100+ (Full support)
+  - Safari 15+ (iOS Safari for mobile web)
+  - Edge 100+ (Chromium-based only)
 - Foto wajah karyawan sudah tersedia saat onboard

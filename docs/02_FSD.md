@@ -127,6 +127,20 @@ HadirYuk
   - Mark token sebagai used
 - **Post-condition:** Password berhasil diubah, token marked as used
 
+#### 2.1.6 Token Refresh
+
+- **Pre-condition:** User memiliki valid refresh token (belum expired)
+- **Business Logic:**
+  - Access token expired (setelah 4 jam)
+  - Frontend otomatis call POST /api/v1/auth/refresh dengan refresh token
+  - Sistem validasi refresh token: cek expiry, cek user status
+  - Jika valid: generate new access token, return response
+  - Jika invalid: return 401, frontend redirect ke login
+- **Post-condition:** User mendapat access token baru tanpa perlu login ulang
+- **Error Handling:**
+  - Refresh token expired: redirect ke login
+  - User status inactive/suspended: redirect ke login dengan message "Akun Anda telah dinonaktifkan"
+
 ### 2.2 Attendance (Absensi)
 
 #### 2.2.1 Check-in (Geotagging + Face Recognition)
@@ -157,14 +171,33 @@ HadirYuk
   - QR Code di-generate oleh sistem dengan expiry 5 menit
 - **Post-condition:** Record absensi tersimpan, status check-in tercatat
 
-#### 2.2.3 Check-out
+#### 2.2.3 Check-out (Geotagging + Face Recognition)
 
 - **Pre-condition:** User sudah check-in hari ini, belum check-out
 - **Business Logic:**
-  - Sama seperti check-in dengan validasi yang sama
-  - Validasi check-out time >= shift start time + minimum work hours
-  - Catat: user_id, check_in_time, check_out_time, duration
-- **Post-condition:** Record absensi diupdate dengan check-out time
+  - User klik tombol Check-out
+  - Browser meminta akses lokasi (GPS)
+  - Validasi lokasi dalam radius kantor yang sama dengan check-in
+  - Jika lokasi valid, buka kamera untuk face recognition (opsional, bisa dikonfigurasi)
+  - Capture foto dan bandingkan dengan foto terdaftar
+  - Jika match (threshold > 85%), update record absensi
+  - Hitung duration = check_out_time - check_in_time - break_duration
+  - Tentukan status: "present" jika on-time, "late" jika check_in > shift start + tolerance
+  - Catat: check_out_time, check_out_lat, check_out_lng, check_out_method, check_out_photo_url, duration, status
+- **Post-condition:** Attendance record updated dengan check-out data
+- **Edge Cases:**
+  - Check-out sebelum minimum work hours: warning tapi tetap allow (dengan flag)
+  - User lupa check-out: HR Admin bisa koreksi (lihat 2.2.5)
+  - Check-out di lokasi berbeda dari check-in: allow tapi catat perbedaan lokasi
+
+#### 2.2.3b Check-out (QR Code)
+
+- **Pre-condition:** User sudah check-in hari ini, belum check-out, QR Code tersedia
+- **Business Logic:**
+  - User klik tombol Scan QR untuk check-out
+  - Validasi QR Code (format, expiry, lokasi)
+  - Update existing attendance record dengan check_out_time, method=qr_code
+- **Post-condition:** Attendance record updated dengan check-out data
 
 #### 2.2.4 Attendance History
 
@@ -376,6 +409,15 @@ HadirYuk
   - Download file
 - **Post-condition:** File PDF terdownload
 
+#### 2.10.4 Leave Report
+
+- **Pre-condition:** HR Admin login
+- **Business Logic:**
+  - Filter: date range, employee, department, leave type
+  - Generate report dengan data: nama, leave type, start date, end date, duration, status
+  - Hitung summary: total leave days per type, per employee, per department
+- **Post-condition:** Report ditampilkan
+
 ### 2.11 QR Code Management
 
 #### 2.11.1 Generate QR Code
@@ -535,6 +577,78 @@ HadirYuk
 | QR Image Preview | Image    | Auto-generated           |
 | Active QR List   | Table    | Shows active codes       |
 | Revoke Button    | Button   | Per QR code row          |
+
+### HR Dashboard
+
+| Element Name        | Type       | Validation Rules                                |
+| ------------------- | ---------- | ----------------------------------------------- |
+| Today Stats Cards   | Card Grid  | Auto-calculated: present, late, not_yet, leave  |
+| Weekly Chart        | Line Chart | Last 7 days attendance data                     |
+| Not Attended List   | Table      | Employees who haven't checked in today          |
+| Recent Leave Req    | Table      | Latest 5 leave requests, status badge           |
+| Quick Actions       | Button     | Navigate to Export Report, Manage Shift         |
+
+### Admin Dashboard
+
+| Element Name     | Type      | Validation Rules                             |
+| ---------------- | --------- | -------------------------------------------- |
+| System Stats     | Card Grid | total_users, active_users, roles, permissions |
+| Recent Activity  | Table     | Last 10 audit log entries                    |
+| System Health    | Indicator | DB status, storage usage percentage          |
+
+### Attendance History
+
+| Element Name     | Type         | Validation Rules                        |
+| ---------------- | ------------ | --------------------------------------- |
+| Date Range       | Date Picker  | date_from <= date_to                    |
+| Employee Filter  | Dropdown     | Multi-select, search by name            |
+| Status Filter    | Checkbox     | present, late, absent, leave            |
+| Export Buttons   | Button Group | Excel, PDF — disabled if no data        |
+| Data Table       | Table        | Pagination 20/page, sortable columns    |
+
+### Leave Balance
+
+| Element Name   | Type        | Validation Rules                  |
+| -------------- | ----------- | --------------------------------- |
+| Leave Type     | Card Grid   | Per type: total, used, remaining  |
+| Progress Bar   | Visual      | used/total percentage, color-coded |
+| History Table  | Table       | Past leave requests with status   |
+
+### Shift Schedule View
+
+| Element Name      | Type        | Validation Rules                    |
+| ----------------- | ----------- | ----------------------------------- |
+| Calendar          | Month View  | Color-coded by shift color_code     |
+| Month Navigation  | Button      | Prev/Next month                     |
+| Shift Legend      | Badge List  | Shift name + color mapping          |
+
+### Location Management
+
+| Element Name      | Type          | Validation Rules                           |
+| ----------------- | ------------- | ------------------------------------------ |
+| Map Preview       | Map Component | Shows marker at lat/lng                    |
+| Radius Slider     | Range Input   | 50-500 meters, visual circle on map        |
+| Coordinate Input  | Number Fields | Valid lat (-90 to 90), lng (-180 to 180)   |
+| Location List     | Table         | Name, address, radius, active status       |
+
+### Audit Log View
+
+| Element Name     | Type         | Validation Rules                         |
+| ---------------- | ------------ | ---------------------------------------- |
+| Date Filter      | Date Picker  | date_from <= date_to                     |
+| User Filter      | Dropdown     | Filter by user who performed action      |
+| Entity Type      | Dropdown     | user, attendance, shift, leave, role     |
+| Detail Modal     | Modal        | Shows old_values vs new_values diff      |
+
+### Profile Page
+
+| Element Name       | Type         | Validation Rules                          |
+| ------------------ | ------------ | ----------------------------------------- |
+| Name               | Input text   | Required, max 100 chars                   |
+| Phone              | Input text   | Required, valid phone format              |
+| Face Photo Preview | Image        | Current photo or placeholder              |
+| Face Photo Upload  | File Input   | JPG/PNG, max 2MB                          |
+| Change Password    | Form         | Current + new + confirm password          |
 
 ## 4. Use Case Diagram
 
