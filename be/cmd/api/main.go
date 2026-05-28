@@ -60,6 +60,7 @@ func main() {
 		routes.RegisterNotificationRoutes(protected, container.Handlers)
 		routes.RegisterSystemProtectedRoutes(protected, container.Handlers)
 		routes.RegisterShiftRoutes(protected, container.Handlers, container.Access)
+		routes.RegisterShiftAssignmentRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterLocationRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterLeaveTypeRoutes(protected, container.Handlers, container.Access)
 	}

@@ -10,6 +10,7 @@ import {
   PhClock,
   PhMapPin,
   PhCalendarBlank,
+  PhCalendar,
 } from '@phosphor-icons/vue'
 import type { IMenuItem } from '@/components/layouts/SidebarMenu.vue'
 
@@ -33,6 +34,8 @@ const menuItems: IMenuItem[] = [
   { icon: PhClock, label: 'Shifts', to: '/master/shifts' },
   { icon: PhMapPin, label: 'Lokasi Kantor', to: '/master/locations' },
   { icon: PhCalendarBlank, label: 'Jenis Cuti', to: '/master/leave-types' },
+  { isTitle: true, label: 'Absensi' },
+  { icon: PhCalendar, label: 'Penugasan Shift', to: '/attendance/shift-assignments' },
 ]
 
 const toggleSidebar = () => {

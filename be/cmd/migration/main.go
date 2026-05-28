@@ -93,6 +93,7 @@ func runMigration(db *gorm.DB, command string) {
 			&models.Shift{},
 			&models.OfficeLocation{},
 			&models.LeaveType{},
+			&models.UserShiftAssignment{},
 		)
 		if err != nil {
 			log.Fatalf("Migration failed: %v", err)
@@ -105,6 +106,7 @@ func runMigration(db *gorm.DB, command string) {
 
 		// Drop tables in correct order (foreign key constraints)
 		err := db.Migrator().DropTable(
+			&models.UserShiftAssignment{},
 			&models.LeaveType{},
 			&models.OfficeLocation{},
 			&models.Shift{},

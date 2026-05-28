@@ -40,13 +40,6 @@ async function handleSubmit() {
   const isValid = await v$.value.$validate()
   if (!isValid) return
 
-  if (shiftStore.form.start_time && !shiftStore.form.start_time.includes(':00')) {
-    shiftStore.form.start_time = shiftStore.form.start_time + ':00'
-  }
-  if (shiftStore.form.end_time && !shiftStore.form.end_time.includes(':00')) {
-    shiftStore.form.end_time = shiftStore.form.end_time + ':00'
-  }
-
   try {
     if (isEdit.value && shiftStore.form.id) {
       await shiftStore.update(shiftStore.form.id)

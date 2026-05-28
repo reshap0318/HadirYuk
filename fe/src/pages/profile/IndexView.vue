@@ -1,7 +1,14 @@
 <script setup lang="ts">
-import { UiButton, UiModal, FormInput, FormPassword, FormAvatar } from '@/components/utils'
+import {
+  UiButton,
+  UiModal,
+  FormInput,
+  FormPassword,
+  FormAvatar,
+  FormFile,
+} from '@/components/utils'
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import {
   PhUser,
@@ -13,12 +20,26 @@ import {
   PhPhone,
   PhBuildingOffice,
   PhBriefcase,
+  PhIdentificationBadge,
+  PhTrash,
+  PhCamera,
 } from '@phosphor-icons/vue'
 import { useProfileStore } from '@/stores'
 
 const profileStore = useProfileStore()
 const showEditModal = ref(false)
 const showPasswordModal = ref(false)
+const showFacePhotoModal = ref(false)
+const facePhotoFile = ref<File[] | null>(null)
+const facePhotoPreview = ref<string | null>(null)
+
+watch(facePhotoFile, (files) => {
+  if (files && files.length > 0) {
+    facePhotoPreview.value = URL.createObjectURL(files[0])
+  } else {
+    facePhotoPreview.value = null
+  }
+})
 
 const v$ = useVuelidate(profileStore.formRules, profileStore.form)
 
@@ -104,6 +125,33 @@ function getInitials(name: string): string {
     .join('')
     .toUpperCase()
     .slice(0, 2)
+}
+
+function openFacePhotoModal() {
+  facePhotoFile.value = null
+  facePhotoPreview.value = null
+  showFacePhotoModal.value = true
+}
+
+async function handleUploadFacePhoto() {
+  if (!facePhotoFile.value || facePhotoFile.value.length === 0) return
+
+  try {
+    await profileStore.uploadFacePhoto(facePhotoFile.value[0])
+    showFacePhotoModal.value = false
+    facePhotoFile.value = null
+    facePhotoPreview.value = null
+  } catch {
+    // error handled in store
+  }
+}
+
+async function handleRemoveFacePhoto() {
+  try {
+    await profileStore.removeFacePhoto()
+  } catch {
+    // error handled in store
+  }
 }
 </script>
 
@@ -269,6 +317,43 @@ function getInitials(name: string): string {
                 <UiButton variant="secondary" size="sm" @click="openPasswordModal"> Ubah </UiButton>
               </div>
             </div>
+
+            <!-- Face Photo Card -->
+            <div class="col-span-3 bg-white rounded-xl shadow p-5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                    <PhIdentificationBadge class="w-5 h-5 text-indigo-500" />
+                  </div>
+                  <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Foto Wajah</p>
+                    <p class="text-sm font-semibold text-gray-900">
+                      {{ profileStore.profile.face_photo ? 'Sudah terdaftar' : 'Belum terdaftar' }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <UiButton
+                    v-if="profileStore.profile.face_photo"
+                    variant="danger"
+                    size="sm"
+                    :leading-icon="PhTrash"
+                    :loading="profileStore.loading.FacePhoto"
+                    @click="handleRemoveFacePhoto"
+                  >
+                    Hapus
+                  </UiButton>
+                  <UiButton
+                    variant="primary"
+                    size="sm"
+                    :leading-icon="PhCamera"
+                    @click="openFacePhotoModal"
+                  >
+                    {{ profileStore.profile.face_photo ? 'Ubah' : 'Upload' }}
+                  </UiButton>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Permissions Card -->
@@ -395,6 +480,67 @@ function getInitials(name: string): string {
           @click="handleChangePassword"
         >
           Ubah Password
+        </UiButton>
+      </template>
+    </UiModal>
+
+    <!-- Face Photo Upload Modal -->
+    <UiModal v-model="showFacePhotoModal" title="Upload Foto Wajah" size="md" :persistent="true">
+      <div class="space-y-5">
+        <div class="text-sm text-gray-600">
+          <p>Upload foto wajah Anda untuk digunakan dalam pengenalan wajah saat absensi.</p>
+          <ul class="mt-2 list-disc list-inside space-y-1 text-gray-500">
+            <li>Format: JPG, PNG</li>
+            <li>Ukuran maksimal: 5MB</li>
+            <li>Pastikan wajah terlihat jelas dan menghadap kamera</li>
+          </ul>
+        </div>
+
+        <!-- Current face photo preview -->
+        <div
+          v-if="profileStore.profile?.face_photo && !facePhotoPreview"
+          class="flex justify-center"
+        >
+          <div class="relative">
+            <img
+              :src="profileStore.profile.face_photo"
+              alt="Foto wajah saat ini"
+              class="w-40 h-40 rounded-xl object-cover border-2 border-gray-200"
+            />
+            <p class="text-center text-xs text-gray-500 mt-2">Foto wajah saat ini</p>
+          </div>
+        </div>
+
+        <!-- New photo preview -->
+        <div v-if="facePhotoPreview" class="flex justify-center">
+          <div class="relative">
+            <img
+              :src="facePhotoPreview"
+              alt="Preview foto wajah baru"
+              class="w-40 h-40 rounded-xl object-cover border-2 border-blue-300"
+            />
+            <p class="text-center text-xs text-blue-600 mt-2">Preview foto baru</p>
+          </div>
+        </div>
+
+        <FormFile
+          v-model="facePhotoFile"
+          name="face_photo"
+          label="Pilih Foto Wajah"
+          accept="image/*"
+        />
+      </div>
+
+      <template #footer>
+        <UiButton variant="secondary" @click="showFacePhotoModal = false"> Batal </UiButton>
+        <UiButton
+          variant="primary"
+          :loading="profileStore.loading.FacePhoto"
+          :disabled="!facePhotoFile || facePhotoFile.length === 0"
+          :leading-icon="PhUploadSimple"
+          @click="handleUploadFacePhoto"
+        >
+          Upload
         </UiButton>
       </template>
     </UiModal>

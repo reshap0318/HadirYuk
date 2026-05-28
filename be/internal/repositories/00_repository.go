@@ -3,18 +3,19 @@ package repositories
 import "gorm.io/gorm"
 
 type Repositories struct {
-	TxManager      *TransactionManager
-	User           *UserRepository
-	UserProfile    *UserProfileRepository
-	PasswordReset  *PasswordResetRepository
-	Permission     *PermissionRepository
-	Role           *RoleRepository
-	RoleHasPerm    *RoleHasPermissionRepository
-	UserRole       *UserRoleRepository
-	Notification   *NotificationRepository
-	Shift          *ShiftRepository
-	OfficeLocation *OfficeLocationRepository
-	LeaveType      *LeaveTypeRepository
+	TxManager             *TransactionManager
+	User                  *UserRepository
+	UserProfile           *UserProfileRepository
+	PasswordReset         *PasswordResetRepository
+	Permission            *PermissionRepository
+	Role                  *RoleRepository
+	RoleHasPerm           *RoleHasPermissionRepository
+	UserRole              *UserRoleRepository
+	Notification          *NotificationRepository
+	Shift                 *ShiftRepository
+	OfficeLocation        *OfficeLocationRepository
+	LeaveType             *LeaveTypeRepository
+	UserShiftAssignment   *UserShiftAssignmentRepository
 }
 
 func NewRepositories(db *gorm.DB) (*Repositories, error) {
@@ -30,19 +31,21 @@ func NewRepositories(db *gorm.DB) (*Repositories, error) {
 	shiftRepo := NewShiftRepository(db)
 	officeLocationRepo := NewOfficeLocationRepository(db)
 	leaveTypeRepo := NewLeaveTypeRepository(db)
+	userShiftAssignmentRepo := NewUserShiftAssignmentRepository(db)
 
 	return &Repositories{
-		TxManager:      txManager,
-		User:           userRepo,
-		UserProfile:    userProfileRepo,
-		PasswordReset:  passwordResetRepo,
-		Permission:     permissionRepo,
-		Role:           roleRepo,
-		RoleHasPerm:    roleHasPermRepo,
-		UserRole:       userRoleRepo,
-		Notification:   notificationRepo,
-		Shift:          shiftRepo,
-		OfficeLocation: officeLocationRepo,
-		LeaveType:      leaveTypeRepo,
+		TxManager:             txManager,
+		User:                  userRepo,
+		UserProfile:           userProfileRepo,
+		PasswordReset:         passwordResetRepo,
+		Permission:            permissionRepo,
+		Role:                  roleRepo,
+		RoleHasPerm:           roleHasPermRepo,
+		UserRole:              userRoleRepo,
+		Notification:          notificationRepo,
+		Shift:                 shiftRepo,
+		OfficeLocation:        officeLocationRepo,
+		LeaveType:             leaveTypeRepo,
+		UserShiftAssignment:   userShiftAssignmentRepo,
 	}, nil
 }

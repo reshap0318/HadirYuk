@@ -29,3 +29,6 @@ export type { ILocation, ILocationPayload } from './location'
 
 export { useLeaveTypeStore } from './leaveType'
 export type { ILeaveType, ILeaveTypePayload } from './leaveType'
+
+export { useShiftAssignmentStore } from './shiftAssignment'
+export type { IShiftAssignment, IShiftAssignmentPayload } from './shiftAssignment'

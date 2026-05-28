@@ -67,6 +67,12 @@ const routes: RouteRecordRaw[] = [
         name: 'MasterLeaveTypes',
         component: () => import('@/pages/master/leave-types/IndexView.vue'),
       },
+      {
+        path: 'attendance/shift-assignments',
+        name: 'ShiftAssignments',
+        component: () => import('@/pages/attendance/shift-assignments/IndexView.vue'),
+        meta: { requiresAuth: true, permissions: ['shift.assign'] },
+      },
     ],
   },
   // Catch-all route for 404 - must be last

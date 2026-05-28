@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { required, email, minLength, sameAs } from '@vuelidate/validators'
+import { get, type IApiResponse } from '@/plugins/axios'
 import { IRole } from './role'
 import { IPermission } from './permission'
 import { useCrud, withFile } from '@/composables'
@@ -78,9 +79,20 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function fetchAllUsers(): Promise<IUser[]> {
+    try {
+      const { data } = await get<IApiResponse<IUser[]>>('/users')
+      return data.data || []
+    } catch (error: any) {
+      console.error('Failed to fetch all users', error)
+      return []
+    }
+  }
+
   return {
     ...userCrud,
     create,
     update,
+    fetchAllUsers,
   }
 })

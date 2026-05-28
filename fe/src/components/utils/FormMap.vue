@@ -29,9 +29,10 @@ const defaultCenter: [number, number] = [-6.248494, 106.792687]
 function initMap() {
   if (!mapContainer.value) return
 
-  const center = props.modelValue.lat !== 0 || props.modelValue.lng !== 0
-    ? [props.modelValue.lat, props.modelValue.lng] as [number, number]
-    : defaultCenter
+  const center =
+    props.modelValue.lat !== 0 || props.modelValue.lng !== 0
+      ? ([props.modelValue.lat, props.modelValue.lng] as [number, number])
+      : defaultCenter
 
   map = L.map(mapContainer.value).setView(center, props.modelValue.lat !== 0 ? 16 : 16)
 
@@ -165,12 +166,8 @@ defineExpose({ getCurrentLocation })
       :style="{ height: `${height}px` }"
     />
     <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-      <span>
-        Lat: {{ modelValue.lat.toFixed(6) }}, Lng: {{ modelValue.lng.toFixed(6) }}
-      </span>
-      <span v-if="modelValue.radius">
-        Radius: {{ modelValue.radius }}m
-      </span>
+      <span> Lat: {{ modelValue.lat.toFixed(6) }}, Lng: {{ modelValue.lng.toFixed(6) }} </span>
+      <span v-if="modelValue.radius"> Radius: {{ modelValue.radius }}m </span>
     </div>
     <div class="mt-3">
       <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
@@ -184,7 +181,13 @@ defineExpose({ getCurrentLocation })
         step="10"
         :value="modelValue.radius ?? 100"
         class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-        @input="emit('update:modelValue', { lat: modelValue.lat, lng: modelValue.lng, radius: Number(($event.target as HTMLInputElement).value) })"
+        @input="
+          emit('update:modelValue', {
+            lat: modelValue.lat,
+            lng: modelValue.lng,
+            radius: Number(($event.target as HTMLInputElement).value),
+          })
+        "
       />
       <div class="flex justify-between text-xs text-gray-400 mt-1">
         <span>50m</span>
