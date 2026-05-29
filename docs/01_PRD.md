@@ -147,7 +147,7 @@ flowchart TD
 ### Security
 
 - Password di-hash menggunakan bcrypt
-- JWT untuk authentication dengan expiry 4 jam
+- JWT untuk authentication dengan expiry 24 jam
 - Face recognition data dienkripsi
 - Rate limiting pada endpoint login dan absensi
 

@@ -131,7 +131,7 @@ HadirYuk
 
 - **Pre-condition:** User memiliki valid refresh token (belum expired)
 - **Business Logic:**
-  - Access token expired (setelah 4 jam)
+  - Access token expired (setelah 24 jam)
   - Frontend otomatis call POST /api/v1/auth/refresh dengan refresh token
   - Sistem validasi refresh token: cek expiry, cek user status
   - Jika valid: generate new access token, return response

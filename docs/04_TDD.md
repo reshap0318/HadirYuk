@@ -410,7 +410,7 @@ erDiagram
 | `/api/auth/login` | POST | ❌ | - | `{ "email": "string", "password": "string" }` | `{ "code": 200, "message": "...", "data": { "token": "...", "refresh_token": "...", "user": { "id": 1, "name": "...", "email": "...", "roles": ["..."] } } }` |
 | `/api/auth/logout` | POST | ✅ | - | `{}` | `{ "code": 200, "message": "Logged out successfully" }` |
 | `/api/auth/refresh` | POST | ❌ | - | `{ "refresh_token": "string" }` | `{ "code": 200, "message": "...", "data": { "token": "..." } }` |
-| `/api/auth/change-password` | POST | ✅ | `auth.change-password` | `{ "current_password": "string", "new_password": "string", "confirm_password": "string" }` | `{ "code": 200, "message": "Password changed successfully" }` |
+| `/api/auth/change-password` | POST | ✅ | baseline | `{ "current_password": "string", "new_password": "string", "confirm_password": "string" }` | `{ "code": 200, "message": "Password changed successfully" }` |
 | `/api/auth/forgot-password` | POST | ❌ | - | `{ "email": "string" }` | `{ "code": 200, "message": "Reset link sent to email" }` |
 | `/api/auth/reset-password` | POST | ❌ | - | `{ "token": "string", "new_password": "string", "confirm_password": "string" }` | `{ "code": 200, "message": "Password reset successfully" }` |
 
@@ -418,13 +418,13 @@ erDiagram
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/attendance/checkin` | POST | ✅ | `attendance.checkin` | `{ "latitude": float, "longitude": float, "photo": "base64" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
-| `/api/attendance/checkin/qr` | POST | ✅ | `attendance.checkin` | `{ "qr_code": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
-| `/api/attendance/checkout` | POST | ✅ | `attendance.checkout` | `{ "latitude": float, "longitude": float, "photo": "base64" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
-| `/api/attendance/checkout/qr` | POST | ✅ | `attendance.checkout` | `{ "qr_code": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
-| `/api/attendance/history` | GET | ✅ | `attendance.view` | `?date_from=...&date_to=...&page=1&page_size=20` | Paginated response |
-| `/api/attendance/today` | GET | ✅ | `attendance.view` | - | `{ "code": 200, "message": "...", "data": { "status": "checked_in", "check_in_time": "...", "shift": {...} } }` |
-| `/api/attendance/stats` | GET | ✅ | `attendance.view` | `?month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "present": 20, "late": 2, "absent": 1, "leave": 2 } }` |
+| `/api/attendance/checkin` | POST | ✅ | baseline | `{ "latitude": float, "longitude": float, "photo": "base64" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
+| `/api/attendance/checkin/qr` | POST | ✅ | baseline | `{ "qr_code": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
+| `/api/attendance/checkout` | POST | ✅ | baseline | `{ "latitude": float, "longitude": float, "photo": "base64" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
+| `/api/attendance/checkout/qr` | POST | ✅ | baseline | `{ "qr_code": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
+| `/api/attendance/history` | GET | ✅ | baseline | `?date_from=...&date_to=...&page=1&page_size=20` | Paginated response |
+| `/api/attendance/today` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "status": "checked_in", "check_in_time": "...", "shift": {...} } }` |
+| `/api/attendance/stats` | GET | ✅ | baseline | `?month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "present": 20, "late": 2, "absent": 1, "leave": 2 } }` |
 | `/api/attendance/:id/correct` | PUT | ✅ | `attendance.correct` | `{ "check_in_time": "...", "check_out_time": "...", "reason": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "corrected_at": "..." } }` |
 | `/api/attendance/late-statistics` | GET | ✅ | `late-statistic.view` | `?date_from=...&date_to=...&user_id=1` | Paginated response |
 
@@ -433,21 +433,21 @@ erDiagram
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
 | `/api/shifts` | POST | ✅ | `shift.create` | `{ "name": "string", "start_time": "08:00", "end_time": "17:00", "break_duration": 60, "color_code": "#FF0000" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
-| `/api/shifts` | GET | ✅ | `shift.index` | `?page=1&page_size=20` | Paginated response |
-| `/api/shifts/:id` | GET | ✅ | `shift.index` | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/shifts` | GET | ✅ | baseline | `?page=1&page_size=20` | Paginated response |
+| `/api/shifts/:id` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/shifts/:id` | PUT | ✅ | `shift.update` | `{ "name": "string", "start_time": "08:00", "end_time": "17:00", "break_duration": 60 }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/shifts/:id` | DELETE | ✅ | `shift.delete` | - | `{ "code": 200, "message": "Shift deleted successfully" }` |
 | `/api/shifts/assign` | POST | ✅ | `shift.assign` | `{ "user_ids": [1,2,3], "shift_id": 1, "effective_date": "...", "end_date": "..." }` | `{ "code": 200, "message": "Shift assigned successfully" }` |
-| `/api/shifts/schedule` | GET | ✅ | `shift.index` | `?user_id=1&month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "schedule": [...] } }` |
+| `/api/shifts/schedule` | GET | ✅ | baseline | `?user_id=1&month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "schedule": [...] } }` |
 
 ### Leave
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/leave` | POST | ✅ | `leave.submit` | `{ "leave_type_id": 1, "start_date": "...", "end_date": "...", "reason": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
-| `/api/leave` | GET | ✅ | `leave.view` | `?page=1&page_size=20` | Paginated response |
-| `/api/leave/balance` | GET | ✅ | `leave.view` | - | `{ "code": 200, "message": "...", "data": { "annual": { "total": 12, "used": 5, "remaining": 7 }, ... } }` |
-| `/api/leave/types` | GET | ✅ | `leave.view` | - | Paginated response |
+| `/api/leave` | POST | ✅ | baseline | `{ "leave_type_id": 1, "start_date": "...", "end_date": "...", "reason": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/leave` | GET | ✅ | baseline | `?page=1&page_size=20` | Paginated response |
+| `/api/leave/balance` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "annual": { "total": 12, "used": 5, "remaining": 7 }, ... } }` |
+| `/api/leave/types` | GET | ✅ | baseline | - | Paginated response |
 | `/api/leave/types` | POST | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/leave/types/:id` | PUT | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/leave/types/:id` | DELETE | ✅ | `leave.manage-types` | - | `{ "code": 200, "message": "Leave type deleted successfully" }` |
@@ -461,7 +461,7 @@ erDiagram
 | `/api/users/:id` | GET | ✅ | `user.index` | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/users/:id` | PUT | ✅ | `user.update` | `{ "name": "string", "phone": "string", "department": "string", "position": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/users/:id` | DELETE | ✅ | `user.delete` | - | `{ "code": 200, "message": "User deactivated successfully" }` |
-| `/api/users/:id/face-photo` | POST | ✅ | `profile.upload-face` | `multipart/form-data: { "photo": file }` | `{ "code": 200, "message": "Face photo uploaded successfully", "data": { "photo_url": "..." } }` |
+| `/api/users/:id/face-photo` | POST | ✅ | baseline | `multipart/form-data: { "photo": file }` | `{ "code": 200, "message": "Face photo uploaded successfully", "data": { "photo_url": "..." } }` |
 | `/api/users/:id/roles` | POST | ✅ | `user.assign-role` | `{ "role_ids": [1, 2] }` | `{ "code": 200, "message": "Roles assigned successfully" }` |
 
 ### UAM (Role & Permissions)
@@ -474,7 +474,7 @@ erDiagram
 | `/api/roles/:id` | PUT | ✅ | `role.update` | `{ "name": "string", "description": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/roles/:id` | DELETE | ✅ | `role.delete` | - | `{ "code": 200, "message": "Role deleted successfully" }` |
 | `/api/roles/:id/permissions` | PUT | ✅ | `role.assign-permission` | `{ "permission_ids": [1, 2, 3] }` | `{ "code": 200, "message": "Permissions assigned successfully" }` |
-| `/api/permissions` | GET | ✅ | `role.index` | - | Paginated response |
+| `/api/permissions` | GET | ✅ | `permission.index` | - | Paginated response |
 | `/api/permissions` | POST | ✅ | `permission.create` | `{ "name": "string", "description": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/permissions/:id` | PUT | ✅ | `permission.update` | `{ "name": "string", "description": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/permissions/:id` | DELETE | ✅ | `permission.delete` | - | `{ "code": 200, "message": "Permission deleted successfully" }` |
@@ -501,7 +501,7 @@ erDiagram
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/dashboard/employee` | GET | ✅ | `dashboard.view` | - | `{ "code": 200, "message": "...", "data": { "today_status": "...", "check_in_time": "...", "shift": {...}, "monthly_summary": {...}, "week_schedule": [...] } }` |
+| `/api/dashboard/employee` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "today_status": "...", "check_in_time": "...", "shift": {...}, "monthly_summary": {...}, "week_schedule": [...] } }` |
 | `/api/dashboard/hr` | GET | ✅ | `dashboard.view-hr` | `?date=YYYY-MM-DD` | `{ "code": 200, "message": "...", "data": { "today_stats": {...}, "weekly_chart": [...], "not_attended": [...], "recent_leaves": [...] } }` |
 | `/api/dashboard/admin` | GET | ✅ | `dashboard.view-admin` | `?date=YYYY-MM-DD` | `{ "code": 200, "message": "...", "data": { "system_stats": {...}, "recent_activity": [...], "system_health": {...} } }` |
 
@@ -520,8 +520,8 @@ erDiagram
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/me` | GET | ✅ | `profile.view` | - | `{ "code": 200, "message": "...", "data": { "id": 1, "name": "...", "email": "...", "avatar": "..." } }` |
-| `/api/me` | PUT | ✅ | `profile.update` | `{ "name": "string", "avatar": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/me` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "id": 1, "name": "...", "email": "...", "avatar": "..." } }` |
+| `/api/me` | PUT | ✅ | baseline | `{ "name": "string", "avatar": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 
 ### Notifications (boilerplate existing)
 
@@ -542,27 +542,19 @@ erDiagram
 | `/.well-known/jwks.json` | GET | ❌ | - | JWKS public key response |
 | `/api/upload` | POST | ✅ | - | `{ "code": 200, "message": "...", "data": { "uuid": "...", "url": "/storage/tmp/..." } }` |
 
-## 4.1 Permission-to-API Mapping
+## 5. Permission-to-API Mapping
+
+> **Note:** Endpoints dengan permission `baseline` tidak memerlukan permission spesifik — semua authenticated user dapat mengaksesnya.
 
 | Permission | Protected Endpoints |
 |------------|---------------------|
-| `auth.change-password` | POST /api/auth/change-password |
-| `profile.view` | GET /api/me |
-| `profile.update` | PUT /api/me |
-| `profile.upload-face` | POST /api/users/:id/face-photo |
-| `attendance.checkin` | POST /api/attendance/checkin, POST /api/attendance/checkin/qr |
-| `attendance.checkout` | POST /api/attendance/checkout, POST /api/attendance/checkout/qr |
-| `attendance.view` | GET /api/attendance/history, GET /api/attendance/today, GET /api/attendance/stats |
 | `attendance.view-all` | GET /api/attendance/history?user_id=all |
 | `attendance.export` | GET /api/reports/attendance/export/* |
 | `attendance.correct` | PUT /api/attendance/:id/correct |
-| `shift.index` | GET /api/shifts, GET /api/shifts/:id, GET /api/shifts/schedule |
 | `shift.create` | POST /api/shifts |
 | `shift.update` | PUT /api/shifts/:id |
 | `shift.delete` | DELETE /api/shifts/:id |
 | `shift.assign` | POST /api/shifts/assign |
-| `leave.submit` | POST /api/leave |
-| `leave.view` | GET /api/leave, GET /api/leave/balance |
 | `leave.view-all` | GET /api/leave?user_id=all |
 | `leave.manage-types` | CRUD /api/leave/types |
 | `user.index` | GET /api/users, GET /api/users/:id |
@@ -570,7 +562,7 @@ erDiagram
 | `user.update` | PUT /api/users/:id |
 | `user.delete` | DELETE /api/users/:id |
 | `user.assign-role` | POST /api/users/:id/roles |
-| `role.index` | GET /api/roles, GET /api/roles/:id, GET /api/permissions |
+| `role.index` | GET /api/roles, GET /api/roles/:id |
 | `role.create` | POST /api/roles |
 | `role.update` | PUT /api/roles/:id |
 | `role.delete` | DELETE /api/roles/:id |
@@ -583,7 +575,6 @@ erDiagram
 | `location.create` | POST /api/locations |
 | `location.update` | PUT /api/locations/:id |
 | `location.delete` | DELETE /api/locations/:id |
-| `dashboard.view` | GET /api/dashboard/employee |
 | `dashboard.view-hr` | GET /api/dashboard/hr |
 | `dashboard.view-admin` | GET /api/dashboard/admin |
 | `report.view` | GET /api/reports/* |
@@ -593,8 +584,9 @@ erDiagram
 | `qrcode.view` | GET /api/qr-codes |
 | `qrcode.revoke` | POST /api/qr-codes/:id/revoke |
 | `late-statistic.view` | GET /api/attendance/late-statistics |
+| `audit.view` | GET /api/audit-logs |
 
-## 4.2 API Response Standard
+## 6. API Response Standard
 
 ### Success Response Envelope
 
@@ -650,7 +642,7 @@ erDiagram
 | 429 | Too Many Requests (rate limit) |
 | 500 | Internal Server Error |
 
-## 5. Infrastructure & Security
+## 7. Infrastructure & Security
 
 ### JWT Authentication (RS256 Asymmetric)
 
