@@ -87,8 +87,21 @@ func (s *Services) UserCreate(ctx context.Context, req dtos.UserCreateRequest) (
 }
 
 // UserGetAll returns all users with roles and profiles (no pagination).
+// Applies data filtering based on user permissions:
+// - user.view-all: returns all users including super admin
+// - without user.view-all: returns all users except super admin
 func (s *Services) UserGetAll(ctx context.Context) ([]dtos.UserDTO, error) {
-	users, err := s.repo.User.FindAll(nil, "Roles", "Profile")
+	var users []models.User
+	var err error
+
+	// Check if user has permission to view all data including super admin
+	if s.Access.HasPermission(ctx, "user.view-all") {
+		users, err = s.repo.User.FindAll(nil, "Roles", "Profile")
+	} else {
+		// Default: exclude super admin users
+		users, err = s.repo.User.FindAllExceptSuperAdmin("Roles", "Profile")
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +114,9 @@ func (s *Services) UserGetAll(ctx context.Context) ([]dtos.UserDTO, error) {
 }
 
 // UserGetAllPaginated returns paginated users with roles.
+// Applies data filtering based on user permissions:
+// - user.view-all: returns all users including super admin
+// - without user.view-all: returns all users except super admin
 func (s *Services) UserGetAllPaginated(ctx context.Context, opts *repositories.QueryOptions) (*repositories.PagedResult[dtos.UserDTO], error) {
 	if opts == nil {
 		opts = &repositories.QueryOptions{}
@@ -113,7 +129,17 @@ func (s *Services) UserGetAllPaginated(ctx context.Context, opts *repositories.Q
 	}
 	opts.Preloads = []string{"Roles", "Profile"}
 
-	result, err := s.repo.User.FindAllWithOpts(nil, opts)
+	var result *repositories.PagedResult[models.User]
+	var err error
+
+	// Check if user has permission to view all data including super admin
+	if s.Access.HasPermission(ctx, "user.view-all") {
+		result, err = s.repo.User.FindAllWithOpts(nil, opts)
+	} else {
+		// Default: exclude super admin users at database level
+		result, err = s.repo.User.FindAllExceptSuperAdminWithOpts(opts)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -140,99 +166,6 @@ func (s *Services) UserGetByID(ctx context.Context, id uint) (*dtos.UserDTO, err
 	}
 
 	dto := dtos.ToUserDTO(user)
-	return &dto, nil
-}
-
-// ProfileGet returns the authenticated user's profile.
-func (s *Services) ProfileGet(ctx context.Context, userID uint) (*dtos.UserDTO, error) {
-	s.Logger.LogStart("ProfileGet", "Fetching profile for user ID: %d", userID)
-
-	user, err := s.repo.User.FindByID(nil, userID, "Roles", "Profile")
-	if err != nil {
-		s.Logger.LogEndWithError("ProfileGet", "User not found: %v", err)
-		return nil, helpers.ErrNotFound
-	}
-
-	dto := dtos.ToUserDTO(user)
-	s.Logger.LogEnd("ProfileGet", "Profile fetched for user: %s", dto.Email)
-	return &dto, nil
-}
-
-// ProfileUpdate updates the authenticated user's profile.
-func (s *Services) ProfileUpdate(ctx context.Context, userID uint, req dtos.ProfileUpdateRequest) (*dtos.UserDTO, error) {
-	s.Logger.LogStart("ProfileUpdate", "Updating profile for user ID: %d", userID)
-
-	existing, err := s.repo.User.FindByID(nil, userID, "Profile")
-	if err != nil {
-		s.Logger.LogEndWithError("ProfileUpdate", "User not found: %v", err)
-		return nil, helpers.ErrNotFound
-	}
-
-	updates := map[string]interface{}{
-		"name": req.Name,
-	}
-
-	if req.Avatar != "" {
-		avatarPath, err := helpers.MoveFile(req.Avatar, "storage/tmp", "storage/avatars")
-		if err != nil {
-			s.Logger.LogStep("ProfileUpdate", "Failed to move avatar: %v", err)
-		} else {
-			if existing.Avatar != "" {
-				helpers.DeleteFile(existing.Avatar)
-			}
-			updates["avatar"] = avatarPath
-		}
-	}
-
-	profileUpdates := map[string]interface{}{}
-	if req.Phone != "" {
-		profileUpdates["phone"] = req.Phone
-	}
-	if req.Department != "" {
-		profileUpdates["department"] = req.Department
-	}
-	if req.Position != "" {
-		profileUpdates["position"] = req.Position
-	}
-
-	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
-		result, err := s.repo.User.UpdateMap(tx, &models.User{ID: userID}, updates)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(profileUpdates) > 0 {
-			if result.Profile == nil {
-				result.Profile = &models.UserProfile{UserID: userID}
-				if _, err := s.repo.UserProfile.Create(tx, result.Profile); err != nil {
-					s.Logger.LogStep("ProfileUpdate", "Failed to create profile: %v", err)
-					return nil, err
-				}
-			}
-			if _, err := s.repo.UserProfile.UpdateMap(tx, &models.UserProfile{UserID: userID}, profileUpdates); err != nil {
-				s.Logger.LogStep("ProfileUpdate", "Failed to update profile fields: %v", err)
-				return nil, err
-			}
-		}
-
-		reloaded, err := s.repo.User.FindByID(tx, result.ID, "Roles", "Profile")
-		if err != nil {
-			return nil, err
-		}
-
-		return reloaded, nil
-	})
-	if err != nil {
-		s.Logger.LogEndWithError("ProfileUpdate", "Failed to update profile: %v", err)
-		return nil, err
-	}
-
-	result := res.(*models.User)
-	dto := dtos.ToUserDTO(result)
-
-	s.Access.Invalidate(userID)
-
-	s.Logger.LogEnd("ProfileUpdate", "Profile updated for user: %s", dto.Email)
 	return &dto, nil
 }
 
@@ -364,133 +297,4 @@ func (s *Services) UserDelete(ctx context.Context, id uint) error {
 	return nil
 }
 
-// ProfileUploadFacePhoto uploads a face photo for the authenticated user.
-func (s *Services) ProfileUploadFacePhoto(ctx context.Context, userID uint, fileUUID string) (*dtos.UserDTO, error) {
-	s.Logger.LogStart("ProfileUploadFacePhoto", "Uploading face photo for user ID: %d", userID)
 
-	existing, err := s.repo.User.FindByID(nil, userID, "Profile")
-	if err != nil {
-		s.Logger.LogEndWithError("ProfileUploadFacePhoto", "User not found: %v", err)
-		return nil, helpers.ErrNotFound
-	}
-
-	// Move file from tmp to face-photos directory
-	facePhotoPath, err := helpers.MoveFile(fileUUID, "storage/tmp", "storage/face-photos")
-	if err != nil {
-		s.Logger.LogEndWithError("ProfileUploadFacePhoto", "Failed to move face photo: %v", err)
-		return nil, err
-	}
-
-	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
-		// Delete old face photo if exists
-		if existing.Profile != nil && existing.Profile.FacePhotoURL != "" {
-			helpers.DeleteFile(existing.Profile.FacePhotoURL)
-		}
-
-		// Update or create profile with face photo
-		profileUpdates := map[string]interface{}{
-			"face_photo_url": facePhotoPath,
-		}
-
-		if existing.Profile == nil {
-			profile := &models.UserProfile{
-				UserID:       userID,
-				FacePhotoURL: facePhotoPath,
-			}
-			if _, err := s.repo.UserProfile.Create(tx, profile); err != nil {
-				s.Logger.LogStep("ProfileUploadFacePhoto", "Failed to create profile: %v", err)
-				return nil, err
-			}
-		} else {
-			if _, err := s.repo.UserProfile.UpdateMap(tx, &models.UserProfile{UserID: userID}, profileUpdates); err != nil {
-				s.Logger.LogStep("ProfileUploadFacePhoto", "Failed to update profile: %v", err)
-				return nil, err
-			}
-		}
-
-		reloaded, err := s.repo.User.FindByID(tx, userID, "Roles", "Profile")
-		if err != nil {
-			return nil, err
-		}
-
-		return reloaded, nil
-	})
-	if err != nil {
-		s.Logger.LogEndWithError("ProfileUploadFacePhoto", "Failed to upload face photo: %v", err)
-		return nil, err
-	}
-
-	result := res.(*models.User)
-	dto := dtos.ToUserDTO(result)
-
-	_ = s.NotificationCreate(ctx, &NotificationCreateParams{
-		Type:    "success",
-		Title:   "Face Photo Uploaded",
-		Message: "Your face photo has been uploaded successfully",
-		Data: map[string]interface{}{
-			"user_id": userID,
-		},
-	})
-
-	s.Logger.LogEnd("ProfileUploadFacePhoto", "Face photo uploaded for user: %s", dto.Email)
-	return &dto, nil
-}
-
-// ProfileDeleteFacePhoto removes the face photo for the authenticated user.
-func (s *Services) ProfileDeleteFacePhoto(ctx context.Context, userID uint) (*dtos.UserDTO, error) {
-	s.Logger.LogStart("ProfileDeleteFacePhoto", "Deleting face photo for user ID: %d", userID)
-
-	existing, err := s.repo.User.FindByID(nil, userID, "Profile")
-	if err != nil {
-		s.Logger.LogEndWithError("ProfileDeleteFacePhoto", "User not found: %v", err)
-		return nil, helpers.ErrNotFound
-	}
-
-	if existing.Profile == nil || existing.Profile.FacePhotoURL == "" {
-		s.Logger.LogEndWithError("ProfileDeleteFacePhoto", "No face photo to delete")
-		return nil, &helpers.FieldError{Field: "face_photo", Message: "No face photo to delete"}
-	}
-
-	oldFacePhoto := existing.Profile.FacePhotoURL
-
-	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
-		profileUpdates := map[string]interface{}{
-			"face_photo_url":  "",
-			"face_embedding": "",
-		}
-
-		if _, err := s.repo.UserProfile.UpdateMap(tx, &models.UserProfile{UserID: userID}, profileUpdates); err != nil {
-			s.Logger.LogStep("ProfileDeleteFacePhoto", "Failed to update profile: %v", err)
-			return nil, err
-		}
-
-		reloaded, err := s.repo.User.FindByID(tx, userID, "Roles", "Profile")
-		if err != nil {
-			return nil, err
-		}
-
-		return reloaded, nil
-	})
-	if err != nil {
-		s.Logger.LogEndWithError("ProfileDeleteFacePhoto", "Failed to delete face photo: %v", err)
-		return nil, err
-	}
-
-	// Delete the file after successful DB update
-	helpers.DeleteFile(oldFacePhoto)
-
-	result := res.(*models.User)
-	dto := dtos.ToUserDTO(result)
-
-	_ = s.NotificationCreate(ctx, &NotificationCreateParams{
-		Type:    "info",
-		Title:   "Face Photo Removed",
-		Message: "Your face photo has been removed",
-		Data: map[string]interface{}{
-			"user_id": userID,
-		},
-	})
-
-	s.Logger.LogEnd("ProfileDeleteFacePhoto", "Face photo deleted for user: %s", dto.Email)
-	return &dto, nil
-}

@@ -50,6 +50,7 @@ func SeedPermissions(db *gorm.DB) map[string]uint {
 		{"user.update", "Can update user"},
 		{"user.delete", "Can delete/deactivate user"},
 		{"user.assign-role", "Can assign role to user"},
+		{"user.view-all", "Can view all user data including super admin"},
 		// Role
 		{"role.index", "Can view role list"},
 		{"role.create", "Can create new role"},

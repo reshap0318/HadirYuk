@@ -57,6 +57,7 @@ func main() {
 		routes.RegisterPermissionRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterRoleRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterUserRoutes(protected, container.Handlers, container.Access)
+		routes.RegisterProfileRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterNotificationRoutes(protected, container.Handlers)
 		routes.RegisterSystemProtectedRoutes(protected, container.Handlers)
 		routes.RegisterShiftRoutes(protected, container.Handlers, container.Access)

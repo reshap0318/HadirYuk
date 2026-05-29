@@ -128,7 +128,8 @@ func runMigration(db *gorm.DB, command string) {
 }
 
 func runSeed(db *gorm.DB) {
-	fmt.Println("\n🌱 Seeding default data...\n")
+	fmt.Println("\n🌱 Seeding default data...")
+	fmt.Println("")
 
 	// Seed in correct order
 	permIDs := seeders.SeedPermissions(db)

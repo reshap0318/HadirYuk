@@ -13,17 +13,9 @@ func RegisterUserRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, acc *he
 	users := r.Group("/users")
 	{
 		users.POST("", middleware.RequirePermission(acc, "user.create"), handlers.UserCreate)
-		users.GET("", middleware.RequirePermission(acc, "user.index"), handlers.UserGetAll)
-		users.GET("/:id", middleware.RequirePermission(acc, "user.index"), handlers.UserGetByID)
+		users.GET("", middleware.RequirePermission(acc, "user.index", "user.view-all"), handlers.UserGetAll)
+		users.GET("/:id", middleware.RequirePermission(acc, "user.index", "user.view-all"), handlers.UserGetByID)
 		users.PUT("/:id", middleware.RequirePermission(acc, "user.update"), handlers.UserUpdate)
 		users.DELETE("/:id", middleware.RequirePermission(acc, "user.delete"), handlers.UserDelete)
-	}
-
-	me := r.Group("/me")
-	{
-		me.GET("", handlers.ProfileGet)
-		me.PUT("", handlers.ProfileUpdate)
-		me.POST("/face-photo", middleware.RequirePermission(acc, "profile.upload-face"), handlers.ProfileUploadFacePhoto)
-		me.DELETE("/face-photo", middleware.RequirePermission(acc, "profile.upload-face"), handlers.ProfileDeleteFacePhoto)
 	}
 }
