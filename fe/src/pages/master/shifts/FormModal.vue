@@ -3,8 +3,10 @@ import { UiModal, FormInput, UiButton } from '@/components/utils'
 import { computed, ref } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { useShiftStore } from '@/stores/shift'
+import { useFormError } from '@/composables/useFormError'
 
 const shiftStore = useShiftStore()
+const formErrorStore = useFormError()
 const v$ = useVuelidate(shiftStore.formRules, shiftStore.form)
 
 const isVisible = ref(false)
@@ -30,6 +32,7 @@ function show(data?: {
     shiftStore.resetForm()
   }
   v$.value.$reset()
+  formErrorStore.clear()
   isVisible.value = true
 }
 

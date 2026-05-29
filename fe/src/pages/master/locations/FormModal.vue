@@ -4,9 +4,11 @@ import FormMap from '@/components/utils/FormMap.vue'
 import { computed, ref } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { useLocationStore } from '@/stores/location'
+import { useFormError } from '@/composables/useFormError'
 import { PhMapPin } from '@phosphor-icons/vue'
 
 const locationStore = useLocationStore()
+const formErrorStore = useFormError()
 const v$ = useVuelidate(locationStore.formRules, locationStore.form)
 const mapRef = ref<InstanceType<typeof FormMap> | null>(null)
 
@@ -50,6 +52,7 @@ function show(data?: {
     locationStore.resetForm()
   }
   v$.value.$reset()
+  formErrorStore.clear()
   isVisible.value = true
 }
 

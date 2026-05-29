@@ -3,8 +3,10 @@ import { UiModal, FormInput, UiButton } from '@/components/utils'
 import { computed, ref } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { useLeaveTypeStore } from '@/stores/leaveType'
+import { useFormError } from '@/composables/useFormError'
 
 const leaveTypeStore = useLeaveTypeStore()
+const formErrorStore = useFormError()
 const v$ = useVuelidate(leaveTypeStore.formRules, leaveTypeStore.form)
 
 const isVisible = ref(false)
@@ -28,6 +30,7 @@ function show(data?: {
     leaveTypeStore.resetForm()
   }
   v$.value.$reset()
+  formErrorStore.clear()
   isVisible.value = true
 }
 

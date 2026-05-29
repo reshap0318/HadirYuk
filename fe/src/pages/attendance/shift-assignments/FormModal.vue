@@ -5,6 +5,7 @@ import useVuelidate from '@vuelidate/core'
 import { useShiftAssignmentStore } from '@/stores/shiftAssignment'
 import { useUserStore } from '@/stores/user'
 import { useShiftStore } from '@/stores/shift'
+import { useFormError } from '@/composables/useFormError'
 import type { IUser } from '@/stores/user'
 import type { IShift } from '@/stores/shift'
 import { required, helpers } from '@vuelidate/validators'
@@ -14,6 +15,7 @@ import { formatDateForInput } from '@/helpers/date'
 const shiftAssignmentStore = useShiftAssignmentStore()
 const userStore = useUserStore()
 const shiftStore = useShiftStore()
+const formErrorStore = useFormError()
 
 const isVisible = ref(false)
 const isEdit = computed(() => !!shiftAssignmentStore.form.id)
@@ -113,6 +115,7 @@ function show(data?: {
     shiftAssignmentStore.resetForm()
   }
   v$.value.$reset()
+  formErrorStore.clear()
   isVisible.value = true
 }
 

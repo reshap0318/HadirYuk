@@ -4,8 +4,10 @@ import { computed, ref } from 'vue'
 import useVuelidate from '@vuelidate/core'
 
 import { usePermissionStore } from '@/stores/permission'
+import { useFormError } from '@/composables/useFormError'
 
 const permissionStore = usePermissionStore()
+const formErrorStore = useFormError()
 const v$ = useVuelidate(permissionStore.formRules, permissionStore.form)
 
 const isVisible = ref(false)
@@ -21,6 +23,7 @@ function show(data?: { id?: number; name: string; description: string }) {
     permissionStore.resetForm()
   }
   v$.value.$reset()
+  formErrorStore.clear()
   isVisible.value = true
 }
 

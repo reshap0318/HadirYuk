@@ -12,11 +12,13 @@ import useVuelidate from '@vuelidate/core'
 import { useUserStore } from '@/stores/user'
 import { useRoleStore } from '@/stores/role'
 import type { IRole } from '@/stores/role'
+import { useFormError } from '@/composables/useFormError'
 import { required, email, minLength, helpers } from '@vuelidate/validators'
 import { PhPhone, PhBuildingOffice, PhBriefcase } from '@phosphor-icons/vue'
 
 const userStore = useUserStore()
 const roleStore = useRoleStore()
+const formErrorStore = useFormError()
 const isVisible = ref(false)
 const isEdit = computed(() => !!userStore.form.id)
 const allRoles = ref<IRole[]>([])
@@ -107,6 +109,7 @@ async function show(data?: {
     currentAvatar.value = null
   }
   v$.value.$reset()
+  formErrorStore.clear()
   isVisible.value = true
 }
 

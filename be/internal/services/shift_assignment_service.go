@@ -31,24 +31,32 @@ func (s *Services) ShiftAssignToUser(ctx context.Context, req dtos.ShiftAssignme
 		return nil, &helpers.FieldError{Field: "shift_id", Message: "Shift not found"}
 	}
 
-	// Check no overlapping active assignment
-	exists, err := s.repo.UserShiftAssignment.Exists(nil, map[string]interface{}{
-		"user_id":   req.UserID,
-		"is_active": true,
-	})
-	if err != nil {
-		s.Logger.LogEndWithError("ShiftAssignToUser", "Failed to check existing assignment: %v", err)
-		return nil, err
-	}
-	if exists {
-		s.Logger.LogEndWithError("ShiftAssignToUser", "User already has an active shift assignment")
-		return nil, &helpers.FieldError{Field: "user_id", Message: "User already has an active shift assignment"}
-	}
-
+	// Parse dates first
 	startDate, err := time.Parse("2006-01-02", req.StartDate)
 	if err != nil {
 		s.Logger.LogEndWithError("ShiftAssignToUser", "Invalid start_date format: %v", err)
 		return nil, &helpers.FieldError{Field: "start_date", Message: "Invalid date format, use YYYY-MM-DD"}
+	}
+
+	var endDate *time.Time
+	if req.EndDate != "" {
+		parsedEnd, err := time.Parse("2006-01-02", req.EndDate)
+		if err != nil {
+			s.Logger.LogEndWithError("ShiftAssignToUser", "Invalid end_date format: %v", err)
+			return nil, &helpers.FieldError{Field: "end_date", Message: "Invalid date format, use YYYY-MM-DD"}
+		}
+		endDate = &parsedEnd
+	}
+
+	// Check for overlapping active assignment (same user + shift)
+	overlapping, err := s.repo.UserShiftAssignment.FindOverlappingAssignments(nil, req.UserID, req.ShiftID, startDate, endDate, 0)
+	if err != nil {
+		s.Logger.LogEndWithError("ShiftAssignToUser", "Failed to check existing assignment: %v", err)
+		return nil, err
+	}
+	if len(overlapping) > 0 {
+		s.Logger.LogEndWithError("ShiftAssignToUser", "User already has an overlapping shift assignment for this period")
+		return nil, &helpers.FieldError{Field: "start_date", Message: "User already has an overlapping shift assignment for this period"}
 	}
 
 	assignment := &models.UserShiftAssignment{
@@ -56,15 +64,7 @@ func (s *Services) ShiftAssignToUser(ctx context.Context, req dtos.ShiftAssignme
 		ShiftID:   req.ShiftID,
 		StartDate: startDate,
 		IsActive:  true,
-	}
-
-	if req.EndDate != "" {
-		endDate, err := time.Parse("2006-01-02", req.EndDate)
-		if err != nil {
-			s.Logger.LogEndWithError("ShiftAssignToUser", "Invalid end_date format: %v", err)
-			return nil, &helpers.FieldError{Field: "end_date", Message: "Invalid date format, use YYYY-MM-DD"}
-		}
-		assignment.EndDate = &endDate
+		EndDate:   endDate,
 	}
 
 	var result *models.UserShiftAssignment
@@ -189,6 +189,12 @@ func (s *Services) ShiftUpdateAssignment(ctx context.Context, id uint, req dtos.
 
 	updates := map[string]interface{}{}
 
+	// Determine effective values for overlap check
+	effectiveUserID := existing.UserID
+	effectiveShiftID := existing.ShiftID
+	effectiveStartDate := existing.StartDate
+	effectiveEndDate := existing.EndDate
+
 	if req.ShiftID != 0 {
 		// Check new shift exists
 		_, err := s.repo.Shift.FindByID(nil, req.ShiftID)
@@ -197,6 +203,7 @@ func (s *Services) ShiftUpdateAssignment(ctx context.Context, id uint, req dtos.
 			return nil, &helpers.FieldError{Field: "shift_id", Message: "Shift not found"}
 		}
 		updates["shift_id"] = req.ShiftID
+		effectiveShiftID = req.ShiftID
 	}
 
 	if req.StartDate != "" {
@@ -206,6 +213,7 @@ func (s *Services) ShiftUpdateAssignment(ctx context.Context, id uint, req dtos.
 			return nil, &helpers.FieldError{Field: "start_date", Message: "Invalid date format, use YYYY-MM-DD"}
 		}
 		updates["start_date"] = startDate
+		effectiveStartDate = startDate
 	}
 
 	if req.EndDate != "" {
@@ -215,6 +223,10 @@ func (s *Services) ShiftUpdateAssignment(ctx context.Context, id uint, req dtos.
 			return nil, &helpers.FieldError{Field: "end_date", Message: "Invalid date format, use YYYY-MM-DD"}
 		}
 		updates["end_date"] = &endDate
+		effectiveEndDate = &endDate
+	} else if req.EndDate == "" && existing.EndDate != nil && req.StartDate != "" {
+		// If end_date not provided in request but start_date changed, keep existing end_date
+		// (already set above via effectiveEndDate)
 	}
 
 	if req.IsActive != nil {
@@ -225,6 +237,20 @@ func (s *Services) ShiftUpdateAssignment(ctx context.Context, id uint, req dtos.
 		dto := dtos.ToShiftAssignmentDTO(existing)
 		s.Logger.LogEnd("ShiftUpdateAssignment", "No updates provided for assignment ID: %d", id)
 		return &dto, nil
+	}
+
+	// Check for overlapping active assignment (same user + shift, exclude current record)
+	// Only check if dates or shift changed
+	if req.StartDate != "" || req.EndDate != "" || req.ShiftID != 0 {
+		overlapping, err := s.repo.UserShiftAssignment.FindOverlappingAssignments(nil, effectiveUserID, effectiveShiftID, effectiveStartDate, effectiveEndDate, id)
+		if err != nil {
+			s.Logger.LogEndWithError("ShiftUpdateAssignment", "Failed to check existing assignment: %v", err)
+			return nil, err
+		}
+		if len(overlapping) > 0 {
+			s.Logger.LogEndWithError("ShiftUpdateAssignment", "User already has an overlapping shift assignment for this period")
+			return nil, &helpers.FieldError{Field: "start_date", Message: "User already has an overlapping shift assignment for this period"}
+		}
 	}
 
 	var result *models.UserShiftAssignment

@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"time"
+
 	"github.com/reshap0318/hadirYuk/internal/models"
 	"gorm.io/gorm"
 )
@@ -81,6 +83,40 @@ func (r *UserShiftAssignmentRepository) FindByUserIDWithHistory(tx *gorm.DB, use
 		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}, nil
+}
+
+// FindOverlappingAssignments finds active assignments for a user+shift that overlap with a given period.
+// Overlap condition: new_start <= existing_end AND new_end >= existing_start
+// endDate of nil means ongoing (treated as infinity).
+// excludeID is used to skip the current record during updates (pass 0 to include all).
+func (r *UserShiftAssignmentRepository) FindOverlappingAssignments(tx *gorm.DB, userID uint, shiftID uint, startDate time.Time, endDate *time.Time, excludeID uint) ([]models.UserShiftAssignment, error) {
+	db := r.getDB(tx)
+
+	// Build overlap query:
+	// (existing.end_date IS NULL OR new_start <= existing.end_date)
+	// AND (new_end IS NULL OR existing.start_date <= new_end)
+	query := db.Model(&models.UserShiftAssignment{}).
+		Where("user_id = ? AND shift_id = ? AND is_active = ?", userID, shiftID, true)
+
+	// Overlap: new_start <= existing_end (or existing_end is NULL/ongoing)
+	if endDate == nil {
+		// New assignment is ongoing — overlaps with anything that started before or on new_start
+		query = query.Where("end_date IS NULL OR start_date <= ?", startDate)
+	} else {
+		// New assignment has end date
+		query = query.Where("(end_date IS NULL OR ? <= end_date) AND start_date <= ?", startDate, *endDate)
+	}
+
+	// Exclude current record during updates
+	if excludeID > 0 {
+		query = query.Where("id != ?", excludeID)
+	}
+
+	var assignments []models.UserShiftAssignment
+	if err := query.Find(&assignments).Error; err != nil {
+		return nil, err
+	}
+	return assignments, nil
 }
 
 // FindAllWithSearch finds all assignments with search on user name, email, and shift name.

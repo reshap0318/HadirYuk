@@ -8,6 +8,7 @@ import type { IPermission } from '@/stores/permission'
 
 const roleStore = useRoleStore()
 const permissionStore = usePermissionStore()
+const formErrorStore = useFormError()
 const v$ = useVuelidate(roleStore.formRules, roleStore.form)
 
 const isVisible = ref(false)
@@ -51,6 +52,7 @@ async function show(data?: {
     roleStore.resetForm()
   }
   v$.value.$reset()
+  formErrorStore.clear()
   isVisible.value = true
 }
 
