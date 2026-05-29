@@ -47,6 +47,7 @@ async function show(data?: {
     roleStore.form.description = data.description || ''
     roleStore.form.permissions = data.permissions?.map((p) => p.id) || []
   } else {
+    roleStore.form.id = undefined
     roleStore.resetForm()
   }
   v$.value.$reset()
@@ -55,6 +56,9 @@ async function show(data?: {
 
 function close() {
   isVisible.value = false
+  roleStore.form.id = undefined
+  roleStore.resetForm()
+  v$.value.$reset()
 }
 
 async function handleSubmit() {

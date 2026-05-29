@@ -26,6 +26,7 @@ function show(data?: {
     shiftStore.form.break_duration = data.break_duration
     shiftStore.form.color_code = data.color_code
   } else {
+    shiftStore.form.id = undefined
     shiftStore.resetForm()
   }
   v$.value.$reset()
@@ -34,6 +35,9 @@ function show(data?: {
 
 function close() {
   isVisible.value = false
+  shiftStore.form.id = undefined
+  shiftStore.resetForm()
+  v$.value.$reset()
 }
 
 async function handleSubmit() {

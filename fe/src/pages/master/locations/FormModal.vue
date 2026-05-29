@@ -46,6 +46,7 @@ function show(data?: {
     locationStore.form.radius_meters = data.radius_meters
     locationStore.form.is_active = data.is_active
   } else {
+    locationStore.form.id = undefined
     locationStore.resetForm()
   }
   v$.value.$reset()
@@ -54,6 +55,9 @@ function show(data?: {
 
 function close() {
   isVisible.value = false
+  locationStore.form.id = undefined
+  locationStore.resetForm()
+  v$.value.$reset()
 }
 
 async function handleSubmit() {

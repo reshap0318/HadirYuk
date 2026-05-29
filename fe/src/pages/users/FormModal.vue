@@ -112,6 +112,9 @@ async function show(data?: {
 
 function close() {
   isVisible.value = false
+  userStore.form.id = undefined
+  userStore.resetForm()
+  v$.value.$reset()
 }
 
 async function handleSubmit() {

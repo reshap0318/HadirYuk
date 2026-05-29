@@ -109,6 +109,7 @@ function show(data?: {
     shiftAssignmentStore.form.start_date = formatDateForInput(data.start_date)
     shiftAssignmentStore.form.end_date = data.end_date ? formatDateForInput(data.end_date) : ''
   } else {
+    shiftAssignmentStore.form.id = undefined
     shiftAssignmentStore.resetForm()
   }
   v$.value.$reset()
@@ -117,6 +118,9 @@ function show(data?: {
 
 function close() {
   isVisible.value = false
+  shiftAssignmentStore.form.id = undefined
+  shiftAssignmentStore.resetForm()
+  v$.value.$reset()
 }
 
 async function handleSubmit() {

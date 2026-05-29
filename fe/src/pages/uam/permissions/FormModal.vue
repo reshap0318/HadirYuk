@@ -17,6 +17,7 @@ function show(data?: { id?: number; name: string; description: string }) {
     permissionStore.form.name = data.name
     permissionStore.form.description = data.description || ''
   } else {
+    permissionStore.form.id = undefined
     permissionStore.resetForm()
   }
   v$.value.$reset()
@@ -25,6 +26,9 @@ function show(data?: { id?: number; name: string; description: string }) {
 
 function close() {
   isVisible.value = false
+  permissionStore.form.id = undefined
+  permissionStore.resetForm()
+  v$.value.$reset()
 }
 
 async function handleSubmit() {

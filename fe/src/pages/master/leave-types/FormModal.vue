@@ -24,6 +24,7 @@ function show(data?: {
     leaveTypeStore.form.default_days = data.default_days
     leaveTypeStore.form.is_paid = data.is_paid
   } else {
+    leaveTypeStore.form.id = undefined
     leaveTypeStore.resetForm()
   }
   v$.value.$reset()
@@ -32,6 +33,9 @@ function show(data?: {
 
 function close() {
   isVisible.value = false
+  leaveTypeStore.form.id = undefined
+  leaveTypeStore.resetForm()
+  v$.value.$reset()
 }
 
 async function handleSubmit() {

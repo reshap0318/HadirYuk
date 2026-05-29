@@ -12,17 +12,6 @@
 
 | Permission | Module | Action | Description |
 |------------|--------|--------|-------------|
-| `auth.login` | auth | login | Can login to system |
-| `auth.logout` | auth | logout | Can logout from system |
-| `auth.forgot-password` | auth | forgot-password | Can request password reset |
-| `auth.reset-password` | auth | reset-password | Can reset password with token |
-| `auth.change-password` | auth | change-password | Can change own password |
-| `profile.view` | profile | view | Can view own profile |
-| `profile.update` | profile | update | Can update own profile |
-| `profile.upload-face` | profile | upload-face | Can upload face photo |
-| `attendance.checkin` | attendance | checkin | Can check-in attendance |
-| `attendance.checkout` | attendance | checkout | Can check-out attendance |
-| `attendance.view` | attendance | view | Can view own attendance history |
 | `attendance.view-all` | attendance | view-all | Can view all attendance history |
 | `attendance.export` | attendance | export | Can export attendance report |
 | `attendance.correct` | attendance | correct | Can correct attendance record |
@@ -31,11 +20,10 @@
 | `shift.update` | shift | update | Can update shift |
 | `shift.delete` | shift | delete | Can delete shift |
 | `shift.assign` | shift | assign | Can assign shift to employee |
-| `leave.submit` | leave | submit | Can submit leave request |
-| `leave.view` | leave | view | Can view own leave history |
 | `leave.view-all` | leave | view-all | Can view all leave history |
 | `leave.manage-types` | leave | manage-types | Can manage leave types |
 | `user.index` | user | index | Can view user list |
+| `user.view-all` | user | view-all | Can view all user data including super admin |
 | `user.create` | user | create | Can create new user |
 | `user.update` | user | update | Can update user |
 | `user.delete` | user | delete | Can delete/deactivate user |
@@ -53,7 +41,6 @@
 | `location.create` | location | create | Can create new location |
 | `location.update` | location | update | Can update location |
 | `location.delete` | location | delete | Can delete location |
-| `dashboard.view` | dashboard | view | Can view own dashboard |
 | `dashboard.view-hr` | dashboard | view-hr | Can view HR dashboard |
 | `dashboard.view-admin` | dashboard | view-admin | Can view admin dashboard |
 | `report.view` | report | view | Can view reports |
@@ -69,19 +56,7 @@
 
 | Permission | Super Admin | HR Admin | Karyawan |
 |------------|-------------|----------|----------|
-| **Authentication & Profile** | | | |
-| `auth.login` | ✅ | ✅ | ✅ |
-| `auth.logout` | ✅ | ✅ | ✅ |
-| `auth.forgot-password` | ✅ | ✅ | ✅ |
-| `auth.reset-password` | ✅ | ✅ | ✅ |
-| `auth.change-password` | ✅ | ✅ | ✅ |
-| `profile.view` | ✅ | ✅ | ✅ |
-| `profile.update` | ✅ | ✅ | ✅ |
-| `profile.upload-face` | ✅ | ✅ | ✅ |
 | **Attendance** | | | |
-| `attendance.checkin` | ✅ | ✅ | ✅ |
-| `attendance.checkout` | ✅ | ✅ | ✅ |
-| `attendance.view` | ✅ | ✅ | ✅ |
 | `attendance.view-all` | ✅ | ✅ | ❌ |
 | `attendance.export` | ✅ | ✅ | ❌ |
 | `attendance.correct` | ✅ | ✅ | ❌ |
@@ -92,12 +67,11 @@
 | `shift.delete` | ✅ | ✅ | ❌ |
 | `shift.assign` | ✅ | ✅ | ❌ |
 | **Leave** | | | |
-| `leave.submit` | ✅ | ✅ | ✅ |
-| `leave.view` | ✅ | ✅ | ✅ |
 | `leave.view-all` | ✅ | ✅ | ❌ |
 | `leave.manage-types` | ✅ | ✅ | ❌ |
 | **User Management** | | | |
 | `user.index` | ✅ | ✅ | ❌ |
+| `user.view-all` | ✅ | ✅ | ❌ |
 | `user.create` | ✅ | ✅ | ❌ |
 | `user.update` | ✅ | ✅ | ❌ |
 | `user.delete` | ✅ | ❌ | ❌ |
@@ -119,7 +93,6 @@
 | `location.update` | ✅ | ✅ | ❌ |
 | `location.delete` | ✅ | ✅ | ❌ |
 | **Dashboard** | | | |
-| `dashboard.view` | ✅ | ✅ | ✅ |
 | `dashboard.view-hr` | ✅ | ✅ | ❌ |
 | `dashboard.view-admin` | ✅ | ❌ | ❌ |
 | **Report** | | | |
