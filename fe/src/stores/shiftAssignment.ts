@@ -50,9 +50,7 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
 
   async function fetchByUserId(userId: number): Promise<IShiftAssignment[]> {
     try {
-      const { data } = await get<IApiResponse<IShiftAssignment[]>>(
-        `/shifts/assignments/${userId}`,
-      )
+      const { data } = await get<IApiResponse<IShiftAssignment[]>>(`/shifts/assignments/${userId}`)
       return data.data || []
     } catch (error: any) {
       console.error('Failed to fetch shift assignments by user', error)
@@ -84,7 +82,12 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
         },
       })
       crud.indexData.value.items = data.data || []
-      crud.indexData.value.pagination = data.metadata || { page: 1, page_size: 10, total: 0, total_pages: 1 }
+      crud.indexData.value.pagination = data.metadata || {
+        page: 1,
+        page_size: 10,
+        total: 0,
+        total_pages: 1,
+      }
       return crud.indexData.value.items
     } catch (error: any) {
       console.error('Failed to fetch shift assignments', error)

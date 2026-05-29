@@ -108,12 +108,8 @@ func (s *Services) LocationUpdate(ctx context.Context, id uint, req dtos.Locatio
 	s.Logger.LogStart("LocationUpdate", "Updating location ID: %d", id)
 
 	location := &models.OfficeLocation{ID: id}
-	if req.Name != "" {
-		location.Name = req.Name
-	}
-	if req.Address != "" {
-		location.Address = req.Address
-	}
+	location.Name = req.Name
+	location.Address = req.Address
 	location.Latitude = req.Latitude
 	location.Longitude = req.Longitude
 	location.RadiusMeters = req.RadiusMeters

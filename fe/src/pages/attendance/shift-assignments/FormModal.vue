@@ -75,16 +75,6 @@ function formatDuration(minutes: number): string {
   return mins > 0 ? `${hours} jam ${mins} menit` : `${hours} jam`
 }
 
-function calculateTotalHours(startTime: string, endTime: string, breakDuration: number): number {
-  if (!startTime || !endTime) return 0
-  const [startH, startM] = startTime.split(':').map(Number)
-  const [endH, endM] = endTime.split(':').map(Number)
-  let totalMinutes = (endH * 60 + endM) - (startH * 60 + startM)
-  if (totalMinutes < 0) totalMinutes += 24 * 60
-  totalMinutes -= breakDuration
-  return Math.round((totalMinutes / 60) * 100) / 100
-}
-
 async function loadUsers() {
   if (allUsers.value.length > 0) return
   usersLoading.value = true
@@ -204,18 +194,21 @@ defineExpose({ show, close })
                 <PhClock class="w-4 h-4 text-gray-400" />
                 <span class="text-gray-600">Jam:</span>
                 <span class="font-medium text-gray-900">
-                  {{ formatTime(selectedShift.start_time) }} - {{ formatTime(selectedShift.end_time) }}
+                  {{ formatTime(selectedShift.start_time) }} -
+                  {{ formatTime(selectedShift.end_time) }}
                 </span>
               </div>
               <div class="flex items-center gap-2">
                 <PhCalendar class="w-4 h-4 text-gray-400" />
                 <span class="text-gray-600">Istirahat:</span>
-                <span class="font-medium text-gray-900">{{ formatDuration(selectedShift.break_duration) }}</span>
+                <span class="font-medium text-gray-900">{{
+                  formatDuration(selectedShift.break_duration)
+                }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-gray-600">Total:</span>
                 <span class="font-medium" :style="{ color: selectedShift.color_code }">
-                  {{ selectedShift.total_hours > 0 ? selectedShift.total_hours : calculateTotalHours(selectedShift.start_time, selectedShift.end_time, selectedShift.break_duration) }} jam
+                  {{ selectedShift.total_hours }} jam
                 </span>
               </div>
             </div>

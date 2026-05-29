@@ -127,9 +127,7 @@ func (s *Services) LeaveTypeUpdate(ctx context.Context, id uint, req dtos.LeaveT
 	}
 
 	leaveType := &models.LeaveType{ID: id}
-	if req.Name != "" {
-		leaveType.Name = req.Name
-	}
+	leaveType.Name = req.Name
 	leaveType.Description = req.Description
 	leaveType.DefaultDays = req.DefaultDays
 	leaveType.IsPaid = req.IsPaid

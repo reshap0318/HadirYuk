@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,6 +14,34 @@ import (
 	"github.com/reshap0318/hadirYuk/internal/models"
 	"github.com/reshap0318/hadirYuk/internal/repositories"
 )
+
+// calculateTotalHours computes total working hours from start time, end time, and break duration.
+// Time format is "HH:MM". Returns hours as float64 (e.g., 7.5 for 7 hours 30 minutes).
+func calculateTotalHours(startTime, endTime string, breakDuration int) float64 {
+	startParts := strings.Split(startTime, ":")
+	endParts := strings.Split(endTime, ":")
+
+	startHour, _ := strconv.Atoi(startParts[0])
+	startMin, _ := strconv.Atoi(startParts[1])
+	endHour, _ := strconv.Atoi(endParts[0])
+	endMin, _ := strconv.Atoi(endParts[1])
+
+	startTotalMin := startHour*60 + startMin
+	endTotalMin := endHour*60 + endMin
+
+	// Handle overnight shifts (e.g., 22:00 to 06:00)
+	durationMin := endTotalMin - startTotalMin
+	if durationMin < 0 {
+		durationMin += 24 * 60
+	}
+
+	workMin := durationMin - breakDuration
+	if workMin < 0 {
+		workMin = 0
+	}
+
+	return float64(workMin) / 60.0
+}
 
 func (s *Services) ShiftCreate(ctx context.Context, req dtos.ShiftRequest) (*dtos.ShiftDTO, error) {
 	s.Logger.LogStart("ShiftCreate", "Creating shift: %s", req.Name)
@@ -31,7 +61,7 @@ func (s *Services) ShiftCreate(ctx context.Context, req dtos.ShiftRequest) (*dto
 		EndTime:       req.EndTime,
 		BreakDuration: req.BreakDuration,
 		ColorCode:     req.ColorCode,
-		TotalHours:    req.TotalHours,
+		TotalHours:    calculateTotalHours(req.StartTime, req.EndTime, req.BreakDuration),
 	}
 
 	var result *models.Shift
@@ -117,33 +147,30 @@ func (s *Services) ShiftGetByID(ctx context.Context, id uint) (*dtos.ShiftDTO, e
 func (s *Services) ShiftUpdate(ctx context.Context, id uint, req dtos.ShiftRequest) (*dtos.ShiftDTO, error) {
 	s.Logger.LogStart("ShiftUpdate", "Updating shift ID: %d", id)
 
-	exists, err := s.repo.Shift.Exists(nil, map[string]interface{}{"name": req.Name})
+	_, err := s.repo.Shift.FindByID(nil, id)
+	if err != nil {
+		s.Logger.LogEndWithError("ShiftUpdate", "Shift not found: %v", err)
+		return nil, helpers.ErrNotFound
+	}
+
+	exists, err := s.repo.Shift.Exists(nil, map[string]interface{}{"name": req.Name, "id <>": id})
 	if err != nil {
 		s.Logger.LogEndWithError("ShiftUpdate", "Failed to check duplicate: %v", err)
 		return nil, err
 	}
 	if exists {
-		shift, _ := s.repo.Shift.FindByID(nil, id)
-		if shift == nil || shift.Name != req.Name {
-			return nil, &helpers.FieldError{Field: "name", Message: "Shift name already exists"}
-		}
+		return nil, &helpers.FieldError{Field: "name", Message: "Shift name already exists"}
 	}
 
-	shift := &models.Shift{ID: id}
-	if req.Name != "" {
-		shift.Name = req.Name
+	shift := &models.Shift{
+		ID:            id,
+		Name:          req.Name,
+		StartTime:     req.StartTime,
+		EndTime:       req.EndTime,
+		BreakDuration: req.BreakDuration,
+		ColorCode:     req.ColorCode,
+		TotalHours:    calculateTotalHours(req.StartTime, req.EndTime, req.BreakDuration),
 	}
-	if req.StartTime != "" {
-		shift.StartTime = req.StartTime
-	}
-	if req.EndTime != "" {
-		shift.EndTime = req.EndTime
-	}
-	shift.BreakDuration = req.BreakDuration
-	if req.ColorCode != "" {
-		shift.ColorCode = req.ColorCode
-	}
-	shift.TotalHours = req.TotalHours
 
 	var result *models.Shift
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {

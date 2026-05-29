@@ -82,8 +82,16 @@ function getInitials(name: string): string {
 
 function getAvatarColor(name: string): string {
   const colors = [
-    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-    '#EC4899', '#06B6D4', '#F97316', '#6366F1', '#14B8A6',
+    '#3B82F6',
+    '#10B981',
+    '#F59E0B',
+    '#EF4444',
+    '#8B5CF6',
+    '#EC4899',
+    '#06B6D4',
+    '#F97316',
+    '#6366F1',
+    '#14B8A6',
   ]
   let hash = 0
   for (let i = 0; i < name.length; i++) {
@@ -116,7 +124,10 @@ onMounted(() => {
     </div>
 
     <!-- Search Bar -->
-    <div v-if="!shiftAssignmentStore.loading.Index && shiftAssignmentStore.indexData.items.length > 0" class="mb-6">
+    <div
+      v-if="!shiftAssignmentStore.loading.Index && shiftAssignmentStore.indexData.items.length > 0"
+      class="mb-6"
+    >
       <div class="relative">
         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
           <PhMagnifyingGlass class="h-5 w-5 text-gray-400" />
@@ -250,7 +261,10 @@ onMounted(() => {
                 class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ml-auto"
                 :class="getStatusColor(assignment.is_active)"
               >
-                <span class="w-1.5 h-1.5 rounded-full" :class="getStatusDotColor(assignment.is_active)"></span>
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="getStatusDotColor(assignment.is_active)"
+                ></span>
                 {{ getStatusLabel(assignment.is_active) }}
               </span>
             </div>
@@ -261,12 +275,16 @@ onMounted(() => {
                 <div class="flex items-center gap-1.5">
                   <PhCalendar class="w-4 h-4 text-gray-400 shrink-0" />
                   <span class="text-gray-400">Mulai:</span>
-                  <span class="font-medium text-gray-700">{{ formatDate(assignment.start_date) }}</span>
+                  <span class="font-medium text-gray-700">{{
+                    formatDate(assignment.start_date)
+                  }}</span>
                 </div>
                 <div v-if="assignment.end_date" class="flex items-center gap-1.5">
                   <span class="text-gray-300">|</span>
                   <span class="text-gray-400">Selesai:</span>
-                  <span class="font-medium text-gray-700">{{ formatDate(assignment.end_date) }}</span>
+                  <span class="font-medium text-gray-700">{{
+                    formatDate(assignment.end_date)
+                  }}</span>
                 </div>
                 <div v-else>
                   <span class="text-gray-300">|</span>
