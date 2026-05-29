@@ -11,8 +11,8 @@ export interface IShiftAssignment {
   start_date: string
   end_date: string | null
   is_active: boolean
-  user?: { id: number; name: string; email: string }
-  shift?: { id: number; name: string; color_code: string }
+  user?: { id: number; name: string; email: string; avatar: string | null }
+  shift?: { id: number; name: string; color_code: string; start_time: string; end_time: string }
 }
 
 export interface IShiftAssignmentPayload {

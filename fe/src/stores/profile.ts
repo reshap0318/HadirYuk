@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
-import { get, put, type IApiResponse } from '@/plugins/axios'
+import { get, put, del, type IApiResponse } from '@/plugins/axios'
 import { required, email, minLength, helpers } from '@vuelidate/validators'
 import { uploadFile } from '@/helpers/upload'
 import swal from '@/plugins/swal'
@@ -174,7 +174,7 @@ export const useProfileStore = defineStore('profile', () => {
 
     loading.value.FacePhoto = true
     try {
-      await put<IApiResponse<IProfile>>('/me/face-photo', { face_photo: '' })
+      await del<IApiResponse<IProfile>>('/me/face-photo')
 
       const { data } = await get<IApiResponse<IProfile>>('/me')
       profile.value = data.data || null

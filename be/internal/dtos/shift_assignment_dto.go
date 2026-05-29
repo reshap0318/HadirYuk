@@ -3,6 +3,7 @@ package dtos
 import (
 	"time"
 
+	"github.com/reshap0318/hadirYuk/internal/helpers"
 	"github.com/reshap0318/hadirYuk/internal/models"
 )
 
@@ -34,9 +35,10 @@ type ShiftAssignmentDTO struct {
 }
 
 type ShiftAssignUserInfo struct {
-	ID    uint   `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID     uint   `json:"id"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Avatar string `json:"avatar"`
 }
 
 func ToShiftAssignmentDTO(a *models.UserShiftAssignment) ShiftAssignmentDTO {
@@ -53,9 +55,10 @@ func ToShiftAssignmentDTO(a *models.UserShiftAssignment) ShiftAssignmentDTO {
 
 	if a.User.ID != 0 {
 		dto.User = &ShiftAssignUserInfo{
-			ID:    a.User.ID,
-			Name:  a.User.Name,
-			Email: a.User.Email,
+			ID:     a.User.ID,
+			Name:   a.User.Name,
+			Email:  a.User.Email,
+			Avatar: helpers.GetFileURL(a.User.Avatar),
 		}
 	}
 

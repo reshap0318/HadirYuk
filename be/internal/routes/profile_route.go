@@ -14,7 +14,7 @@ func RegisterProfileRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, acc 
 	{
 		me.GET("", handlers.ProfileGet)
 		me.PUT("", handlers.ProfileUpdate)
-		me.POST("/face-photo", middleware.RequirePermission(acc, "profile.upload-face"), handlers.ProfileUploadFacePhoto)
+		me.PUT("/face-photo", middleware.RequirePermission(acc, "profile.upload-face"), handlers.ProfileUploadFacePhoto)
 		me.DELETE("/face-photo", middleware.RequirePermission(acc, "profile.upload-face"), handlers.ProfileDeleteFacePhoto)
 	}
 }

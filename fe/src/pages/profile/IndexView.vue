@@ -133,14 +133,20 @@ function openFacePhotoModal() {
   showFacePhotoModal.value = true
 }
 
+function closeFacePhotoModal() {
+  showFacePhotoModal.value = false
+  facePhotoFile.value = null
+  facePhotoPreview.value = null
+}
+
 async function handleUploadFacePhoto() {
   if (!facePhotoFile.value || facePhotoFile.value.length === 0) return
 
   try {
     await profileStore.uploadFacePhoto(facePhotoFile.value[0])
-    showFacePhotoModal.value = false
     facePhotoFile.value = null
     facePhotoPreview.value = null
+    showFacePhotoModal.value = false
   } catch {
     // error handled in store
   }
@@ -149,6 +155,8 @@ async function handleUploadFacePhoto() {
 async function handleRemoveFacePhoto() {
   try {
     await profileStore.removeFacePhoto()
+    facePhotoFile.value = null
+    facePhotoPreview.value = null
   } catch {
     // error handled in store
   }
@@ -179,7 +187,7 @@ async function handleRemoveFacePhoto() {
         />
 
         <!-- Profile Content -->
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 -mt-20">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 -mt-20">
           <!-- Avatar & Name Card -->
           <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
             <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
@@ -288,7 +296,7 @@ async function handleRemoveFacePhoto() {
             </div>
 
             <!-- Member Since -->
-            <div class="col-span-3 bg-white rounded-xl shadow p-5">
+            <div class="col-span-2 bg-white rounded-xl shadow p-5">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center">
                   <PhCalendar class="w-5 h-5 text-violet-500" />
@@ -303,7 +311,7 @@ async function handleRemoveFacePhoto() {
             </div>
 
             <!-- Change Password Card -->
-            <div class="col-span-3 bg-white rounded-xl shadow p-5">
+            <div class="col-span-2 bg-white rounded-xl shadow p-5">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
@@ -319,7 +327,7 @@ async function handleRemoveFacePhoto() {
             </div>
 
             <!-- Face Photo Card -->
-            <div class="col-span-3 bg-white rounded-xl shadow p-5">
+            <div class="col-span-2 bg-white rounded-xl shadow p-5">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
@@ -332,26 +340,14 @@ async function handleRemoveFacePhoto() {
                     </p>
                   </div>
                 </div>
-                <div class="flex gap-2">
-                  <UiButton
-                    v-if="profileStore.profile.face_photo"
-                    variant="danger"
-                    size="sm"
-                    :leading-icon="PhTrash"
-                    :loading="profileStore.loading.FacePhoto"
-                    @click="handleRemoveFacePhoto"
-                  >
-                    Hapus
-                  </UiButton>
-                  <UiButton
-                    variant="primary"
-                    size="sm"
-                    :leading-icon="PhCamera"
-                    @click="openFacePhotoModal"
-                  >
-                    {{ profileStore.profile.face_photo ? 'Ubah' : 'Upload' }}
-                  </UiButton>
-                </div>
+                <UiButton
+                  variant="primary"
+                  size="sm"
+                  :leading-icon="PhCamera"
+                  @click="openFacePhotoModal"
+                >
+                  Kelola
+                </UiButton>
               </div>
             </div>
           </div>
@@ -484,45 +480,56 @@ async function handleRemoveFacePhoto() {
       </template>
     </UiModal>
 
-    <!-- Face Photo Upload Modal -->
-    <UiModal v-model="showFacePhotoModal" title="Upload Foto Wajah" size="md" :persistent="true">
-      <div class="space-y-5">
-        <div class="text-sm text-gray-600">
-          <p>Upload foto wajah Anda untuk digunakan dalam pengenalan wajah saat absensi.</p>
+    <!-- Face Photo Management Modal -->
+    <UiModal v-model="showFacePhotoModal" title="Kelola Foto Wajah" size="md" :persistent="true">
+      <div class="space-y-6">
+        <!-- Info -->
+        <div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-4">
+          <p>Foto wajah digunakan untuk pengenalan wajah saat absensi.</p>
           <ul class="mt-2 list-disc list-inside space-y-1 text-gray-500">
-            <li>Format: JPG, PNG</li>
-            <li>Ukuran maksimal: 5MB</li>
+            <li>Format: JPG, PNG, WebP</li>
             <li>Pastikan wajah terlihat jelas dan menghadap kamera</li>
           </ul>
         </div>
 
-        <!-- Current face photo preview -->
-        <div
-          v-if="profileStore.profile?.face_photo && !facePhotoPreview"
-          class="flex justify-center"
-        >
-          <div class="relative">
+        <!-- Current Face Photo -->
+        <div v-if="profileStore.profile?.face_photo && !facePhotoPreview">
+          <label class="mb-2 block text-sm font-medium text-gray-700">Foto Wajah Saat Ini</label>
+          <div class="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
             <img
               :src="profileStore.profile.face_photo"
               alt="Foto wajah saat ini"
-              class="w-40 h-40 rounded-xl object-cover border-2 border-gray-200"
+              class="w-48 h-48 rounded-xl object-cover border-2 border-gray-200 shadow-sm"
             />
-            <p class="text-center text-xs text-gray-500 mt-2">Foto wajah saat ini</p>
+            <UiButton
+              variant="danger"
+              size="sm"
+              :leading-icon="PhTrash"
+              :loading="profileStore.loading.FacePhoto"
+              class="mt-3"
+              @click="handleRemoveFacePhoto"
+            >
+              Hapus Foto
+            </UiButton>
           </div>
         </div>
 
-        <!-- New photo preview -->
-        <div v-if="facePhotoPreview" class="flex justify-center">
-          <div class="relative">
+        <!-- New Photo Preview -->
+        <div v-if="facePhotoPreview">
+          <label class="mb-2 block text-sm font-medium text-gray-700">Preview Foto Baru</label>
+          <div
+            class="flex flex-col items-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200"
+          >
             <img
               :src="facePhotoPreview"
               alt="Preview foto wajah baru"
-              class="w-40 h-40 rounded-xl object-cover border-2 border-blue-300"
+              class="w-48 h-48 rounded-xl object-cover shadow-sm"
             />
-            <p class="text-center text-xs text-blue-600 mt-2">Preview foto baru</p>
+            <p class="text-xs text-blue-600 mt-2">Foto baru akan menggantikan foto saat ini</p>
           </div>
         </div>
 
+        <!-- Upload File -->
         <FormFile
           v-model="facePhotoFile"
           name="face_photo"
@@ -532,15 +539,15 @@ async function handleRemoveFacePhoto() {
       </div>
 
       <template #footer>
-        <UiButton variant="secondary" @click="showFacePhotoModal = false"> Batal </UiButton>
+        <UiButton variant="secondary" @click="closeFacePhotoModal"> Batal </UiButton>
         <UiButton
+          v-if="facePhotoFile && facePhotoFile.length > 0"
           variant="primary"
           :loading="profileStore.loading.FacePhoto"
-          :disabled="!facePhotoFile || facePhotoFile.length === 0"
           :leading-icon="PhUploadSimple"
           @click="handleUploadFacePhoto"
         >
-          Upload
+          Simpan Foto
         </UiButton>
       </template>
     </UiModal>

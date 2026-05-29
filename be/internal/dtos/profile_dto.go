@@ -18,7 +18,7 @@ type ProfileUpdateRequest struct {
 
 // FacePhotoRequest represents the request to upload face photo.
 type FacePhotoRequest struct {
-	FacePhoto string `json:"face_photo"`
+	FacePhoto string `json:"face_photo" validate:"required"`
 }
 
 // ProfileDTO represents profile data transfer object.
@@ -31,6 +31,7 @@ type ProfileDTO struct {
 	Position   string     `json:"position"`
 	JoinDate   *time.Time `json:"join_date"`
 	Avatar     string     `json:"avatar"`
+	FacePhoto  string     `json:"face_photo"`
 	CreatedAt  time.Time  `json:"created_at"`
 	Roles      []RoleMiniDTO   `json:"roles"`
 	Permissions []PermissionDTO `json:"permissions"`
@@ -53,6 +54,9 @@ func ToProfileDTO(u *models.User) ProfileDTO {
 		dto.Department = u.Profile.Department
 		dto.Position = u.Profile.Position
 		dto.JoinDate = u.Profile.JoinDate
+		if u.Profile.FacePhotoURL != "" {
+			dto.FacePhoto = helpers.GetFileURL(u.Profile.FacePhotoURL)
+		}
 	}
 
 	permSet := make(map[uint]bool)
