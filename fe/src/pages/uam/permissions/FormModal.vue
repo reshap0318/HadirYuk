@@ -35,15 +35,12 @@ async function handleSubmit() {
   const isValid = await v$.value.$validate()
   if (!isValid) return
 
-  try {
-    if (isEdit.value && permissionStore.form.id) {
-      await permissionStore.update(permissionStore.form.id)
-    } else {
-      await permissionStore.create()
-    }
-  } finally {
-    close()
+  if (isEdit.value && permissionStore.form.id) {
+    await permissionStore.update(permissionStore.form.id)
+  } else {
+    await permissionStore.create()
   }
+  close()
 }
 
 defineExpose({ show, close })

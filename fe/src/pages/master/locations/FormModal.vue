@@ -64,15 +64,12 @@ async function handleSubmit() {
   const isValid = await v$.value.$validate()
   if (!isValid) return
 
-  try {
-    if (isEdit.value && locationStore.form.id) {
-      await locationStore.update(locationStore.form.id)
-    } else {
-      await locationStore.create()
-    }
-  } finally {
-    close()
+  if (isEdit.value && locationStore.form.id) {
+    await locationStore.update(locationStore.form.id)
+  } else {
+    await locationStore.create()
   }
+  close()
 }
 
 defineExpose({ show, close })

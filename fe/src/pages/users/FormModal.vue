@@ -121,15 +121,12 @@ async function handleSubmit() {
   const isValid = await v$.value.$validate()
   if (!isValid) return
 
-  try {
-    if (isEdit.value && userStore.form.id) {
-      await userStore.update(userStore.form.id)
-    } else {
-      await userStore.create()
-    }
-  } finally {
-    close()
+  if (isEdit.value && userStore.form.id) {
+    await userStore.update(userStore.form.id)
+  } else {
+    await userStore.create()
   }
+  close()
 }
 
 onMounted(() => {

@@ -65,15 +65,12 @@ async function handleSubmit() {
   const isValid = await v$.value.$validate()
   if (!isValid) return
 
-  try {
-    if (isEdit.value && roleStore.form.id) {
-      await roleStore.update(roleStore.form.id)
-    } else {
-      await roleStore.create()
-    }
-  } finally {
-    close()
+  if (isEdit.value && roleStore.form.id) {
+    await roleStore.update(roleStore.form.id)
+  } else {
+    await roleStore.create()
   }
+  close()
 }
 
 function togglePermission(id: number) {
