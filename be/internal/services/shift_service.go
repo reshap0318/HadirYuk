@@ -152,7 +152,7 @@ func (s *Services) ShiftUpdate(ctx context.Context, id uint, req dtos.ShiftReque
 		return nil, helpers.ErrNotFound
 	}
 
-	exists, err := s.repo.Shift.Exists(nil, map[string]interface{}{"name": req.Name, "id <>": id})
+	exists, err := s.repo.Shift.ExistsByCondition(nil, "name = ? AND id <> ?", req.Name, id)
 	if err != nil {
 		s.Logger.LogEndWithError("ShiftUpdate", "Failed to check duplicate: %v", err)
 		return nil, err

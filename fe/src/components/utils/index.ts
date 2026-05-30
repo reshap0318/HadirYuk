@@ -1,5 +1,6 @@
 export { default as UiButton } from './UiButton.vue'
 export { default as UiCard } from './UiCard.vue'
+export { default as UiDropdown } from './UiDropdown.vue'
 export { default as UiEmptyState } from './UiEmptyState.vue'
 export { default as UiModal } from './UiModal.vue'
 export { default as UiPagination } from './UiPagination.vue'
@@ -11,6 +12,8 @@ export { default as FormFile } from './FormFile.vue'
 export { default as FormInput } from './FormInput.vue'
 export { default as FormPassword } from './FormPassword.vue'
 export { default as FormSelect } from './FormSelect.vue'
+export { default as FacePhotoCapture } from './FacePhotoCapture.vue'
+export { default as FacePhotoManager } from './FacePhotoManager.vue'
 
 export type {
   UiButtonProps,

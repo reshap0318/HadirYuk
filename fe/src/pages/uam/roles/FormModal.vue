@@ -5,6 +5,7 @@ import useVuelidate from '@vuelidate/core'
 import { useRoleStore } from '@/stores/role'
 import { usePermissionStore } from '@/stores/permission'
 import type { IPermission } from '@/stores/permission'
+import { useFormError } from '@/composables/useFormError'
 
 const roleStore = useRoleStore()
 const permissionStore = usePermissionStore()

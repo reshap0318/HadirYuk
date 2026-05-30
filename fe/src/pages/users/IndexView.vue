@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { UiCard, UiButton, UiPagination, UiEmptyState, UiSkeleton } from '@/components/utils'
+import { UiCard, UiButton, UiPagination, UiEmptyState, UiSkeleton, UiDropdown } from '@/components/utils'
 import FormModal from './FormModal.vue'
-import { ref, onMounted, onUnmounted } from 'vue'
+import FacePhotoModal from './FacePhotoModal.vue'
+import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import type { IUser } from '@/stores/user'
 import {
@@ -12,11 +13,12 @@ import {
   PhCalendar,
   PhCrown,
   PhDotsThreeVertical,
+  PhIdentificationCard,
 } from '@phosphor-icons/vue'
 
 const userStore = useUserStore()
 const formModalRef = ref<InstanceType<typeof FormModal> | null>(null)
-const openMenuId = ref<number | null>(null)
+const facePhotoModalRef = ref<InstanceType<typeof FacePhotoModal> | null>(null)
 
 const colorPalette = [
   'bg-blue-500',
@@ -49,22 +51,15 @@ function openCreate() {
 }
 
 function openEdit(user: IUser) {
-  openMenuId.value = null
   formModalRef.value?.show(user)
 }
 
+function openFacePhoto(user: IUser) {
+  facePhotoModalRef.value?.show(user)
+}
+
 async function handleDelete(id: number) {
-  openMenuId.value = null
   await userStore.remove(id)
-}
-
-function toggleMenu(userId: number, event: Event) {
-  event.stopPropagation()
-  openMenuId.value = openMenuId.value === userId ? null : userId
-}
-
-function handleClickOutside() {
-  openMenuId.value = null
 }
 
 function handlePageChange(page: number) {
@@ -73,11 +68,6 @@ function handlePageChange(page: number) {
 
 onMounted(() => {
   userStore.fetchAll()
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -134,8 +124,8 @@ onUnmounted(() => {
           v-for="(user, index) in userStore.indexData.items"
           :key="user.id"
           :classes="{
-            wrapper: 'h-full relative',
-            card: 'group hover:shadow-md transition-all duration-200 h-full border-t-4 border-blue-500',
+            wrapper: 'h-full relative overflow-visible',
+            card: 'group hover:shadow-md transition-all duration-200 h-full border-t-4 border-blue-500 !overflow-visible',
             body: 'p-4',
           }"
         >
@@ -169,38 +159,41 @@ onUnmounted(() => {
                   <span class="truncate">{{ user.email }}</span>
                 </p>
               </div>
-              <!-- 3-Dot Menu -->
-              <div class="relative shrink-0">
-                <button
-                  class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  @click="toggleMenu(user.id, $event)"
-                >
-                  <PhDotsThreeVertical class="w-5 h-5" />
-                </button>
-
-                <!-- Dropdown Menu -->
-                <div
-                  v-if="openMenuId === user.id"
-                  class="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-10"
-                  @click.stop
-                >
+              <!-- Dropdown Menu -->
+              <UiDropdown placement="bottom-right">
+                <template #trigger="{ toggle }">
+                  <button
+                    class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    @click="toggle"
+                  >
+                    <PhDotsThreeVertical class="w-5 h-5" />
+                  </button>
+                </template>
+                <template #default="{ close }">
                   <button
                     class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    @click="openEdit(user)"
+                    @click="openEdit(user); close()"
                   >
                     <PhPencil class="w-4 h-4 text-blue-600" />
                     <span>Edit</span>
                   </button>
                   <button
+                    class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    @click="openFacePhoto(user); close()"
+                  >
+                    <PhIdentificationCard class="w-4 h-4 text-emerald-600" />
+                    <span>Foto Wajah</span>
+                  </button>
+                  <button
                     class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     :disabled="userStore.loading.Delete"
-                    @click="handleDelete(user.id)"
+                    @click="handleDelete(user.id); close()"
                   >
                     <PhTrash class="w-4 h-4" />
                     <span>Hapus</span>
                   </button>
-                </div>
-              </div>
+                </template>
+              </UiDropdown>
             </div>
 
             <!-- Divider -->
@@ -258,4 +251,5 @@ onUnmounted(() => {
   </div>
 
   <FormModal ref="formModalRef" />
+  <FacePhotoModal ref="facePhotoModalRef" />
 </template>

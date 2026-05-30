@@ -1,15 +1,17 @@
 import { defineStore } from 'pinia'
 import { required, email, minLength, sameAs } from '@vuelidate/validators'
-import { get, type IApiResponse } from '@/plugins/axios'
+import { get, put, del, type IApiResponse } from '@/plugins/axios'
 import { IRole } from './role'
 import { IPermission } from './permission'
 import { useCrud, withFile } from '@/composables'
+import swal from '@/plugins/swal'
 
 export interface IUser {
   id: number
   email: string
   name: string
   avatar: string | null
+  face_photo: string | null
   phone: string | null
   department: string | null
   position: string | null
@@ -89,10 +91,34 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function uploadFacePhoto(userId: number, fileUuid: string): Promise<string> {
+    try {
+      const { data } = await put<IApiResponse<{ photo_url: string }>>(`/users/${userId}/face-photo`, { face_photo: fileUuid })
+      swal.success('Berhasil', 'Foto wajah berhasil diperbarui.')
+      return data.data?.photo_url || ''
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal memperbarui foto wajah.'
+      swal.error('Gagal', message)
+      throw error
+    }
+  }
+
+  async function removeFacePhoto(userId: number) {
+    try {
+      await del<IApiResponse<IUser>>(`/users/${userId}/face-photo`)
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal menghapus foto wajah.'
+      swal.error('Gagal', message)
+      throw error
+    }
+  }
+
   return {
     ...userCrud,
     create,
     update,
     fetchAllUsers,
+    uploadFacePhoto,
+    removeFacePhoto,
   }
 })

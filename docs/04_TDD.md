@@ -461,7 +461,8 @@ erDiagram
 | `/api/users/:id` | GET | ✅ | `user.index` | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/users/:id` | PUT | ✅ | `user.update` | `{ "name": "string", "phone": "string", "department": "string", "position": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/users/:id` | DELETE | ✅ | `user.delete` | - | `{ "code": 200, "message": "User deactivated successfully" }` |
-| `/api/users/:id/face-photo` | POST | ✅ | baseline | `multipart/form-data: { "photo": file }` | `{ "code": 200, "message": "Face photo uploaded successfully", "data": { "photo_url": "..." } }` |
+| `/api/users/:id/face-photo` | PUT | ✅ | `user.update` | `{ "face_photo": "uuid" }` | `{ "code": 200, "message": "Face photo uploaded successfully", "data": { "photo_url": "..." } }` |
+| `/api/users/:id/face-photo` | DELETE | ✅ | `user.update` | - | `{ "code": 200, "message": "Face photo deleted successfully" }` |
 | `/api/users/:id/roles` | POST | ✅ | `user.assign-role` | `{ "role_ids": [1, 2] }` | `{ "code": 200, "message": "Roles assigned successfully" }` |
 
 ### UAM (Role & Permissions)
@@ -562,6 +563,7 @@ erDiagram
 | `user.update` | PUT /api/users/:id |
 | `user.delete` | DELETE /api/users/:id |
 | `user.assign-role` | POST /api/users/:id/roles |
+| `user.update` | PUT /api/users/:id, PUT/DELETE /api/users/:id/face-photo |
 | `role.index` | GET /api/roles, GET /api/roles/:id |
 | `role.create` | POST /api/roles |
 | `role.update` | PUT /api/roles/:id |

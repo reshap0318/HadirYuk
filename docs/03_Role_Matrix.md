@@ -140,9 +140,10 @@ graph TD
 
 ### User Data
 - Karyawan hanya bisa update profile mereka sendiri
-- HR Admin bisa create, read, update employee data
-- Super Admin bisa delete employee (soft delete)
-- Face photo hanya bisa diupdate oleh pemilik atau HR Admin
+- Karyawan hanya bisa melihat preview foto wajah mereka (read-only)
+- HR Admin bisa create, read, update employee data termasuk foto wajah
+- Super Admin bisa delete employee (soft delete) dan manage foto wajah
+- Face photo hanya bisa diupload/dihapus oleh HR Admin atau Super Admin melalui halaman User Management
 
 ### Shift Data
 - Shift adalah data global yang bisa dilihat oleh semua role

@@ -5,10 +5,9 @@ import {
   FormInput,
   FormPassword,
   FormAvatar,
-  FormFile,
 } from '@/components/utils'
 
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import {
   PhUser,
@@ -21,8 +20,6 @@ import {
   PhBuildingOffice,
   PhBriefcase,
   PhIdentificationBadge,
-  PhTrash,
-  PhCamera,
 } from '@phosphor-icons/vue'
 import { useProfileStore } from '@/stores'
 
@@ -30,16 +27,6 @@ const profileStore = useProfileStore()
 const showEditModal = ref(false)
 const showPasswordModal = ref(false)
 const showFacePhotoModal = ref(false)
-const facePhotoFile = ref<File[] | null>(null)
-const facePhotoPreview = ref<string | null>(null)
-
-watch(facePhotoFile, (files) => {
-  if (files && files.length > 0) {
-    facePhotoPreview.value = URL.createObjectURL(files[0])
-  } else {
-    facePhotoPreview.value = null
-  }
-})
 
 const v$ = useVuelidate(profileStore.formRules, profileStore.form)
 
@@ -128,38 +115,7 @@ function getInitials(name: string): string {
 }
 
 function openFacePhotoModal() {
-  facePhotoFile.value = null
-  facePhotoPreview.value = null
   showFacePhotoModal.value = true
-}
-
-function closeFacePhotoModal() {
-  showFacePhotoModal.value = false
-  facePhotoFile.value = null
-  facePhotoPreview.value = null
-}
-
-async function handleUploadFacePhoto() {
-  if (!facePhotoFile.value || facePhotoFile.value.length === 0) return
-
-  try {
-    await profileStore.uploadFacePhoto(facePhotoFile.value[0])
-    facePhotoFile.value = null
-    facePhotoPreview.value = null
-    showFacePhotoModal.value = false
-  } catch {
-    // error handled in store
-  }
-}
-
-async function handleRemoveFacePhoto() {
-  try {
-    await profileStore.removeFacePhoto()
-    facePhotoFile.value = null
-    facePhotoPreview.value = null
-  } catch {
-    // error handled in store
-  }
 }
 </script>
 
@@ -326,29 +282,25 @@ async function handleRemoveFacePhoto() {
               </div>
             </div>
 
-            <!-- Face Photo Card -->
-            <div class="col-span-2 bg-white rounded-xl shadow p-5">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-                    <PhIdentificationBadge class="w-5 h-5 text-indigo-500" />
-                  </div>
-                  <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Foto Wajah</p>
-                    <p class="text-sm font-semibold text-gray-900">
-                      {{ profileStore.profile.face_photo ? 'Sudah terdaftar' : 'Belum terdaftar' }}
-                    </p>
-                  </div>
+            <!-- Face Photo Preview (read-only) -->
+            <div
+              class="col-span-2 bg-white rounded-xl shadow p-5 cursor-pointer hover:shadow-md transition-shadow"
+              @click="openFacePhotoModal"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                  <PhIdentificationBadge class="w-5 h-5 text-indigo-500" />
                 </div>
-                <UiButton
-                  variant="primary"
-                  size="sm"
-                  :leading-icon="PhCamera"
-                  @click="openFacePhotoModal"
-                >
-                  Kelola
-                </UiButton>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">Foto Wajah</p>
+                  <p class="text-sm font-semibold text-gray-900">
+                    {{ profileStore.profile.face_photo ? 'Sudah terdaftar' : 'Belum terdaftar' }}
+                  </p>
+                </div>
               </div>
+              <p v-if="!profileStore.profile.face_photo" class="mt-2 text-xs text-gray-400">
+                Hubungi admin untuk mendaftarkan foto wajah.
+              </p>
             </div>
           </div>
 
@@ -480,75 +432,29 @@ async function handleRemoveFacePhoto() {
       </template>
     </UiModal>
 
-    <!-- Face Photo Management Modal -->
-    <UiModal v-model="showFacePhotoModal" title="Kelola Foto Wajah" size="md" :persistent="true">
-      <div class="space-y-6">
-        <!-- Info -->
-        <div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-4">
-          <p>Foto wajah digunakan untuk pengenalan wajah saat absensi.</p>
-          <ul class="mt-2 list-disc list-inside space-y-1 text-gray-500">
-            <li>Format: JPG, PNG, WebP</li>
-            <li>Pastikan wajah terlihat jelas dan menghadap kamera</li>
-          </ul>
-        </div>
-
-        <!-- Current Face Photo -->
-        <div v-if="profileStore.profile?.face_photo && !facePhotoPreview">
-          <label class="mb-2 block text-sm font-medium text-gray-700">Foto Wajah Saat Ini</label>
-          <div class="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-            <img
-              :src="profileStore.profile.face_photo"
-              alt="Foto wajah saat ini"
-              class="w-48 h-48 rounded-xl object-cover border-2 border-gray-200 shadow-sm"
-            />
-            <UiButton
-              variant="danger"
-              size="sm"
-              :leading-icon="PhTrash"
-              :loading="profileStore.loading.FacePhoto"
-              class="mt-3"
-              @click="handleRemoveFacePhoto"
-            >
-              Hapus Foto
-            </UiButton>
-          </div>
-        </div>
-
-        <!-- New Photo Preview -->
-        <div v-if="facePhotoPreview">
-          <label class="mb-2 block text-sm font-medium text-gray-700">Preview Foto Baru</label>
-          <div
-            class="flex flex-col items-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200"
-          >
-            <img
-              :src="facePhotoPreview"
-              alt="Preview foto wajah baru"
-              class="w-48 h-48 rounded-xl object-cover shadow-sm"
-            />
-            <p class="text-xs text-blue-600 mt-2">Foto baru akan menggantikan foto saat ini</p>
-          </div>
-        </div>
-
-        <!-- Upload File -->
-        <FormFile
-          v-model="facePhotoFile"
-          name="face_photo"
-          label="Pilih Foto Wajah"
-          accept="image/*"
+    <!-- Face Photo Preview Modal (read-only) -->
+    <UiModal v-model="showFacePhotoModal" title="Foto Wajah" size="md" :persistent="true">
+      <div class="flex flex-col items-center">
+        <img
+          v-if="profileStore.profile?.face_photo"
+          :src="profileStore.profile.face_photo"
+          alt="Foto wajah"
+          class="w-64 h-64 rounded-xl object-cover border-2 border-gray-200 shadow-sm"
         />
+        <div v-else class="w-64 h-64 rounded-xl bg-gray-100 flex items-center justify-center">
+          <PhIdentificationBadge class="w-16 h-16 text-gray-300" />
+        </div>
+        <p class="mt-4 text-sm text-gray-600 text-center">
+          {{
+            profileStore.profile?.face_photo
+              ? 'Foto wajah Anda sudah terdaftar untuk absensi.'
+              : 'Foto wajah belum terdaftar. Hubungi admin atau HR untuk mendaftarkan foto wajah.'
+          }}
+        </p>
       </div>
 
       <template #footer>
-        <UiButton variant="secondary" @click="closeFacePhotoModal"> Batal </UiButton>
-        <UiButton
-          v-if="facePhotoFile && facePhotoFile.length > 0"
-          variant="primary"
-          :loading="profileStore.loading.FacePhoto"
-          :leading-icon="PhUploadSimple"
-          @click="handleUploadFacePhoto"
-        >
-          Simpan Foto
-        </UiButton>
+        <UiButton variant="secondary" @click="showFacePhotoModal = false"> Tutup </UiButton>
       </template>
     </UiModal>
   </div>

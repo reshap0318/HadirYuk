@@ -47,7 +47,7 @@ type UserDTO struct {
 	Position    string          `json:"position"`
 	JoinDate    *time.Time      `json:"join_date"`
 	Avatar      string          `json:"avatar"`
-	FacePhoto   string          `json:"face_photo_url"`
+	FacePhoto   string          `json:"face_photo"`
 	CreatedAt   time.Time       `json:"created_at"`
 	UpdatedAt   time.Time       `json:"updated_at"`
 	Roles       []RoleMiniDTO   `json:"roles"`

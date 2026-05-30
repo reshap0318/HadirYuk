@@ -64,6 +64,7 @@ func main() {
 		routes.RegisterShiftAssignmentRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterLocationRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterLeaveTypeRoutes(protected, container.Handlers, container.Access)
+		routes.RegisterFaceRoutes(protected, container.Handlers, container.Access)
 	}
 
 	addr := host + ":" + port

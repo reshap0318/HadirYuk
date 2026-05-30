@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
-import { get, put, del, type IApiResponse } from '@/plugins/axios'
+import { get, put, type IApiResponse } from '@/plugins/axios'
 import { required, email, minLength, helpers } from '@vuelidate/validators'
 import { uploadFile } from '@/helpers/upload'
 import swal from '@/plugins/swal'
@@ -40,7 +40,6 @@ export const useProfileStore = defineStore('profile', () => {
   const loading = ref<Record<string, boolean>>({
     Fetch: false,
     Update: false,
-    FacePhoto: false,
   })
 
   const form = reactive<IProfilePayload>({
@@ -145,50 +144,6 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  async function uploadFacePhoto(file: File) {
-    loading.value.FacePhoto = true
-    try {
-      const uploaded = await uploadFile(file)
-      await put<IApiResponse<IProfile>>('/me/face-photo', { face_photo: uploaded.uuid })
-
-      const { data } = await get<IApiResponse<IProfile>>('/me')
-      profile.value = data.data || null
-
-      swal.success('Berhasil', 'Foto wajah berhasil diperbarui.')
-    } catch (error: any) {
-      const message = error?.response?.data?.message || 'Gagal memperbarui foto wajah.'
-      swal.error('Gagal', message)
-      throw error
-    } finally {
-      loading.value.FacePhoto = false
-    }
-  }
-
-  async function removeFacePhoto() {
-    const result = await swal.warning(
-      'Hapus Foto Wajah',
-      'Apakah Anda yakin ingin menghapus foto wajah? Data ini digunakan untuk pengenalan wajah saat absensi.',
-    )
-
-    if (!result.isConfirmed) return
-
-    loading.value.FacePhoto = true
-    try {
-      await del<IApiResponse<IProfile>>('/me/face-photo')
-
-      const { data } = await get<IApiResponse<IProfile>>('/me')
-      profile.value = data.data || null
-
-      swal.success('Berhasil', 'Foto wajah berhasil dihapus.')
-    } catch (error: any) {
-      const message = error?.response?.data?.message || 'Gagal menghapus foto wajah.'
-      swal.error('Gagal', message)
-      throw error
-    } finally {
-      loading.value.FacePhoto = false
-    }
-  }
-
   return {
     profile,
     loading,
@@ -196,7 +151,5 @@ export const useProfileStore = defineStore('profile', () => {
     formRules,
     fetchProfile,
     updateProfile,
-    uploadFacePhoto,
-    removeFacePhoto,
   }
 })
