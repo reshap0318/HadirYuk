@@ -74,9 +74,9 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, permissions: ['shift.assign'] },
       },
       {
-        path: 'attendance/checkin',
-        name: 'AttendanceCheckIn',
-        component: () => import('@/pages/attendance/checkin/IndexView.vue'),
+        path: 'attendance',
+        name: 'Attendance',
+        component: () => import('@/pages/attendance/attendance/IndexView.vue'),
         meta: { requiresAuth: true },
       },
     ],

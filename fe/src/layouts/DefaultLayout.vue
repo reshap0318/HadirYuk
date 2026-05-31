@@ -36,7 +36,7 @@ const menuItems: IMenuItem[] = [
   { icon: PhMapPin, label: 'Lokasi Kantor', to: '/master/locations' },
   { icon: PhCalendarBlank, label: 'Jenis Cuti', to: '/master/leave-types' },
   { isTitle: true, label: 'Absensi' },
-  { icon: PhSignIn, label: 'Check In', to: '/attendance/checkin' },
+  { icon: PhSignIn, label: 'Absensi', to: '/attendance' },
   { icon: PhCalendar, label: 'Penugasan Shift', to: '/attendance/shift-assignments' },
 ]
 

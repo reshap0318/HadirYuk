@@ -172,9 +172,9 @@ onBeforeUnmount(() => {
   <div class="px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">Absensi Masuk</h1>
+      <h1 class="text-2xl font-bold text-gray-900">Absensi</h1>
       <p class="text-sm text-gray-600 mt-1">
-        Lakukan check-in untuk mencatat kehadiran Anda hari ini.
+        Catat kehadiran Anda hari ini.
       </p>
     </div>
 
