@@ -180,36 +180,8 @@ onBeforeUnmount(() => {
 
     <!-- Main Layout: Map Left, Info Right -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <!-- Map Section (2/3 width on lg) -->
-      <div class="lg:col-span-2">
-        <UiCard :classes="{ wrapper: '', card: '', body: 'p-2' }">
-          <div
-            ref="mapContainer"
-            class="rounded-lg border border-gray-200 overflow-hidden z-0"
-            style="height: 500px"
-          />
-          <div class="mt-2 flex items-center justify-between px-2 text-xs text-gray-500">
-            <span>
-              Lat: {{ attendanceStore.userLocation?.latitude.toFixed(6) ?? '-' }}, Lng:
-              {{ attendanceStore.userLocation?.longitude.toFixed(6) ?? '-' }}
-            </span>
-            <UiButton
-              size="sm"
-              variant="primary"
-              class="text-blue-600 hover:text-blue-700"
-              @click="handleGetLocation"
-            >
-              <template #icon>
-                <PhNavigationArrow class="w-4 h-4" />
-              </template>
-              Perbarui Lokasi
-            </UiButton>
-          </div>
-        </UiCard>
-      </div>
-
       <!-- Info Section (1/3 width on lg) -->
-      <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-4 lg:order-2">
         <!-- Clock Card -->
         <UiCard
           :classes="{
@@ -376,6 +348,36 @@ onBeforeUnmount(() => {
             Anda di luar radius kantor
           </p>
         </div>
+      </div>
+
+      <!-- Map Section (2/3 width on lg) -->
+      <div class="lg:col-span-2 lg:order-1">
+        <UiCard :classes="{ wrapper: '', card: '', body: 'p-2' }">
+          <div
+            ref="mapContainer"
+            class="rounded-lg border border-gray-200 overflow-hidden z-0"
+            style="height: 500px"
+          />
+          <div
+            class="mt-2 flex flex-col lg:flex-row items-center justify-between gap-2 px-2 text-xs text-gray-500"
+          >
+            <span class="text-center lg:text-left w-full lg:w-auto">
+              Lat: {{ attendanceStore.userLocation?.latitude.toFixed(6) ?? '-' }}, Lng:
+              {{ attendanceStore.userLocation?.longitude.toFixed(6) ?? '-' }}
+            </span>
+            <UiButton
+              size="sm"
+              variant="primary"
+              class="w-full lg:w-auto bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200"
+              @click="handleGetLocation"
+            >
+              <template #icon>
+                <PhNavigationArrow class="w-4 h-4" />
+              </template>
+              Perbarui Lokasi
+            </UiButton>
+          </div>
+        </UiCard>
       </div>
     </div>
   </div>
