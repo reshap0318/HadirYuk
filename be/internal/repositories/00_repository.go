@@ -16,6 +16,7 @@ type Repositories struct {
 	OfficeLocation        *OfficeLocationRepository
 	LeaveType             *LeaveTypeRepository
 	UserShiftAssignment   *UserShiftAssignmentRepository
+	Attendance            *AttendanceRepository
 }
 
 func NewRepositories(db *gorm.DB) (*Repositories, error) {
@@ -32,6 +33,7 @@ func NewRepositories(db *gorm.DB) (*Repositories, error) {
 	officeLocationRepo := NewOfficeLocationRepository(db)
 	leaveTypeRepo := NewLeaveTypeRepository(db)
 	userShiftAssignmentRepo := NewUserShiftAssignmentRepository(db)
+	attendanceRepo := NewAttendanceRepository(db)
 
 	return &Repositories{
 		TxManager:             txManager,
@@ -47,5 +49,6 @@ func NewRepositories(db *gorm.DB) (*Repositories, error) {
 		OfficeLocation:        officeLocationRepo,
 		LeaveType:             leaveTypeRepo,
 		UserShiftAssignment:   userShiftAssignmentRepo,
+		Attendance:            attendanceRepo,
 	}, nil
 }

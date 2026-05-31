@@ -65,6 +65,7 @@ func main() {
 		routes.RegisterLocationRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterLeaveTypeRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterFaceRoutes(protected, container.Handlers, container.Access)
+		routes.RegisterAttendanceRoutes(protected, container.Handlers)
 	}
 
 	addr := host + ":" + port

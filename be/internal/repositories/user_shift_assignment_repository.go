@@ -17,11 +17,18 @@ func NewUserShiftAssignmentRepository(db *gorm.DB) *UserShiftAssignmentRepositor
 	}
 }
 
-// FindByUserID finds the active shift assignment for a user.
+// FindByUserID finds the active shift assignment for a user that is valid today.
 func (r *UserShiftAssignmentRepository) FindByUserID(tx *gorm.DB, userID uint, preloads ...string) (*models.UserShiftAssignment, error) {
 	db := r.getDB(tx)
 	var instance *models.UserShiftAssignment
-	query := db.Model(&instance).Where("user_id = ? AND is_active = ?", userID, true)
+
+	now := time.Now()
+	todayStr := now.Format("2006-01-02")
+
+	query := db.Model(&instance).
+		Where("user_id = ? AND is_active = ?", userID, true).
+		Where("start_date <= ?", todayStr).
+		Where("end_date IS NULL OR end_date >= ?", todayStr)
 
 	for _, preload := range preloads {
 		query = query.Preload(preload)

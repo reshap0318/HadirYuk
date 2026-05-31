@@ -93,7 +93,10 @@ export const useUserStore = defineStore('user', () => {
 
   async function uploadFacePhoto(userId: number, fileUuid: string): Promise<string> {
     try {
-      const { data } = await put<IApiResponse<{ photo_url: string }>>(`/users/${userId}/face-photo`, { face_photo: fileUuid })
+      const { data } = await put<IApiResponse<{ photo_url: string }>>(
+        `/users/${userId}/face-photo`,
+        { face_photo: fileUuid },
+      )
       swal.success('Berhasil', 'Foto wajah berhasil diperbarui.')
       return data.data?.photo_url || ''
     } catch (error: any) {

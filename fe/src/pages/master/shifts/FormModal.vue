@@ -18,6 +18,7 @@ function show(data?: {
   start_time: string
   end_time: string
   break_duration: number
+  flexi_minutes: number
   color_code: string
 }) {
   if (data) {
@@ -26,6 +27,7 @@ function show(data?: {
     shiftStore.form.start_time = data.start_time
     shiftStore.form.end_time = data.end_time
     shiftStore.form.break_duration = data.break_duration
+    shiftStore.form.flexi_minutes = data.flexi_minutes
     shiftStore.form.color_code = data.color_code
   } else {
     shiftStore.form.id = undefined
@@ -102,6 +104,20 @@ defineExpose({ show, close })
           :validation="v$.break_duration"
           @update:model-value="shiftStore.form.break_duration = Number($event)"
         />
+
+        <FormInput
+          :model-value="String(shiftStore.form.flexi_minutes)"
+          name="flexi_minutes"
+          label="Flexi Time (menit)"
+          type="number"
+          placeholder="10"
+          :validation="v$.flexi_minutes"
+          @update:model-value="shiftStore.form.flexi_minutes = Number($event)"
+        />
+        <p class="-mt-3 text-xs text-gray-500">
+          Toleransi keterlambatan. Check-in diperbolehkan mulai dari (waktu mulai - flexi). Status
+          "late" jika check-in melewati (waktu mulai + flexi).
+        </p>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Warna Shift</label>

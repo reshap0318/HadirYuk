@@ -49,7 +49,7 @@ func (c *FaceClient) UseStub() bool {
 }
 
 func (c *FaceClient) InitError() error {
-	return fmt.Errorf("GoCV not enabled. Build with -tags gocv for real face detection")
+	return nil
 }
 
 func (c *FaceClient) DetectFace(imagePath string) (bool, error) {

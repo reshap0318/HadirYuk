@@ -138,7 +138,9 @@ defineExpose({
         <!-- New Photo Preview -->
         <div v-if="facePhotoPreview" class="w-full">
           <label class="mb-1.5 block text-xs font-medium text-gray-700">Preview Foto Baru</label>
-          <div class="flex flex-col items-center p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
+          <div
+            class="flex flex-col items-center p-3 bg-blue-50 rounded-lg border-2 border-blue-200"
+          >
             <img
               :src="facePhotoPreview"
               alt="Preview foto wajah baru"

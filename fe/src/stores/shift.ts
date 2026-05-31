@@ -9,6 +9,7 @@ export interface IShift {
   start_time: string
   end_time: string
   break_duration: number
+  flexi_minutes: number
   color_code: string
   total_hours: number
 }
@@ -19,6 +20,7 @@ export interface IShiftPayload {
   start_time: string
   end_time: string
   break_duration: number
+  flexi_minutes: number
   color_code: string
   total_hours: number
 }
@@ -32,6 +34,7 @@ export const useShiftStore = defineStore('shift', () => {
       start_time: '',
       end_time: '',
       break_duration: 0,
+      flexi_minutes: 10,
       color_code: '#3B82F6',
       total_hours: 0,
     },
@@ -57,6 +60,10 @@ export const useShiftStore = defineStore('shift', () => {
         'Durasi istirahat minimal 0 menit.',
         (value: number) => value >= 0,
       ),
+    },
+    flexi_minutes: {
+      required,
+      minValue: helpers.withMessage('Flexi time minimal 0 menit.', (value: number) => value >= 0),
     },
     color_code: { required },
   }))

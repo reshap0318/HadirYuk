@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import {
-  UiButton,
-  UiModal,
-  FormInput,
-  FormPassword,
-  FormAvatar,
-} from '@/components/utils'
+import { UiButton, UiModal, FormInput, FormPassword, FormAvatar } from '@/components/utils'
 
 import { ref, onMounted } from 'vue'
 import useVuelidate from '@vuelidate/core'

@@ -59,6 +59,7 @@ func (s *Services) ShiftCreate(ctx context.Context, req dtos.ShiftRequest) (*dto
 		StartTime:     req.StartTime,
 		EndTime:       req.EndTime,
 		BreakDuration: req.BreakDuration,
+		FlexiMinutes:  req.FlexiMinutes,
 		ColorCode:     req.ColorCode,
 		TotalHours:    calculateTotalHours(req.StartTime, req.EndTime, req.BreakDuration),
 	}
@@ -167,6 +168,7 @@ func (s *Services) ShiftUpdate(ctx context.Context, id uint, req dtos.ShiftReque
 		StartTime:     req.StartTime,
 		EndTime:       req.EndTime,
 		BreakDuration: req.BreakDuration,
+		FlexiMinutes:  req.FlexiMinutes,
 		ColorCode:     req.ColorCode,
 		TotalHours:    calculateTotalHours(req.StartTime, req.EndTime, req.BreakDuration),
 	}

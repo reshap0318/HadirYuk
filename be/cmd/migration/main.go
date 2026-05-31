@@ -80,6 +80,14 @@ func runMigration(db *gorm.DB, command string) {
 	case "up":
 		fmt.Println("Running migrations...")
 
+		// Handle attendance table schema change (drop & recreate for clean FK)
+		if db.Migrator().HasTable(&models.Attendance{}) {
+			fmt.Println("Dropping attendances table for schema update...")
+			if err := db.Migrator().DropTable(&models.Attendance{}); err != nil {
+				log.Printf("Warning: Failed to drop attendances table: %v", err)
+			}
+		}
+
 		// AutoMigrate all models
 		err := db.AutoMigrate(
 			&models.User{},
@@ -94,6 +102,7 @@ func runMigration(db *gorm.DB, command string) {
 			&models.OfficeLocation{},
 			&models.LeaveType{},
 			&models.UserShiftAssignment{},
+			&models.Attendance{},
 		)
 		if err != nil {
 			log.Fatalf("Migration failed: %v", err)
@@ -107,6 +116,7 @@ func runMigration(db *gorm.DB, command string) {
 		// Drop tables in correct order (foreign key constraints)
 		err := db.Migrator().DropTable(
 			&models.UserShiftAssignment{},
+			&models.Attendance{},
 			&models.LeaveType{},
 			&models.OfficeLocation{},
 			&models.Shift{},

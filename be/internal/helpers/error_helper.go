@@ -12,6 +12,16 @@ func (e *FieldError) Error() string {
 	return e.Message
 }
 
+// CustomError represents a custom application error with optional HTTP status override.
+type CustomError struct {
+	Message string
+	Status  int
+}
+
+func (e *CustomError) Error() string {
+	return e.Message
+}
+
 // Common application errors.
 var (
 	ErrNotFound          = errors.New("record not found")

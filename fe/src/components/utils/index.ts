@@ -14,6 +14,7 @@ export { default as FormPassword } from './FormPassword.vue'
 export { default as FormSelect } from './FormSelect.vue'
 export { default as FacePhotoCapture } from './FacePhotoCapture.vue'
 export { default as FacePhotoManager } from './FacePhotoManager.vue'
+export { default as FormMap } from './FormMap.vue'
 
 export type {
   UiButtonProps,

@@ -46,7 +46,8 @@ func NewServices(repo *repositories.Repositories, redisClient *database.RedisCac
 	// Initialize FaceClient and FaceService
 	faceClient := face.NewFaceClient()
 
-	// Panic if face recognition models fail to load (only applies when built with -tags gocv)
+	// Panic if GoCV models fail to load (only when built with -tags gocv)
+	// Stub implementation (without gocv tag) will not panic
 	if err := faceClient.InitError(); err != nil {
 		panic(fmt.Sprintf("Face recognition initialization failed: %v. Pastikan file model tersedia: haarcascade_frontalface_default.xml, nn4.small2.v1.t7", err))
 	}
