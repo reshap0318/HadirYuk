@@ -162,6 +162,45 @@ func copyFileInternal(src, dst string) error {
 	return nil
 }
 
+type FileMetadata struct {
+	UUID      string
+	Extension string
+	SizeBytes int64
+	SizeMB    float64
+	FullPath  string
+}
+
+func GetFileMetadata(fileUUID, dir string) (*FileMetadata, error) {
+	if fileUUID == "" {
+		return nil, fmt.Errorf("file UUID is empty")
+	}
+
+	files, err := filepath.Glob(filepath.Join(dir, fileUUID+".*"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to search file: %w", err)
+	}
+	if len(files) == 0 {
+		return nil, fmt.Errorf("file not found for uuid: %s", fileUUID)
+	}
+
+	srcPath := files[0]
+	info, err := os.Stat(srcPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat file: %w", err)
+	}
+
+	ext := strings.ToLower(filepath.Ext(srcPath))
+	sizeMB := float64(info.Size()) / 1024.0 / 1024.0
+
+	return &FileMetadata{
+		UUID:      fileUUID,
+		Extension: ext,
+		SizeBytes: info.Size(),
+		SizeMB:    sizeMB,
+		FullPath:  srcPath,
+	}, nil
+}
+
 func MoveFile(fileUUID, srcDir, destDir string) (string, error) {
 	if fileUUID == "" {
 		return "", fmt.Errorf("file UUID is empty")

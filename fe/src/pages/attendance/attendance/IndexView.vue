@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance'
-import { UiCard, UiButton } from '@/components/utils'
+import { UiCard, UiButton, UiModal } from '@/components/utils'
+import FacePhotoCapture from '@/components/utils/FacePhotoCapture.vue'
 import {
   PhClock,
   PhNavigationArrow,
   PhCheckCircle,
   PhXCircle,
   PhBuildingOffice,
+  PhCamera,
 } from '@phosphor-icons/vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { uploadFile } from '@/helpers/upload'
+import swal from '@/plugins/swal'
 
 const attendanceStore = useAttendanceStore()
 
@@ -24,6 +28,12 @@ const currentTime = ref(new Date())
 let timeInterval: ReturnType<typeof setInterval> | null = null
 
 const defaultCenter: [number, number] = [-6.248494, 106.792687]
+
+const showCameraModal = ref(false)
+const photoPreview = ref<string | null>(null)
+const capturedFile = ref<File | null>(null)
+const processingCheckIn = ref(false)
+const facePhotoCaptureRef = ref<InstanceType<typeof FacePhotoCapture> | null>(null)
 
 const formattedDate = computed(() => {
   return currentTime.value.toLocaleDateString('id-ID', {
@@ -60,12 +70,13 @@ const checkInTime = computed(() => {
   return attendanceStore.todayStatus?.time_in
 })
 
-const canCheckIn = computed(() => {
+const canStartCheckIn = computed(() => {
   return (
     attendanceStore.isInsideRadius &&
     attendanceStore.userLocation !== null &&
     !attendanceStore.loading &&
-    !hasCheckedIn.value
+    !hasCheckedIn.value &&
+    !processingCheckIn.value
   )
 })
 
@@ -137,17 +148,53 @@ async function handleGetLocation() {
   }
 }
 
-async function handleCheckIn() {
-  if (!attendanceStore.userLocation || !canCheckIn.value) return
+function openCamera() {
+  if (!canStartCheckIn.value) return
+  showCameraModal.value = true
+}
 
-  const success = await attendanceStore.checkIn(
-    attendanceStore.userLocation.latitude,
-    attendanceStore.userLocation.longitude,
-  )
+async function handlePhotoCaptured(file: File) {
+  capturedFile.value = file
+  photoPreview.value = URL.createObjectURL(file)
+}
 
-  if (success) {
-    await attendanceStore.fetchTodayStatus()
+async function handleCameraError(message: string) {
+  swal.error('Kamera Error', message)
+}
+
+async function submitCheckIn() {
+  if (!capturedFile.value || !attendanceStore.userLocation) return
+
+  processingCheckIn.value = true
+
+  try {
+    const uploaded = await uploadFile(capturedFile.value)
+    const success = await attendanceStore.checkIn(
+      attendanceStore.userLocation.latitude,
+      attendanceStore.userLocation.longitude,
+      uploaded.uuid,
+    )
+
+    if (success) {
+      await attendanceStore.fetchTodayStatus()
+      showCameraModal.value = false
+      photoPreview.value = null
+      capturedFile.value = null
+      facePhotoCaptureRef.value?.reset()
+    }
+  } catch (error: any) {
+    const message = error?.response?.data?.message || 'Gagal memproses check-in.'
+    swal.error('Gagal', message)
   }
+
+  processingCheckIn.value = false
+}
+
+function closeModal() {
+  showCameraModal.value = false
+  photoPreview.value = null
+  capturedFile.value = null
+  facePhotoCaptureRef.value?.reset()
 }
 
 onMounted(async () => {
@@ -170,15 +217,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="px-4 sm:px-6 lg:px-8">
-    <!-- Header -->
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">Absensi</h1>
       <p class="text-sm text-gray-600 mt-1">Catat kehadiran Anda hari ini.</p>
     </div>
 
-    <!-- Main Layout: Map Left, Info Right -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <!-- Info Section (1/3 width on lg) -->
       <div class="flex flex-col gap-4 lg:order-2">
         <!-- Clock Card -->
         <UiCard
@@ -235,10 +279,8 @@ onBeforeUnmount(() => {
         </UiCard>
 
         <!-- Location Status Card -->
-        <UiCard :classes="{ wrapper: '', card: '', body: 'p-4' }">
-          <!-- Office Info -->
+        <UiCard :classes="{ body: 'p-4' }">
           <div v-if="attendanceStore.nearestOffice" class="space-y-3">
-            <!-- Office Name -->
             <div class="flex items-center gap-3">
               <div
                 class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0"
@@ -253,7 +295,6 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <!-- Distance & Radius Row -->
             <div class="grid grid-cols-2 gap-3">
               <div class="p-3 rounded-lg bg-gray-50">
                 <p class="text-xs text-gray-500 mb-1">Jarak</p>
@@ -267,7 +308,6 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <!-- Proximity Status -->
             <div class="pt-1">
               <div class="flex justify-between text-xs text-gray-500 mb-1">
                 <span>Proksimitas</span>
@@ -289,12 +329,10 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <!-- Loading state -->
           <div v-else class="text-center py-4">
             <p class="text-sm text-gray-500">Mendeteksi lokasi...</p>
           </div>
 
-          <!-- Geolocation Error -->
           <div
             v-if="attendanceStore.geolocationError"
             class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg"
@@ -313,31 +351,24 @@ onBeforeUnmount(() => {
         <div class="flex flex-col gap-2">
           <UiButton
             size="lg"
-            :disabled="!canCheckIn"
-            :loading="attendanceStore.loading"
+            :disabled="!canStartCheckIn"
+            :loading="processingCheckIn"
             :class="[
               'w-full px-6 py-3 text-base font-semibold transition-all',
-              canCheckIn
+              canStartCheckIn
                 ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200'
                 : hasCheckedIn
                   ? 'bg-green-100 text-green-700 cursor-default'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed',
             ]"
-            @click="handleCheckIn"
+            @click="openCamera"
           >
             <template #icon>
-              <PhCheckCircle class="w-5 h-5" />
+              <PhCamera class="w-5 h-5" />
             </template>
-            {{
-              attendanceStore.loading
-                ? 'Memproses...'
-                : hasCheckedIn
-                  ? 'Sudah Check-in'
-                  : 'Check In'
-            }}
+            {{ processingCheckIn ? 'Memproses...' : hasCheckedIn ? 'Sudah Check-in' : 'Check In' }}
           </UiButton>
 
-          <!-- Outside radius warning -->
           <p
             v-if="!attendanceStore.isInsideRadius && attendanceStore.userLocation && !hasCheckedIn"
             class="flex items-center justify-center gap-1 text-xs text-red-600"
@@ -348,9 +379,9 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- Map Section (2/3 width on lg) -->
+      <!-- Map Section -->
       <div class="lg:col-span-2 lg:order-1">
-        <UiCard :classes="{ wrapper: '', card: '', body: 'p-2' }">
+        <UiCard :classes="{ body: 'p-2' }">
           <div
             ref="mapContainer"
             class="rounded-lg border border-gray-200 overflow-hidden z-0"
@@ -378,5 +409,46 @@ onBeforeUnmount(() => {
         </UiCard>
       </div>
     </div>
+
+    <!-- Camera Modal -->
+    <UiModal
+      v-model="showCameraModal"
+      :title="photoPreview ? 'Konfirmasi Foto' : 'Ambil Foto'"
+      size="md"
+    >
+      <FacePhotoCapture
+        v-if="!photoPreview"
+        ref="facePhotoCaptureRef"
+        :max-file-size="5"
+        :show-guidelines="false"
+        @captured="handlePhotoCaptured"
+        @error="handleCameraError"
+      />
+
+      <div v-if="photoPreview" class="space-y-4">
+        <div
+          class="relative w-full aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200"
+        >
+          <img :src="photoPreview" alt="Preview foto" class="w-full h-full object-cover" />
+        </div>
+        <p class="text-xs text-gray-500 text-center">Foto siap dikirim sebagai bukti check-in.</p>
+      </div>
+
+      <template #footer>
+        <div class="flex gap-2 justify-end">
+          <UiButton variant="secondary" :disabled="processingCheckIn" @click="closeModal">
+            Batal
+          </UiButton>
+          <UiButton
+            v-if="photoPreview"
+            variant="primary"
+            :loading="processingCheckIn"
+            @click="submitCheckIn"
+          >
+            Check In
+          </UiButton>
+        </div>
+      </template>
+    </UiModal>
   </div>
 </template>

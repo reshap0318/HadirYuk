@@ -17,6 +17,7 @@ type Attendance struct {
 	OfficeID       uint           `gorm:"not null;index" json:"office_id"`
 	Status         string         `gorm:"type:varchar(20);not null;default:'absent'" json:"status"`
 	DistanceMeters *float64       `json:"distance_meters"`
+	ImageIn        string         `gorm:"type:varchar(255)" json:"image_in"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`

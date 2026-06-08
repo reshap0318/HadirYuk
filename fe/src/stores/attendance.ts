@@ -7,6 +7,7 @@ import swal from '@/plugins/swal'
 export interface ICheckInPayload {
   latitude: number
   longitude: number
+  image: string
 }
 
 export interface ICheckInResponse {
@@ -182,12 +183,13 @@ export const useAttendanceStore = defineStore('attendance', () => {
   /**
    * Submit check-in to backend
    */
-  async function checkIn(lat: number, lng: number): Promise<boolean> {
+  async function checkIn(lat: number, lng: number, image: string): Promise<boolean> {
     loading.value = true
     try {
       const { data } = await post<IApiResponse<ICheckInResponse>>('/attendance/checkin', {
         lat,
         lng,
+        image,
       })
       checkInData.value = data.data
       swal.success('Berhasil', 'Absensi masuk berhasil dicatat.')

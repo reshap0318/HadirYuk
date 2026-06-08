@@ -4,7 +4,7 @@ import { PhUploadSimple, PhCamera, PhTrash } from '@phosphor-icons/vue'
 import FacePhotoCapture from '@/components/utils/FacePhotoCapture.vue'
 import { ref } from 'vue'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     currentPhoto?: string | null
     activeTab: 'upload' | 'camera'

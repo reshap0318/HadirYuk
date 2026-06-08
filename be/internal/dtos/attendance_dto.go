@@ -7,8 +7,9 @@ import (
 )
 
 type AttendanceCheckInRequest struct {
-	Lat float64 `json:"lat" validate:"required"`
-	Lng float64 `json:"lng" validate:"required"`
+	Lat   float64 `json:"lat" validate:"required"`
+	Lng   float64 `json:"lng" validate:"required"`
+	Image string  `json:"image" validate:"required"`
 }
 
 type NearestOfficeRequest struct {
@@ -44,6 +45,7 @@ type AttendanceDTO struct {
 	OfficeID       uint       `json:"office_id"`
 	Status         string     `json:"status"`
 	DistanceMeters *float64   `json:"distance_meters"`
+	ImageIn        string     `json:"image_in"`
 }
 
 func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
@@ -58,6 +60,7 @@ func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
 		OfficeID:       a.OfficeID,
 		Status:         a.Status,
 		DistanceMeters: a.DistanceMeters,
+		ImageIn:        a.ImageIn,
 	}
 }
 

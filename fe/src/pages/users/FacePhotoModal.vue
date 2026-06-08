@@ -21,7 +21,7 @@ function close() {
   currentUser.value = null
 }
 
-async function handleUploaded(photoUrl: string) {
+async function handleUploaded(_photoUrl: string) {
   await userStore.fetchAll()
   if (currentUser.value) {
     const updatedUser = userStore.indexData.items.find((u) => u.id === currentUser.value!.id)

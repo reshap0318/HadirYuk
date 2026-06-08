@@ -96,7 +96,7 @@ func (s *Services) NearestOffice(ctx context.Context, req dtos.NearestOfficeRequ
 	return &response, nil
 }
 
-// AttendanceCheckIn handles the check-in process with geotagging and Haversine validation.
+// AttendanceCheckIn handles the check-in process with geotagging, Haversine validation, and photo evidence.
 func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceCheckInRequest) (*dtos.AttendanceDTO, error) {
 	s.Logger.LogStart("AttendanceCheckIn", "Processing check-in for user")
 
@@ -105,6 +105,30 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 		s.Logger.LogEndWithError("AttendanceCheckIn", "Invalid token: caller ID not found")
 		return nil, helpers.ErrInvalidToken
 	}
+
+	// Validate photo UUID - check file exists in tmp
+	s.Logger.LogStep("AttendanceCheckIn", "Validating photo evidence UUID: %s", req.Image)
+	fileMeta, err := helpers.GetFileMetadata(req.Image, "storage/tmp")
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceCheckIn", "Photo validation failed: %v", err)
+		return nil, &helpers.CustomError{Message: "Foto bukti tidak valid atau tidak ditemukan"}
+	}
+
+	// Validate file extension
+	allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
+	if !allowedExts[fileMeta.Extension] {
+		s.Logger.LogEndWithError("AttendanceCheckIn", "Photo extension not allowed: %s", fileMeta.Extension)
+		return nil, &helpers.CustomError{Message: "Format foto tidak didukung. Gunakan JPG, PNG, atau WEBP"}
+	}
+
+	// Validate file size (max 5MB)
+	maxSizeMB := 5.0
+	if fileMeta.SizeMB > maxSizeMB {
+		s.Logger.LogEndWithError("AttendanceCheckIn", "Photo size too large: %.2fMB", fileMeta.SizeMB)
+		return nil, &helpers.CustomError{Message: fmt.Sprintf("Ukuran foto terlalu besar (maks %dMB)", maxSizeMB)}
+	}
+
+	s.Logger.LogStep("AttendanceCheckIn", "Photo validated: %s, size: %.2fMB, ext: %s", req.Image, fileMeta.SizeMB, fileMeta.Extension)
 
 	now := time.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -203,6 +227,13 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 		status = "late"
 	}
 
+	// Move photo from tmp to attendance-evidence
+	fotoPath, err := helpers.MoveFile(req.Image, "storage/tmp", "storage/attendance-evidence")
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceCheckIn", "Failed to move photo evidence: %v", err)
+		return nil, &helpers.CustomError{Message: "Gagal menyimpan foto bukti"}
+	}
+
 	// Create attendance record
 	attendance := &models.Attendance{
 		UserID:         userID,
@@ -214,6 +245,7 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 		OfficeID:       nearestOffice.ID,
 		Status:         status,
 		DistanceMeters: &minDistance,
+		ImageIn:        fotoPath,
 	}
 
 	var result *models.Attendance

@@ -15,14 +15,14 @@ last_modified: 2026-06-08
 
 ## Implementation Phases
 
-| Phase       | Name                              | Description                                                         |
-| ----------- | --------------------------------- | ------------------------------------------------------------------- |
-| **Phase 1** | Foundation (DONE)                 | Auth, RBAC, Data Master, Profil, Notifikasi, Upload, Peta           |
-| **Phase 2** | Core Attendance (P0)              | Shift assignment, profile photo, check-in/out geotagging + photo evidence & QR |
-| **Phase 3** | Employee Self-Service (P1)        | Riwayat absensi, dasbor karyawan, cuti                              |
-| **Phase 4** | HR Operations (P2)                | Dasbor HR, koreksi absensi, jadwal shift, laporan                   |
-| **Phase 5** | Analytics & Polish (P3-P4)        | Statistik keterlambatan, dasbor admin, audit log                    |
-| **Phase 6** | Face Recognition (Optional / P4)  | Face embedding generation, face matching during check-in/out        |
+| Phase       | Name                             | Description                                                                    |
+| ----------- | -------------------------------- | ------------------------------------------------------------------------------ |
+| **Phase 1** | Foundation (DONE)                | Auth, RBAC, Data Master, Profil, Notifikasi, Upload, Peta                      |
+| **Phase 2** | Core Attendance (P0)             | Shift assignment, profile photo, check-in/out geotagging + photo evidence & QR |
+| **Phase 3** | Employee Self-Service (P1)       | Riwayat absensi, dasbor karyawan, cuti                                         |
+| **Phase 4** | HR Operations (P2)               | Dasbor HR, koreksi absensi, jadwal shift, laporan                              |
+| **Phase 5** | Analytics & Polish (P3-P4)       | Statistik keterlambatan, dasbor admin, audit log                               |
+| **Phase 6** | Face Recognition (Optional / P4) | Face embedding generation, face matching during check-in/out                   |
 
 ---
 
@@ -336,7 +336,7 @@ last_modified: 2026-06-08
 - **Feature/Module:** Profile Photo
 - **Priority:** P0
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.6.2 Functional Requirements — Upload Profile Photo
 - **TDD Ref:**
@@ -347,7 +347,7 @@ last_modified: 2026-06-08
 - **Feature/Module:** Profile Photo
 - **Priority:** P0
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.6.2 Functional Requirements — Upload Profile Photo
   - §3.20 User Interaction — Profile Page
