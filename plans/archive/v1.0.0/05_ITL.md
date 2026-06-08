@@ -27,15 +27,15 @@
 | T-003   | Authentication  | Refresh token endpoint            | P0       | 2h     | [x]    | FSD §2.1.6   | POST /api/auth/refresh              | baseline               |
 | T-004   | Authentication  | Forgot password + email async     | P0       | 3h     | [x]    | FSD §2.1.4   | POST /api/auth/forgot-password      | baseline               |
 | T-005   | Authentication  | Reset password + token validation | P0       | 2h     | [x]    | FSD §2.1.5   | POST /api/auth/reset-password       | baseline               |
-| T-006   | UAM             | CRUD Role endpoints               | P0       | 3h     | [x]    | FSD §2.7.1   | CRUD /api/roles                     | role.\*                |
-| T-007   | UAM             | CRUD Permission endpoints         | P0       | 2h     | [x]    | FSD §2.7.2   | CRUD /api/permissions               | permission.\*          |
+| T-006   | UAM             | CRUD Role endpoints               | P0       | 3h     | [x]    | FSD §2.7.1   | CRUD /api/roles                     | role.*                |
+| T-007   | UAM             | CRUD Permission endpoints         | P0       | 2h     | [x]    | FSD §2.7.2   | CRUD /api/permissions               | permission.*          |
 | T-008   | UAM             | Role-Permission mapping           | P0       | 2h     | [x]    | FSD §2.7.2   | PUT /api/roles/:id/permissions      | role.assign-permission |
 | T-009   | UAM             | User-Role assignment              | P0       | 2h     | [x]    | FSD §2.7.3   | POST /api/users/:id/roles           | user.assign-role       |
 | T-010   | UAM             | Permission middleware + cache     | P0       | 4h     | [x]    | FSD §2.7     | Middleware                          | All RBAC               |
-| T-011   | Data Master     | CRUD Shift endpoints              | P1       | 3h     | [x]    | FSD §2.3.1   | CRUD /api/shifts                    | shift.\*               |
-| T-012   | Data Master     | CRUD Office Location endpoints    | P1       | 3h     | [x]    | FSD §2.9.1   | CRUD /api/locations                 | location.\*            |
+| T-011   | Data Master     | CRUD Shift endpoints              | P1       | 3h     | [x]    | FSD §2.3.1   | CRUD /api/shifts                    | shift.*               |
+| T-012   | Data Master     | CRUD Office Location endpoints    | P1       | 3h     | [x]    | FSD §2.9.1   | CRUD /api/locations                 | location.*            |
 | T-013   | Data Master     | CRUD Leave Type endpoints         | P1       | 2h     | [x]    | FSD §2.4     | CRUD /api/leave/types               | leave.manage-types     |
-| T-014   | User Management | CRUD User with auto-profile       | P0       | 4h     | [x]    | FSD §2.6.1   | CRUD /api/users                     | user.\*                |
+| T-014   | User Management | CRUD User with auto-profile       | P0       | 4h     | [x]    | FSD §2.6.1   | CRUD /api/users                     | user.*                |
 | T-015   | Profile         | View/Edit profile (/me)           | P1       | 2h     | [x]    | FSD Profile  | GET/PUT /api/me                     | baseline               |
 | T-016   | Profile         | Upload avatar                     | P1       | 2h     | [x]    | FSD §2.6.2   | POST /api/upload                    | baseline               |
 | T-017   | Notifications   | CRUD notifications + mark read    | P2       | 3h     | [x]    | FSD -        | CRUD /api/notifications             | -                      |
@@ -63,7 +63,7 @@
 | T-032   | Attendance Check-out | Frontend: check-out page (location + camera + capture)       | P0       | 3h     | [ ]    | FSD §2.2.3         | POST /api/attendance/checkout                    | baseline                   |
 | T-033   | QR Code              | Backend: generate QR code with signature + expiry            | P0       | 3h     | [ ]    | FSD §2.11.1        | POST /api/qr-codes/generate                      | qrcode.generate            |
 | T-034   | QR Code              | Backend: view active QR codes + revoke                       | P0       | 2h     | [ ]    | FSD §2.11.2-2.11.3 | GET /api/qr-codes, POST /api/qr-codes/:id/revoke | qrcode.view, qrcode.revoke |
-| T-035   | QR Code              | Frontend: QR code management page (generate, list, revoke)   | P0       | 3h     | [ ]    | FSD §2.11          | QR Code endpoints                                | qrcode.\*                  |
+| T-035   | QR Code              | Frontend: QR code management page (generate, list, revoke)   | P0       | 3h     | [ ]    | FSD §2.11          | QR Code endpoints                                | qrcode.*                  |
 | T-036   | QR Code              | Backend: QR code validation service (signature + expiry)     | P0       | 2h     | [ ]    | FSD §2.2.2         | Service layer                                    | baseline                   |
 | T-037   | QR Check-in          | Backend: check-in via QR code                                | P0       | 2h     | [ ]    | FSD §2.2.2         | POST /api/attendance/checkin/qr                  | baseline                   |
 | T-038   | QR Check-in          | Frontend: QR scanner component (vue-qrcode-reader)           | P0       | 3h     | [ ]    | FSD §2.2.2         | POST /api/attendance/checkin/qr                  | baseline                   |
@@ -110,9 +110,9 @@
 | T-076   | Attendance Report     | Backend: attendance report endpoint with filters                    | P2       | 3h     | [ ]    | FSD §2.10.1 | GET /api/reports/attendance              | report.view         |
 | T-077   | Attendance Report     | Backend: export to Excel (.xlsx)                                    | P2       | 3h     | [ ]    | FSD §2.10.2 | GET /api/reports/attendance/export/excel | report.export-excel |
 | T-078   | Attendance Report     | Backend: export to PDF                                              | P2       | 3h     | [ ]    | FSD §2.10.3 | GET /api/reports/attendance/export/pdf   | report.export-pdf   |
-| T-079   | Attendance Report     | Frontend: report page (filters, table, export buttons)              | P2       | 3h     | [ ]    | FSD §2.10   | Report endpoints                         | report.\*           |
+| T-079   | Attendance Report     | Frontend: report page (filters, table, export buttons)              | P2       | 3h     | [ ]    | FSD §2.10   | Report endpoints                         | report.*            |
 | T-080   | Leave Report          | Backend: leave report endpoint with filters                         | P2       | 2h     | [ ]    | FSD §2.10.4 | GET /api/reports/leave                   | report.view         |
-| T-081   | Leave Report          | Backend: leave report export Excel/PDF                              | P2       | 2h     | [ ]    | FSD §2.10.4 | GET /api/reports/leave/export/\*         | report.export-\*    |
+| T-081   | Leave Report          | Backend: leave report export Excel/PDF                              | P2       | 2h     | [ ]    | FSD §2.10.4 | GET /api/reports/leave/export/*          | report.export-*     |
 | T-082   | Leave Report          | Frontend: leave report page                                         | P2       | 2h     | [ ]    | FSD §2.10.4 | GET /api/reports/leave                   | report.view         |
 | T-083   | Attendance View-All   | Backend: attendance history with user_id=all filter                 | P2       | 1h     | [ ]    | FSD §2.2.4  | GET /api/attendance/history?user_id=all  | attendance.view-all |
 | T-084   | Leave View-All        | Backend: leave history with user_id=all filter                      | P2       | 1h     | [ ]    | FSD §2.4    | GET /api/leave?user_id=all               | leave.view-all      |

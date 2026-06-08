@@ -1,3 +1,10 @@
+---
+title: 04_TDD.md
+version: 1.3.1
+created: 2026-05-29
+last_modified: 2026-06-08
+---
+
 # Technical Design Document (TDD)
 
 ## 1. Tech Stack
@@ -11,7 +18,7 @@
 | **Authentication** | JWT (golang-jwt) RS256 | Latest | Asymmetric token-based auth |
 | **Password Hashing** | bcrypt | Built-in | Secure password storage |
 | **Validation** | go-playground/validator | Latest | Request validation |
-| **Face Recognition** | GoCV / face-recognition-go | Latest | Face detection & matching |
+| **Face Recognition** | GoCV / face-recognition-go | Latest | Face detection & matching (OPTIONAL — not required for core check-in) |
 | **QR Code** | tuotoo/qrcode | Latest | QR code generation & scanning |
 | **File Storage** | Local Storage | - | Photo & document storage (`storage/`) |
 | **Email** | net/smtp | Built-in | Password reset emails |
@@ -36,14 +43,14 @@ graph TB
         A --> C[Axios HTTP Client]
         A --> D[Vue Router]
     end
-    
+
     subgraph Backend
         C --> E[Gin Router]
         E --> F[Middleware]
         F --> G[JWT Auth RS256]
         F --> H[CORS]
         F --> I[Rate Limiter]
-        
+
         E --> K[Handlers]
         K --> L[Auth Handler]
         K --> M[Attendance Handler]
@@ -56,7 +63,7 @@ graph TB
         K --> SB[Location Handler]
         K --> SC[QR Code Handler]
         K --> SD[Notification Handler]
-        
+
         K --> S[Services]
         S --> T[Face Recognition Service]
         S --> U[QR Code Service]
@@ -64,23 +71,23 @@ graph TB
         S --> W[Notification Service]
         S --> X[Email Service]
     end
-    
-    subgraph Data Layer
+
+    subgraph DataLayer
         S --> Y[Repositories]
         Y --> Z[(MySQL)]
         Y --> AA[(Redis)]
         Y --> AB[Local Storage]
     end
-    
+
     subgraph External
         T --> AC[Face Detection Model]
         U --> AD[QR Code Generator]
         X --> AE[SMTP Server]
     end
-    
+
     style Client fill:#e1f5fe
     style Backend fill:#fff3e0
-    style Data fill:#e8f5e9
+    style DataLayer fill:#e8f5e9
     style External fill:#f3e5f5
 ```
 
@@ -185,21 +192,21 @@ erDiagram
     USERS ||--o{ NOTIFICATIONS : receives
     USERS ||--o{ LEAVE_BALANCES : has
     USERS ||--o| USER_PROFILES : has
-    
+
     ROLES ||--o{ USER_HAS_ROLES : contains
     ROLES ||--o{ ROLE_HAS_PERMISSIONS : contains
     PERMISSIONS ||--o{ ROLE_HAS_PERMISSIONS : belongs
-    
+
     SHIFTS ||--o{ EMPLOYEE_SHIFTS : assigned
-    
+
     OFFICE_LOCATIONS ||--o{ ATTENDANCES : recorded_at
     OFFICE_LOCATIONS ||--o{ QR_CODES : generates
-    
+
     LEAVE_TYPES ||--o{ LEAVE_REQUESTS : categorized
     LEAVE_TYPES ||--o{ LEAVE_BALANCES : tracks
-    
+
     QR_CODES ||--o{ ATTENDANCES : scanned_at
-    
+
     USERS {
         bigint id PK
         string email UK
@@ -210,19 +217,19 @@ erDiagram
         datetime updated_at
         datetime deleted_at
     }
-    
+
     USER_PROFILES {
         bigint user_id PK,FK
         string department
         string position
         string phone
         date join_date
-        string face_photo_url
+        string profile_photo_url
         text face_embedding
         datetime created_at
         datetime updated_at
     }
-    
+
     ROLES {
         bigint id PK
         string name UK
@@ -231,7 +238,7 @@ erDiagram
         datetime updated_at
         datetime deleted_at
     }
-    
+
     PERMISSIONS {
         bigint id PK
         string name UK
@@ -240,19 +247,19 @@ erDiagram
         datetime updated_at
         datetime deleted_at
     }
-    
+
     USER_HAS_ROLES {
         bigint user_id PK,FK
         bigint role_id PK,FK
         datetime created_at
     }
-    
+
     ROLE_HAS_PERMISSIONS {
         bigint role_id PK,FK
         bigint permission_id PK,FK
         datetime created_at
     }
-    
+
     SHIFTS {
         bigint id PK
         string name UK
@@ -265,7 +272,7 @@ erDiagram
         datetime updated_at
         datetime deleted_at
     }
-    
+
     EMPLOYEE_SHIFTS {
         bigint user_id PK,FK
         bigint shift_id PK,FK
@@ -273,7 +280,7 @@ erDiagram
         date end_date
         datetime created_at
     }
-    
+
     OFFICE_LOCATIONS {
         bigint id PK
         string name
@@ -286,7 +293,7 @@ erDiagram
         datetime updated_at
         datetime deleted_at
     }
-    
+
     ATTENDANCES {
         bigint id PK
         bigint user_id FK
@@ -310,7 +317,7 @@ erDiagram
         datetime created_at
         datetime updated_at
     }
-    
+
     LEAVE_TYPES {
         bigint id PK
         string name UK
@@ -321,7 +328,7 @@ erDiagram
         datetime updated_at
         datetime deleted_at
     }
-    
+
     LEAVE_REQUESTS {
         bigint id PK
         bigint user_id FK
@@ -335,7 +342,7 @@ erDiagram
         datetime updated_at
         datetime deleted_at
     }
-    
+
     LEAVE_BALANCES {
         bigint user_id PK,FK
         bigint leave_type_id PK,FK
@@ -345,7 +352,7 @@ erDiagram
         datetime created_at
         datetime updated_at
     }
-    
+
     QR_CODES {
         bigint id PK
         bigint office_id FK
@@ -356,7 +363,7 @@ erDiagram
         datetime created_at
         datetime deleted_at
     }
-    
+
     NOTIFICATIONS {
         bigint id PK
         bigint user_id FK
@@ -368,7 +375,7 @@ erDiagram
         datetime created_at
         datetime deleted_at
     }
-    
+
     PASSWORD_RESETS {
         bigint id PK
         string email
@@ -403,7 +410,7 @@ erDiagram
 
 > All endpoints use base path `/api/` (not `/api/v1/`). Responses follow the boilerplate `Response` envelope.
 
-### Authentication
+### §4.1 Authentication Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -414,21 +421,23 @@ erDiagram
 | `/api/auth/forgot-password` | POST | ❌ | - | `{ "email": "string" }` | `{ "code": 200, "message": "Reset link sent to email" }` |
 | `/api/auth/reset-password` | POST | ❌ | - | `{ "token": "string", "new_password": "string", "confirm_password": "string" }` | `{ "code": 200, "message": "Password reset successfully" }` |
 
-### Attendance
+### §4.2 Attendance Endpoints
+
+> **Note:** Photo field in check-in/check-out endpoints uses `document_id` (UUID) obtained from `POST /api/upload`. Frontend MUST upload photo first via `/api/upload`, then pass the returned `document_id` to check-in/check-out. Photo is for **evidence purposes only**. No face recognition matching is performed unless the optional face recognition feature is enabled.
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/attendance/checkin` | POST | ✅ | baseline | `{ "latitude": float, "longitude": float, "photo": "base64" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
+| `/api/attendance/checkin` | POST | ✅ | baseline | `{ "latitude": float, "longitude": float, "document_id": "uuid-string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
 | `/api/attendance/checkin/qr` | POST | ✅ | baseline | `{ "qr_code": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
-| `/api/attendance/checkout` | POST | ✅ | baseline | `{ "latitude": float, "longitude": float, "photo": "base64" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
+| `/api/attendance/checkout` | POST | ✅ | baseline | `{ "latitude": float, "longitude": float, "document_id": "uuid-string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
 | `/api/attendance/checkout/qr` | POST | ✅ | baseline | `{ "qr_code": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
 | `/api/attendance/history` | GET | ✅ | baseline | `?date_from=...&date_to=...&page=1&page_size=20` | Paginated response |
 | `/api/attendance/today` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "status": "checked_in", "check_in_time": "...", "shift": {...} } }` |
 | `/api/attendance/stats` | GET | ✅ | baseline | `?month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "present": 20, "late": 2, "absent": 1, "leave": 2 } }` |
 | `/api/attendance/:id/correct` | PUT | ✅ | `attendance.correct` | `{ "check_in_time": "...", "check_out_time": "...", "reason": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "corrected_at": "..." } }` |
-| `/api/attendance/late-statistics` | GET | ✅ | `late-statistic.view` | `?date_from=...&date_to=...&user_id=1` | Paginated response |
+| `/api/attendance/late-statistics` | GET | ✅ | `late-statistic.view` | `?date_from=...&date_to=...&user=1` | Paginated response |
 
-### Shift
+### §4.3 Shift Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -437,14 +446,14 @@ erDiagram
 | `/api/shifts/:id` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/shifts/:id` | PUT | ✅ | `shift.update` | `{ "name": "string", "start_time": "08:00", "end_time": "17:00", "break_duration": 60 }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/shifts/:id` | DELETE | ✅ | `shift.delete` | - | `{ "code": 200, "message": "Shift deleted successfully" }` |
-| `/api/shifts/assign` | POST | ✅ | `shift.assign` | `{ "user_ids": [1,2,3], "shift_id": 1, "effective_date": "...", "end_date": "..." }` | `{ "code": 200, "message": "Shift assigned successfully" }` |
-| `/api/shifts/schedule` | GET | ✅ | baseline | `?user_id=1&month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "schedule": [...] } }` |
+| `/api/shifts/assign` | POST | ✅ | `shift.assign` | `{ "users": [1,2,3], "shift": 1, "effective_date": "...", "end_date": "..." }` | `{ "code": 200, "message": "Shift assigned successfully" }` |
+| `/api/shifts/schedule` | GET | ✅ | baseline | `?user=1&month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "schedule": [...] } }` |
 
-### Leave
+### §4.4 Leave Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/leave` | POST | ✅ | baseline | `{ "leave_type_id": 1, "start_date": "...", "end_date": "...", "reason": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/leave` | POST | ✅ | baseline | `{ "leave_type": 1, "start_date": "...", "end_date": "...", "reason": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/leave` | GET | ✅ | baseline | `?page=1&page_size=20` | Paginated response |
 | `/api/leave/balance` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "annual": { "total": 12, "used": 5, "remaining": 7 }, ... } }` |
 | `/api/leave/types` | GET | ✅ | baseline | - | Paginated response |
@@ -452,7 +461,7 @@ erDiagram
 | `/api/leave/types/:id` | PUT | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/leave/types/:id` | DELETE | ✅ | `leave.manage-types` | - | `{ "code": 200, "message": "Leave type deleted successfully" }` |
 
-### User Management
+### §4.5 User Management Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -461,10 +470,10 @@ erDiagram
 | `/api/users/:id` | GET | ✅ | `user.index` | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/users/:id` | PUT | ✅ | `user.update` | `{ "name": "string", "phone": "string", "department": "string", "position": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/users/:id` | DELETE | ✅ | `user.delete` | - | `{ "code": 200, "message": "User deactivated successfully" }` |
-| `/api/users/:id/face-photo` | POST | ✅ | baseline | `multipart/form-data: { "photo": file }` | `{ "code": 200, "message": "Face photo uploaded successfully", "data": { "photo_url": "..." } }` |
-| `/api/users/:id/roles` | POST | ✅ | `user.assign-role` | `{ "role_ids": [1, 2] }` | `{ "code": 200, "message": "Roles assigned successfully" }` |
+| `/api/users/:id/face-photo` | POST | ✅ | baseline | `multipart/form-data: { "photo": file }` | `{ "code": 200, "message": "Profile photo uploaded successfully", "data": { "photo_url": "..." } }` |
+| `/api/users/:id/roles` | POST | ✅ | `user.assign-role` | `{ "roles": [1, 2] }` | `{ "code": 200, "message": "Roles assigned successfully" }` |
 
-### UAM (Role & Permissions)
+### §4.6 UAM (Role & Permissions) Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -473,13 +482,13 @@ erDiagram
 | `/api/roles/:id` | GET | ✅ | `role.index` | - | `{ "code": 200, "message": "...", "data": { "id": 1, "permissions": [...] } }` |
 | `/api/roles/:id` | PUT | ✅ | `role.update` | `{ "name": "string", "description": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/roles/:id` | DELETE | ✅ | `role.delete` | - | `{ "code": 200, "message": "Role deleted successfully" }` |
-| `/api/roles/:id/permissions` | PUT | ✅ | `role.assign-permission` | `{ "permission_ids": [1, 2, 3] }` | `{ "code": 200, "message": "Permissions assigned successfully" }` |
+| `/api/roles/:id/permissions` | PUT | ✅ | `role.assign-permission` | `{ "permissions": [1, 2, 3] }` | `{ "code": 200, "message": "Permissions assigned successfully" }` |
 | `/api/permissions` | GET | ✅ | `permission.index` | - | Paginated response |
 | `/api/permissions` | POST | ✅ | `permission.create` | `{ "name": "string", "description": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/permissions/:id` | PUT | ✅ | `permission.update` | `{ "name": "string", "description": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/permissions/:id` | DELETE | ✅ | `permission.delete` | - | `{ "code": 200, "message": "Permission deleted successfully" }` |
 
-### Location
+### §4.7 Location Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -489,15 +498,15 @@ erDiagram
 | `/api/locations/:id` | PUT | ✅ | `location.update` | `{ "name": "string", "address": "string", "latitude": float, "longitude": float, "radius_meters": 100 }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/locations/:id` | DELETE | ✅ | `location.delete` | - | `{ "code": 200, "message": "Location deleted successfully" }` |
 
-### QR Code Management
+### §4.8 QR Code Management Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/qr-codes/generate` | POST | ✅ | `qrcode.generate` | `{ "office_id": 1, "expiry_minutes": 5 }` | `{ "code": 201, "message": "...", "data": { "id": 1, "code_value": "...", "qr_image": "base64", "expires_at": "..." } }` |
-| `/api/qr-codes` | GET | ✅ | `qrcode.view` | `?office_id=1&page=1&page_size=20` | Paginated response |
+| `/api/qr-codes/generate` | POST | ✅ | `qrcode.generate` | `{ "office": 1, "expiry_minutes": 5 }` | `{ "code": 201, "message": "...", "data": { "id": 1, "code_value": "...", "qr_image": "base64", "expires_at": "..." } }` |
+| `/api/qr-codes` | GET | ✅ | `qrcode.view` | `?office=1&page=1&page_size=20` | Paginated response |
 | `/api/qr-codes/:id/revoke` | POST | ✅ | `qrcode.revoke` | `{}` | `{ "code": 200, "message": "QR code revoked successfully" }` |
 
-### Dashboard
+### §4.9 Dashboard Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -505,25 +514,25 @@ erDiagram
 | `/api/dashboard/hr` | GET | ✅ | `dashboard.view-hr` | `?date=YYYY-MM-DD` | `{ "code": 200, "message": "...", "data": { "today_stats": {...}, "weekly_chart": [...], "not_attended": [...], "recent_leaves": [...] } }` |
 | `/api/dashboard/admin` | GET | ✅ | `dashboard.view-admin` | `?date=YYYY-MM-DD` | `{ "code": 200, "message": "...", "data": { "system_stats": {...}, "recent_activity": [...], "system_health": {...} } }` |
 
-### Report
+### §4.10 Report Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/reports/attendance` | GET | ✅ | `report.view` | `?date_from=...&date_to=...&user_id=1&department=...&status=...` | `{ "code": 200, "message": "...", "data": [...], "metadata": { "total": 100, ... } }` |
+| `/api/reports/attendance` | GET | ✅ | `report.view` | `?date_from=...&date_to=...&user=1&department=...&status=...` | `{ "code": 200, "message": "...", "data": [...], "metadata": { "total": 100, ... } }` |
 | `/api/reports/attendance/export/excel` | GET | ✅ | `report.export-excel` | `?date_from=...&date_to=...` | `File download (.xlsx)` |
 | `/api/reports/attendance/export/pdf` | GET | ✅ | `report.export-pdf` | `?date_from=...&date_to=...` | `File download (.pdf)` |
 | `/api/reports/leave` | GET | ✅ | `report.view` | `?date_from=...&date_to=...` | `{ "code": 200, "message": "...", "data": [...], "metadata": { "total": 50, ... } }` |
 | `/api/reports/leave/export/excel` | GET | ✅ | `report.export-excel` | `?date_from=...&date_to=...` | `File download (.xlsx)` |
 | `/api/reports/leave/export/pdf` | GET | ✅ | `report.export-pdf` | `?date_from=...&date_to=...` | `File download (.pdf)` |
 
-### Profile
+### §4.11 Profile Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
 | `/api/me` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "id": 1, "name": "...", "email": "...", "avatar": "..." } }` |
 | `/api/me` | PUT | ✅ | baseline | `{ "name": "string", "avatar": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 
-### Notifications (boilerplate existing)
+### §4.12 Notification Endpoints (boilerplate existing)
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -534,13 +543,22 @@ erDiagram
 | `/api/notifications/mark-all-read` | PATCH | ✅ | - | - | `{ "code": 200, "message": "All notifications marked as read" }` |
 | `/api/notifications/:id` | DELETE | ✅ | - | - | `{ "code": 200, "message": "Notification deleted" }` |
 
-### System (boilerplate existing)
+### §4.13 System Endpoints (boilerplate existing)
 
-| Endpoint | Method | Auth | Permission | Success Response |
-|----------|--------|------|------------|------------------|
-| `/health` | GET | ❌ | - | `{ "code": 200, "message": "OK", "data": { "status": "healthy", "components": {...} } }` |
-| `/.well-known/jwks.json` | GET | ❌ | - | JWKS public key response |
-| `/api/upload` | POST | ✅ | - | `{ "code": 200, "message": "...", "data": { "uuid": "...", "url": "/storage/tmp/..." } }` |
+| Endpoint | Method | Auth | Permission | Request Payload | Success Response |
+|----------|--------|------|------------|-----------------|------------------|
+| `/health` | GET | ❌ | - | - | `{ "code": 200, "message": "OK", "data": { "status": "healthy", "components": {...} } }` |
+| `/.well-known/jwks.json` | GET | ❌ | - | - | JWKS public key response |
+| `/api/upload` | POST | ✅ | baseline | `multipart/form-data: { "file": file }` | `{ "code": 200, "message": "File uploaded successfully", "data": { "document_id": "uuid-string", "url": "/storage/uploads/..." } }` |
+
+### §4.14 Face Recognition Endpoints (Optional / Could Have)
+
+> **Note:** These endpoints are ONLY used when face recognition feature is enabled. Core check-in/out works WITHOUT face recognition.
+
+| Endpoint | Method | Auth | Permission | Request Payload | Success Response |
+|----------|--------|------|------------|-----------------|------------------|
+| `/api/face-recognition/enable` | POST | ✅ | baseline | `{ "enabled": true }` | `{ "code": 200, "message": "Face recognition enabled" }` |
+| `/api/face-recognition/status` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "enabled": false, "has_face_embedding": true } }` |
 
 ## 5. Permission-to-API Mapping
 
@@ -548,14 +566,14 @@ erDiagram
 
 | Permission | Protected Endpoints |
 |------------|---------------------|
-| `attendance.view-all` | GET /api/attendance/history?user_id=all |
+| `attendance.view-all` | GET /api/attendance/history?user=all |
 | `attendance.export` | GET /api/reports/attendance/export/* |
 | `attendance.correct` | PUT /api/attendance/:id/correct |
 | `shift.create` | POST /api/shifts |
 | `shift.update` | PUT /api/shifts/:id |
 | `shift.delete` | DELETE /api/shifts/:id |
 | `shift.assign` | POST /api/shifts/assign |
-| `leave.view-all` | GET /api/leave?user_id=all |
+| `leave.view-all` | GET /api/leave?user=all |
 | `leave.manage-types` | CRUD /api/leave/types |
 | `user.index` | GET /api/users, GET /api/users/:id |
 | `user.create` | POST /api/users |
@@ -679,7 +697,7 @@ Session Validation:
 ### Data Encryption
 
 - Passwords: bcrypt hashing
-- Face embeddings: stored as text in database
+- Face embeddings: stored as text in database (optional, only if face recognition enabled)
 - JWT keys: RSA asymmetric, private key AES-256 encrypted
 - Database connection: configurable SSL
 
@@ -763,7 +781,8 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173
 RATE_LIMIT_REQUESTS=100
 RATE_LIMIT_WINDOW=60
 
-# Face Recognition
+# Face Recognition (OPTIONAL — not required for core check-in)
+FACE_RECOGNITION_ENABLED=false
 FACE_MODEL_PATH=./models/face_model.dat
 FACE_THRESHOLD=0.85
 FACE_PHOTO_MAX_SIZE=2097152
