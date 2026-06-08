@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { UiButton, UiModal, FormInput, FormPassword, FormAvatar } from '@/components/utils'
+import {
+  UiButton,
+  UiModal,
+  FormInput,
+  FormPassword,
+  FormAvatar,
+  FormError,
+} from '@/components/utils'
 
 import { ref, onMounted } from 'vue'
 import useVuelidate from '@vuelidate/core'
@@ -16,27 +23,20 @@ import {
   PhIdentificationBadge,
 } from '@phosphor-icons/vue'
 import { useProfileStore } from '@/stores'
+import { useFormError } from '@/composables/useFormError'
 
 const profileStore = useProfileStore()
+const formError = useFormError()
 const showEditModal = ref(false)
 const showPasswordModal = ref(false)
 const showFacePhotoModal = ref(false)
 
 const v$ = useVuelidate(profileStore.formRules, profileStore.form)
 
-const passwordForm = ref({
-  password: '',
-  password_confirmation: '',
-})
-
-const passwordRules = {
-  password: { minLength: profileStore.formRules.password.minLength },
-  password_confirmation: {
-    sameAsPassword: profileStore.formRules.password_confirmation.sameAsPassword,
-  },
-}
-
-const vPassword$ = useVuelidate(passwordRules, passwordForm)
+const vPassword$ = useVuelidate(
+  profileStore.changePasswordFormRules,
+  profileStore.changePasswordForm,
+)
 
 onMounted(() => {
   profileStore.fetchProfile()
@@ -56,9 +56,9 @@ function openEditModal() {
 }
 
 function openPasswordModal() {
-  passwordForm.value.password = ''
-  passwordForm.value.password_confirmation = ''
+  profileStore.changePasswordForm.new_password = ''
   vPassword$.value.$reset()
+  formError.clear()
   showPasswordModal.value = true
 }
 
@@ -78,13 +78,10 @@ async function handleChangePassword() {
   const result = await vPassword$.value.$validate()
   if (!result) return
 
-  profileStore.form.password = passwordForm.value.password
-  profileStore.form.password_confirmation = passwordForm.value.password_confirmation
-  profileStore.form.name = profileStore.profile?.name ?? ''
-  profileStore.form.avatar = null
+  formError.clear()
 
   try {
-    await profileStore.updateProfile()
+    await profileStore.changePassword()
     showPasswordModal.value = false
   } catch {
     // error handled in store
@@ -397,27 +394,21 @@ function openFacePhotoModal() {
     <UiModal v-model="showPasswordModal" title="Ubah Password" size="md" :persistent="true">
       <div class="space-y-5">
         <FormPassword
-          v-model="passwordForm.password"
-          name="password"
+          v-model="profileStore.changePasswordForm.new_password"
+          name="new_password"
           label="Password Baru"
           placeholder="Masukkan password baru"
-          :validation="vPassword$.password"
+          :validation="vPassword$.new_password"
         />
 
-        <FormPassword
-          v-model="passwordForm.password_confirmation"
-          name="password_confirmation"
-          label="Konfirmasi Password"
-          placeholder="Masukkan ulang password"
-          :validation="vPassword$.password_confirmation"
-        />
+        <FormError name="new_password" :validation="undefined" />
       </div>
 
       <template #footer>
         <UiButton variant="secondary" @click="showPasswordModal = false"> Batal </UiButton>
         <UiButton
           variant="primary"
-          :loading="profileStore.loading.Update"
+          :loading="profileStore.loading.ChangePassword"
           :leading-icon="PhLock"
           @click="handleChangePassword"
         >

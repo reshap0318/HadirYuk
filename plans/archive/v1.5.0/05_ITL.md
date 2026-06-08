@@ -1,6 +1,6 @@
 ---
 title: 05_ITL.md
-version: 1.6.0
+version: 1.5.0
 created: 2026-05-29
 last_modified: 2026-06-08
 ---
@@ -189,10 +189,10 @@ last_modified: 2026-06-08
 - **FSD Ref:**
   - §2.4 Leave Management — Functional Requirements
 - **TDD Ref:**
-  - GET /api/leave-types
-  - POST /api/leave-types
-  - PUT /api/leave-types/:id
-  - DELETE /api/leave-types/:id
+  - GET /api/leave/types
+  - POST /api/leave/types
+  - PUT /api/leave/types/:id
+  - DELETE /api/leave/types/:id
 
 ### T-014: CRUD User with Auto-Profile
 
@@ -232,17 +232,6 @@ last_modified: 2026-06-08
   - §2.6.2 Functional Requirements — Upload Profile Photo
 - **TDD Ref:**
   - POST /api/upload
-
-### T-016b: Backend — Change Password Endpoint (Profile)
-
-- **Feature/Module:** Profile
-- **Priority:** P1
-- **Estimated Effort:** 1h
-- **Status:** [ ]
-- **FSD Ref:**
-  - §2.14.1 Functional Requirements — Change Password (Profile)
-- **TDD Ref:**
-  - POST /api/me/change-password
 
 ### T-017: CRUD Notifications + Mark Read
 

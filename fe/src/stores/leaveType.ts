@@ -20,7 +20,7 @@ export interface ILeaveTypePayload {
 
 export const useLeaveTypeStore = defineStore('leaveType', () => {
   const crud = useCrud<ILeaveType, ILeaveTypePayload>({
-    endpoint: '/leave/types',
+    endpoint: '/leave-types',
     entityName: 'jenis cuti',
     initialForm: {
       name: '',

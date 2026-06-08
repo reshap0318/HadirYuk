@@ -42,3 +42,28 @@ func (h *Handlers) ProfileUpdate(c *gin.Context) {
 
 	helpers.OK(c, "Profile updated successfully", dto)
 }
+
+// ProfileChangePassword handles POST /api/me/change-password
+func (h *Handlers) ProfileChangePassword(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var req dtos.ChangePasswordRequest
+
+	if err := c.BindJSON(&req); err != nil {
+		helpers.BadRequest(c, "Invalid JSON payload")
+		return
+	}
+
+	if err := h.Validate.Struct(req); err != nil {
+		helpers.ValidationResponse(c, h.getErrorsMap(err))
+		return
+	}
+
+	if err := h.svcs.ProfileChangePassword(c.Request.Context(), userID, req); err != nil {
+		if helpers.HandleError(c, err, "Failed to change password") {
+			return
+		}
+	}
+
+	helpers.OK(c, "Password changed successfully", nil)
+}

@@ -1,6 +1,6 @@
 ---
 title: 02_FSD.md
-version: 1.6.0
+version: 1.5.0
 created: 2026-05-29
 last_modified: 2026-06-08
 ---
@@ -15,6 +15,7 @@ HadirYuk
 │   ├── Login
 │   ├── Logout
 │   ├── Token Refresh
+│   ├── Password Change
 │   ├── Forgot Password
 │   └── Reset Password
 ├── Attendance (Absensi)
@@ -74,8 +75,7 @@ HadirYuk
 ├── Profile
 │   ├── View Profile
 │   ├── Edit Profile
-│   ├── Update Profile Photo
-│   └── Change Password
+│   └── Update Profile Photo
 └── Face Recognition (Optional / Could Have)
     ├── Upload Face Photo for Recognition
     ├── Face Recognition during Check-in
@@ -104,6 +104,17 @@ HadirYuk
   - Invalidate JWT token
   - Clear session di client
 - **Post-condition:** User kembali ke halaman login
+
+#### §2.1.3 Password Change
+
+- **Pre-condition:** User sudah login
+- **Business Logic:**
+  - User input current password, new password, confirm password
+  - Validasi current password benar
+  - Validasi new password memenuhi kriteria (min 6 char, alphanumeric)
+  - Validasi new password != current password
+  - Hash dan simpan password baru
+- **Post-condition:** Password berhasil diubah, user perlu login ulang
 
 #### §2.1.4 Forgot Password
 
@@ -242,8 +253,8 @@ HadirYuk
 
 - **Pre-condition:** HR Admin login, shift dan employee ada
 - **Business Logic:**
-  - Pilih employee (bisa multiple) dan shift
-  - Tentukan tanggal mulai dan tanggal selesai (wajib diisi)
+  - Pilih employee dan shift
+  - Tentukan effective date (kapan shift berlaku)
   - Bisa assign multiple employee sekaligus
   - Validasi: employee belum punya shift aktif di tanggal yang sama
 - **Post-condition:** Employee ter-assign ke shift
@@ -502,19 +513,6 @@ HadirYuk
   - Face recognition failure TIDAK menghalangi check-out
 - **Post-condition:** Attendance record updated dengan check-out data dan face_recognition_status
 
-### §2.14 Profile
-
-#### §2.14.1 Change Password
-
-- **Pre-condition:** User sudah login
-- **Business Logic:**
-  - User input new password dan confirm password
-  - Validasi new password memenuhi kriteria (min 6 chars)
-  - Validasi confirm password sama dengan new password
-  - Hash dan simpan password baru
-  - Invalidate semua session token
-- **Post-condition:** Password berhasil diubah, user perlu login ulang
-
 ## 3. User Interaction & Screen Elements
 
 ### §3.1 Login Page
@@ -704,7 +702,7 @@ HadirYuk
 | Phone                 | Input text | Required, valid phone format     |
 | Profile Photo Preview | Image      | Current photo or placeholder     |
 | Profile Photo Upload  | File Input | JPG/PNG, max 2MB                 |
-| Change Password       | Form       | New password + confirm password, min 6 chars |
+| Change Password       | Form       | Current + new + confirm password |
 
 ## 4. Use Case Diagram
 

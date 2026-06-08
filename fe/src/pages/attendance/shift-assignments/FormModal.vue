@@ -26,19 +26,20 @@ const usersLoading = ref(false)
 const shiftsLoading = ref(false)
 
 const selectedShift = computed(() => {
-  if (!shiftAssignmentStore.form.shift_id) return null
-  return allShifts.value.find((s) => s.id === shiftAssignmentStore.form.shift_id) || null
+  if (!shiftAssignmentStore.form.shift) return null
+  return allShifts.value.find((s) => s.id === shiftAssignmentStore.form.shift) || null
 })
 
 const dynamicRules = computed(() => ({
-  user_id: {
-    required: helpers.withMessage('Karyawan wajib dipilih', (value: number) => value > 0),
+  users: {
+    required: helpers.withMessage('Karyawan wajib dipilih', (value: number[]) => value.length > 0),
   },
-  shift_id: {
+  shift: {
     required: helpers.withMessage('Shift wajib dipilih', (value: number) => value > 0),
   },
   start_date: { required },
   end_date: {
+    required,
     dateAfterStart: helpers.withMessage(
       'Tanggal selesai harus setelah tanggal mulai',
       (value: string) => {
@@ -106,8 +107,8 @@ function show(data?: {
 }) {
   if (data) {
     shiftAssignmentStore.form.id = data.id
-    shiftAssignmentStore.form.user_id = data.user_id
-    shiftAssignmentStore.form.shift_id = data.shift_id
+    shiftAssignmentStore.form.users = [data.user_id]
+    shiftAssignmentStore.form.shift = data.shift_id
     shiftAssignmentStore.form.start_date = formatDateForInput(data.start_date)
     shiftAssignmentStore.form.end_date = data.end_date ? formatDateForInput(data.end_date) : ''
   } else {
@@ -157,27 +158,28 @@ defineExpose({ show, close })
       <div class="space-y-5">
         <!-- Employee Select -->
         <FormSelect
-          v-model="shiftAssignmentStore.form.user_id"
-          name="user_id"
+          v-model="shiftAssignmentStore.form.users"
+          name="users"
           label="Karyawan"
           :options="userOptions"
           placeholder="Pilih karyawan..."
           :searchable="true"
           :loading="usersLoading"
-          :validation="v$.user_id"
+          :validation="v$.users"
+          mode="tags"
           :disabled="isEdit"
         />
 
         <!-- Shift Select -->
         <FormSelect
-          v-model="shiftAssignmentStore.form.shift_id"
-          name="shift_id"
+          v-model="shiftAssignmentStore.form.shift"
+          name="shift"
           label="Shift"
           :options="shiftOptions"
           placeholder="Pilih shift..."
           :searchable="true"
           :loading="shiftsLoading"
-          :validation="v$.shift_id"
+          :validation="v$.shift"
         />
 
         <!-- Shift Info Panel -->
@@ -239,7 +241,7 @@ defineExpose({ show, close })
           <FormInput
             v-model="shiftAssignmentStore.form.end_date"
             name="end_date"
-            label="Tanggal Selesai (Opsional)"
+            label="Tanggal Selesai"
             type="date"
             :validation="v$.end_date"
           />

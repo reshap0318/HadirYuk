@@ -12,7 +12,7 @@ func RegisterShiftAssignmentRoutes(r *gin.RouterGroup, handlers *handlers.Handle
 	shifts := r.Group("/shifts")
 	{
 		// Assignment routes
-		shifts.POST("/assignments", middleware.RequirePermission(acc, "shift.assign"), handlers.ShiftAssignToUser)
+		shifts.POST("/assign", middleware.RequirePermission(acc, "shift.assign"), handlers.ShiftAssignToUser)
 		shifts.GET("/assignments", middleware.RequirePermission(acc, "shift.index"), handlers.ShiftGetUserAssignments)
 		shifts.GET("/assignments/:user_id", middleware.RequirePermission(acc, "shift.index"), handlers.ShiftGetUserAssignments)
 		shifts.GET("/assignments/:user_id/active", middleware.RequirePermission(acc, "shift.index"), handlers.ShiftGetUserActiveAssignment)

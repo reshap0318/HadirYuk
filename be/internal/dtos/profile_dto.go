@@ -16,6 +16,11 @@ type ProfileUpdateRequest struct {
 	Avatar     string `json:"avatar"`
 }
 
+// ChangePasswordRequest represents the request to change password.
+type ChangePasswordRequest struct {
+	NewPassword string `json:"new_password" validate:"required,min=6"`
+}
+
 // FacePhotoRequest represents the request to upload face photo.
 type FacePhotoRequest struct {
 	FacePhoto string `json:"face_photo" validate:"required"`

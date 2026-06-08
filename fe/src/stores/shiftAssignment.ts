@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { required, helpers } from '@vuelidate/validators'
-import { get, type IApiResponse } from '@/plugins/axios'
+import { get, post, type IApiResponse } from '@/plugins/axios'
 import { useCrud } from '@/composables'
+import swal from '@/plugins/swal'
 
 export interface IShiftAssignment {
   id: number
@@ -17,19 +18,19 @@ export interface IShiftAssignment {
 
 export interface IShiftAssignmentPayload {
   id?: number
-  user_id: number
-  shift_id: number
+  users: number[]
+  shift: number
   start_date: string
   end_date: string
 }
 
 export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
   const crud = useCrud<IShiftAssignment, IShiftAssignmentPayload>({
-    endpoint: '/shifts/assignments',
+    endpoint: '/shifts/assign',
     entityName: 'penugasan shift',
     initialForm: {
-      user_id: 0,
-      shift_id: 0,
+      users: [],
+      shift: 0,
       start_date: '',
       end_date: '',
     },
@@ -38,14 +39,17 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
   })
 
   const formRules = computed(() => ({
-    user_id: {
-      required: helpers.withMessage('Karyawan wajib dipilih', (value: number) => value > 0),
+    users: {
+      required: helpers.withMessage(
+        'Karyawan wajib dipilih',
+        (value: number[]) => value.length > 0,
+      ),
     },
-    shift_id: {
+    shift: {
       required: helpers.withMessage('Shift wajib dipilih', (value: number) => value > 0),
     },
     start_date: { required },
-    end_date: {},
+    end_date: { required },
   }))
 
   async function fetchByUserId(userId: number): Promise<IShiftAssignment[]> {
@@ -74,7 +78,7 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
     crud.loading.value.Index = true
     const currentPage = page ?? crud.indexData.value.pagination.page
     try {
-      const { data } = await get<IApiResponse<IShiftAssignment[]>>(crud.endpoint, {
+      const { data } = await get<IApiResponse<IShiftAssignment[]>>('/shifts/assignments', {
         params: {
           page: currentPage,
           page_size: crud.indexData.value.pagination.page_size,
@@ -97,9 +101,30 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
     }
   }
 
+  async function createAssignment() {
+    crud.loading.value.Form = true
+    try {
+      const payload = {
+        users: crud.form.users,
+        shift: crud.form.shift,
+        start_date: crud.form.start_date,
+        end_date: crud.form.end_date,
+      }
+      await post('/shifts/assign', payload)
+      swal.success('Berhasil', 'Penugasan shift berhasil dibuat.')
+      await fetchAllWithSearch()
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal membuat penugasan shift.'
+      swal.error('Gagal', message)
+      throw error
+    } finally {
+      crud.loading.value.Form = false
+    }
+  }
+
   async function create() {
     try {
-      await crud.create()
+      await createAssignment()
     } catch (error: any) {
       console.error('Failed to create shift assignment', error)
       throw error
@@ -122,6 +147,7 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
     fetchActiveByUserId,
     fetchAllWithSearch,
     create,
+    createAssignment,
     update,
   }
 })

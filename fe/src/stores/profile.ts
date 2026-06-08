@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
-import { get, put, type IApiResponse } from '@/plugins/axios'
+import { get, post, put, type IApiResponse } from '@/plugins/axios'
 import { required, email, minLength, helpers } from '@vuelidate/validators'
+import { useFormError } from '@/composables/useFormError'
 import { uploadFile } from '@/helpers/upload'
 import swal from '@/plugins/swal'
 import storage from '@/helpers/storage'
@@ -35,11 +36,16 @@ export interface IProfilePayload {
   avatar: File | null
 }
 
+export interface IChangePasswordPayload {
+  new_password: string
+}
+
 export const useProfileStore = defineStore('profile', () => {
   const profile = ref<IProfile | null>(null)
   const loading = ref<Record<string, boolean>>({
     Fetch: false,
     Update: false,
+    ChangePassword: false,
   })
 
   const form = reactive<IProfilePayload>({
@@ -63,6 +69,14 @@ export const useProfileStore = defineStore('profile', () => {
         (value: string) => !form.password || value === form.password,
       ),
     },
+  }
+
+  const changePasswordForm = reactive<IChangePasswordPayload>({
+    new_password: '',
+  })
+
+  const changePasswordFormRules = {
+    new_password: { required, minLength: minLength(6) },
   }
 
   async function fetchProfile() {
@@ -144,12 +158,35 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
+  async function changePassword() {
+    loading.value.ChangePassword = true
+    useFormError().clear()
+    try {
+      await post<IApiResponse<void>>('/me/change-password', {
+        new_password: changePasswordForm.new_password,
+      })
+
+      changePasswordForm.new_password = ''
+
+      swal.success('Berhasil', 'Password berhasil diubah.')
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal mengubah password.'
+      swal.error('Gagal', message)
+      throw error
+    } finally {
+      loading.value.ChangePassword = false
+    }
+  }
+
   return {
     profile,
     loading,
     form,
     formRules,
+    changePasswordForm,
+    changePasswordFormRules,
     fetchProfile,
     updateProfile,
+    changePassword,
   }
 })

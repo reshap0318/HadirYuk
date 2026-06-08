@@ -1,6 +1,6 @@
 ---
 title: 01_PRD.md
-version: 1.6.0
+version: 1.5.0
 created: 2026-05-29
 last_modified: 2026-06-08
 ---

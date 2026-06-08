@@ -198,7 +198,7 @@ onMounted(() => {
             wrapper:
               'group hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 h-full',
             card: 'h-full flex flex-col overflow-hidden',
-            body: 'flex flex-col flex-1 p-0',
+            body: 'flex flex-col flex-1 p-0! pb-2!',
           }"
         >
           <!-- Banner Header -->
@@ -267,7 +267,7 @@ onMounted(() => {
           </div>
 
           <!-- Card Body -->
-          <div class="flex flex-col flex-1 py-2">
+          <div class="flex flex-col flex-1 py-2 px-4">
             <!-- Shift Info -->
             <div class="mb-3">
               <div class="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50">

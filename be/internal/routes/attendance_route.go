@@ -9,7 +9,7 @@ import (
 func RegisterAttendanceRoutes(r *gin.RouterGroup, handlers *handlers.Handlers) {
 	attendance := r.Group("/attendance")
 	{
-		attendance.GET("/today-status", handlers.GetTodayStatus)
+		attendance.GET("/today", handlers.GetTodayStatus)
 		attendance.POST("/checkin", handlers.AttendanceCheckIn)
 		attendance.POST("/nearest-office", handlers.GetNearestOffice)
 	}

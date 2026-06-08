@@ -1,6 +1,6 @@
 ---
 title: 04_TDD.md
-version: 1.6.0
+version: 1.5.0
 created: 2026-05-29
 last_modified: 2026-06-08
 ---
@@ -277,7 +277,7 @@ erDiagram
     EMPLOYEE_SHIFTS {
         bigint user_id PK,FK
         bigint shift_id PK,FK
-        date start_date PK
+        date effective_date PK
         date end_date
         datetime created_at
     }
@@ -418,6 +418,7 @@ erDiagram
 | `/api/auth/login` | POST | ❌ | - | `{ "email": "string", "password": "string" }` | `{ "code": 200, "message": "...", "data": { "token": "...", "refresh_token": "...", "user": { "id": 1, "name": "...", "email": "...", "roles": ["..."] } } }` |
 | `/api/auth/logout` | POST | ✅ | - | `{}` | `{ "code": 200, "message": "Logged out successfully" }` |
 | `/api/auth/refresh` | POST | ❌ | - | `{ "refresh_token": "string" }` | `{ "code": 200, "message": "...", "data": { "token": "..." } }` |
+| `/api/auth/change-password` | POST | ✅ | baseline | `{ "current_password": "string", "new_password": "string", "confirm_password": "string" }` | `{ "code": 200, "message": "Password changed successfully" }` |
 | `/api/auth/forgot-password` | POST | ❌ | - | `{ "email": "string" }` | `{ "code": 200, "message": "Reset link sent to email" }` |
 | `/api/auth/reset-password` | POST | ❌ | - | `{ "token": "string", "new_password": "string" }` | `{ "code": 200, "message": "Password reset successfully" }` |
 
@@ -446,9 +447,7 @@ erDiagram
 | `/api/shifts/:id` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/shifts/:id` | PUT | ✅ | `shift.update` | `{ "name": "string", "start_time": "08:00", "end_time": "17:00", "break_duration": 60, "flexi_minutes": 15 }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/shifts/:id` | DELETE | ✅ | `shift.delete` | - | `{ "code": 200, "message": "Shift deleted successfully" }` |
-| `/api/shifts/assign` | POST | ✅ | `shift.assign` | `{ "users": [1,2,3], "shift": 1, "start_date": "...", "end_date": "..." }` | `{ "code": 200, "message": "Shift assigned successfully" }` |
-
-> **Note:** Both `start_date` and `end_date` are required fields.
+| `/api/shifts/assign` | POST | ✅ | `shift.assign` | `{ "users": [1,2,3], "shift": 1, "effective_date": "...", "end_date": "..." }` | `{ "code": 200, "message": "Shift assigned successfully" }` |
 | `/api/shifts/schedule` | GET | ✅ | baseline | `?user=1&month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "schedule": [...] } }` |
 
 ### §4.4 Leave Endpoints
@@ -458,10 +457,10 @@ erDiagram
 | `/api/leave` | POST | ✅ | baseline | `{ "leave_type": 1, "start_date": "...", "end_date": "...", "reason": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/leave` | GET | ✅ | baseline | `?page=1&page_size=20` | Paginated response |
 | `/api/leave/balance` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "annual": { "total": 12, "used": 5, "remaining": 7 }, ... } }` |
-| `/api/leave-types` | GET | ✅ | baseline | - | Paginated response |
-| `/api/leave-types` | POST | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
-| `/api/leave-types/:id` | PUT | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
-| `/api/leave-types/:id` | DELETE | ✅ | `leave.manage-types` | - | `{ "code": 200, "message": "Leave type deleted successfully" }` |
+| `/api/leave/types` | GET | ✅ | baseline | - | Paginated response |
+| `/api/leave/types` | POST | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/leave/types/:id` | PUT | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/leave/types/:id` | DELETE | ✅ | `leave.manage-types` | - | `{ "code": 200, "message": "Leave type deleted successfully" }` |
 
 ### §4.5 User Management Endpoints
 
@@ -531,7 +530,6 @@ erDiagram
 |----------|--------|------|------------|-----------------|------------------|
 | `/api/me` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "id": 1, "name": "...", "email": "...", "avatar": "..." } }` |
 | `/api/me` | PUT | ✅ | baseline | `{ "name": "string", "avatar": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
-| `/api/me/change-password` | POST | ✅ | baseline | `{ "new_password": "string", "confirm_password": "string" }` | `{ "code": 200, "message": "Password changed successfully" }` |
 
 ### §4.12 Notification Endpoints (boilerplate existing)
 
@@ -575,7 +573,7 @@ erDiagram
 | `shift.delete` | DELETE /api/shifts/:id |
 | `shift.assign` | POST /api/shifts/assign |
 | `leave.view-all` | GET /api/leave?user=all |
-| `leave.manage-types` | CRUD /api/leave-types |
+| `leave.manage-types` | CRUD /api/leave/types |
 | `user.index` | GET /api/users, GET /api/users/:id |
 | `user.create` | POST /api/users |
 | `user.update` | PUT /api/users/:id (accepts `roles` array inline) |
@@ -730,7 +728,7 @@ Connection Pool:
 | attendances | qr_code_id | BTREE |
 | leave_requests | user_id + status | COMPOSITE |
 | leave_balances | user_id + leave_type_id + year | COMPOSITE UNIQUE |
-| employee_shifts | user_id + shift_id + start_date | COMPOSITE PK |
+| employee_shifts | user_id + shift_id + effective_date | COMPOSITE PK |
 | qr_codes | code_value | UNIQUE |
 | qr_codes | office_id + is_active + expires_at | COMPOSITE |
 | office_locations | name | BTREE |

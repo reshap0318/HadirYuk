@@ -7,7 +7,7 @@ export type {
 } from './auth'
 
 export { useProfileStore } from './profile'
-export type { IProfile, IProfilePayload } from './profile'
+export type { IProfile, IProfilePayload, IChangePasswordPayload } from './profile'
 
 export { useUserStore } from './user'
 export type { IUser, IUserPayload } from './user'

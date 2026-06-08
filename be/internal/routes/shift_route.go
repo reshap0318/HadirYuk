@@ -12,8 +12,8 @@ func RegisterShiftRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, acc *h
 	shifts := r.Group("/shifts")
 	{
 		shifts.POST("", middleware.RequirePermission(acc, "shift.create"), handlers.ShiftCreate)
-		shifts.GET("", middleware.RequirePermission(acc, "shift.index"), handlers.ShiftGetAll)
-		shifts.GET("/:id", middleware.RequirePermission(acc, "shift.index"), handlers.ShiftGetByID)
+		shifts.GET("", handlers.ShiftGetAll)
+		shifts.GET("/:id", handlers.ShiftGetByID)
 		shifts.PUT("/:id", middleware.RequirePermission(acc, "shift.update"), handlers.ShiftUpdate)
 		shifts.DELETE("/:id", middleware.RequirePermission(acc, "shift.delete"), handlers.ShiftDelete)
 	}

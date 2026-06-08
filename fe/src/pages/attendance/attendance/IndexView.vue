@@ -173,9 +173,7 @@ onBeforeUnmount(() => {
     <!-- Header -->
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">Absensi</h1>
-      <p class="text-sm text-gray-600 mt-1">
-        Catat kehadiran Anda hari ini.
-      </p>
+      <p class="text-sm text-gray-600 mt-1">Catat kehadiran Anda hari ini.</p>
     </div>
 
     <!-- Main Layout: Map Left, Info Right -->

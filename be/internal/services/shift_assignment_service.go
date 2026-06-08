@@ -100,6 +100,95 @@ func (s *Services) ShiftAssignToUser(ctx context.Context, req dtos.ShiftAssignme
 	return &dto, nil
 }
 
+// ShiftBulkAssign assigns a shift to multiple users at once.
+func (s *Services) ShiftBulkAssign(ctx context.Context, req dtos.ShiftBulkAssignRequest) ([]dtos.ShiftAssignmentDTO, error) {
+	s.Logger.LogStart("ShiftBulkAssign", "Bulk assigning shift ID: %d to %d users", req.Shift, len(req.Users))
+
+	// Check shift exists
+	shift, err := s.repo.Shift.FindByID(nil, req.Shift)
+	if err != nil {
+		s.Logger.LogEndWithError("ShiftBulkAssign", "Shift not found: %v", err)
+		return nil, &helpers.FieldError{Field: "shift", Message: "Shift not found"}
+	}
+
+	// Parse dates
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		s.Logger.LogEndWithError("ShiftBulkAssign", "Invalid start_date format: %v", err)
+		return nil, &helpers.FieldError{Field: "start_date", Message: "Invalid date format, use YYYY-MM-DD"}
+	}
+
+	endDate, err := time.Parse("2006-01-02", req.EndDate)
+	if err != nil {
+		s.Logger.LogEndWithError("ShiftBulkAssign", "Invalid end_date format: %v", err)
+		return nil, &helpers.FieldError{Field: "end_date", Message: "Invalid date format, use YYYY-MM-DD"}
+	}
+
+	var results []dtos.ShiftAssignmentDTO
+
+	for _, userID := range req.Users {
+		// Check user exists
+		user, err := s.repo.User.FindByID(nil, userID)
+		if err != nil {
+			s.Logger.LogWarn("ShiftBulkAssign", "User not found, skipping user ID: %d", userID)
+			continue
+		}
+
+		// Check for overlapping active assignment (same user + shift)
+		overlapping, err := s.repo.UserShiftAssignment.FindOverlappingAssignments(nil, userID, req.Shift, startDate, &endDate, 0)
+		if err != nil {
+			s.Logger.LogWarn("ShiftBulkAssign", "Failed to check existing assignment for user ID: %d: %v", userID, err)
+			continue
+		}
+		if len(overlapping) > 0 {
+			s.Logger.LogWarn("ShiftBulkAssign", "User ID: %d already has an overlapping shift assignment, skipping", userID)
+			continue
+		}
+
+		assignment := &models.UserShiftAssignment{
+			UserID:    userID,
+			ShiftID:   req.Shift,
+			StartDate: startDate,
+			IsActive:  true,
+			EndDate:   &endDate,
+		}
+
+		var result *models.UserShiftAssignment
+		res, txErr := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
+			var err error
+			result, err = s.repo.UserShiftAssignment.Create(tx, assignment)
+			if err != nil {
+				return nil, err
+			}
+
+			_ = s.NotificationCreate(ctx, &NotificationCreateParams{
+				Type:    "success",
+				Title:   "Shift Assigned",
+				Message: fmt.Sprintf("Shift %s assigned to %s", shift.Name, user.Name),
+				Data: map[string]interface{}{
+					"user_id":  userID,
+					"shift_id": req.Shift,
+					"user":     user.Name,
+					"shift":    shift.Name,
+				},
+			})
+
+			return result, nil
+		})
+		if txErr != nil {
+			s.Logger.LogWarn("ShiftBulkAssign", "Failed to assign shift to user ID: %d: %v", userID, txErr)
+			continue
+		}
+
+		result = res.(*models.UserShiftAssignment)
+		dto := dtos.ToShiftAssignmentDTO(result)
+		results = append(results, dto)
+	}
+
+	s.Logger.LogEnd("ShiftBulkAssign", "Bulk assign completed: %d of %d users assigned", len(results), len(req.Users))
+	return results, nil
+}
+
 // ShiftGetUserAssignments returns paginated shift assignments for a specific user.
 func (s *Services) ShiftGetUserAssignments(ctx context.Context, userID uint, opts *repositories.QueryOptions) (*repositories.PagedResult[dtos.ShiftAssignmentDTO], error) {
 	if opts == nil {

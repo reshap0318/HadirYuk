@@ -1,5 +1,69 @@
 # CHANGELOG
 
+## v1.6.0 - 2026-06-08
+
+### Change Password Endpoint Moved from Auth to Profile
+
+- **04_TDD.md:** Removed `POST /api/auth/change-password` from §4.1 Authentication Endpoints; added `POST /api/me/change-password` to §4.11 Profile Endpoints; payload: `{ "new_password": "string", "confirm_password": "string" }` (confirm_password is frontend validation to ensure user typed new password correctly)
+- **02_FSD.md:** Removed "Password Change" from Authentication hierarchy tree (§1 Functional Hierarchy); added "Change Password" under Profile hierarchy tree; removed §2.1.3 Password Change subsection; added new §2.14 Profile section with §2.14.1 Change Password (business logic: user input new password + confirm password, validate min 6 chars, validate confirm matches new password, hash and save, invalidate all sessions, user needs to re-login); updated §3.20 Profile Page — Change Password validation: "New password + confirm password, min 6 chars"
+- **05_ITL.md:** Added T-016b task under Phase 1 (Profile) for `POST /api/me/change-password` endpoint
+
+### Validation Results
+
+- ✅ `POST /api/me/change-password` added to Profile endpoints with `{ new_password, confirm_password }` payload
+- ✅ FSD hierarchy tree updated — Password Change moved from Auth to Profile
+- ✅ FSD §2.1.3 removed, new §2.14 Profile section added with §2.14.1 Change Password (includes confirm password validation)
+- ✅ FSD §3.20 Profile Page table updated with "New password + confirm password, min 6 chars"
+- ✅ ITL T-016b added with correct FSD/TDD cross-references
+- ✅ All documents have YAML frontmatter with version 1.6.0
+
+## v1.5.0 - 2026-06-08
+
+### Permission Cleanup & flexi_minutes Addition
+
+- **03_Role_Matrix.md:** Removed `user.assign-role` permission (role assignment now inline via `PUT /api/users/:id`); removed `role.assign-permission` permission (permission assignment now inline via `PUT /api/roles/:id`); updated matrix table to remove both permission rows
+- **04_TDD.md:** Added `flexi_minutes` field to SHIFTS ERD table; added `flexi_minutes` to POST /api/shifts and PUT /api/shifts/:id request payloads; updated Password Policy from "Minimum 8 characters" → "Minimum 6 characters"
+- **02_FSD.md:** Updated §2.1.3 Password Change — changed min 8 char → min 6 char; updated §3.1 Login Page — changed min 8 → min 6; updated §3.3 Reset Password Page — changed min 8 → min 6; added "Flexi Minutes" row to §3.7 Shift Management Form
+
+### Validation Results
+
+- ✅ Permission list reduced from 34 to 32 entries
+- ✅ `user.assign-role` and `role.assign-permission` removed from all documents
+- ✅ `flexi_minutes` added to Shift ERD, API contract, and FSD form
+- ✅ Password minLength consistently set to 6 across all documents
+- ✅ All documents have YAML frontmatter with version 1.5.0
+
+## v1.4.0 - 2026-06-08
+
+### Endpoint Consolidation & Field Naming Alignment
+
+- **04_TDD.md:** Removed `PUT /api/roles/:id/permissions` from §4.6 — permissions now handled inline via `PUT /api/roles/:id` which accepts `permissions` array; removed `POST /api/users/:id/roles` from §4.5 — roles now handled inline via `PUT /api/users/:id` which accepts `roles` array; updated Permission-to-API Mapping to reflect inline handling; updated upload response from `document_id` → `uuid`; updated check-in/check-out payloads from `{ "latitude", "longitude", "document_id" }` → `{ "lat", "lng", "foto" }`; removed `confirm_password` from reset-password payload; removed `join_date` from POST /api/users payload
+- **02_FSD.md:** Updated §2.1.5 Reset Password — removed confirm_password (frontend handles confirmation validation); updated §2.2.1 Check-in — changed `document_id` to `foto` (UUID), `latitude`/`longitude` to `lat`/`lng`; updated §2.2.3 Check-out — same field changes; updated §2.6.1 Create Employee — removed `join_date` from input, noted it's auto-set to `created_at`; updated §3.9 User Management Form — removed "Join Date" row; updated §3.18 Location Management — removed "Coordinate Input" row (coordinates only via map click); updated §5.1 flow diagram — changed `document_id` to `foto` (uuid); updated §6.2 validation — changed "document_id tidak valid" to "foto tidak valid"
+- **05_ITL.md:** Updated T-008 — changed TDD Ref to `PUT /api/roles/:id` (inline permissions); updated T-009 — changed TDD Ref to `PUT /api/users/:id` (inline roles); updated T-027, T-028, T-029, T-030, T-031 — changed all `document_id` references to `foto` (UUID from upload), `latitude`/`longitude` to `lat`/`lng`; updated Testing Checklist T-028 description
+- **01_PRD.md:** Version bump only
+- **03_Role_Matrix.md:** Version bump only
+
+### Field Naming Convention Summary (Updated)
+
+| Before | After | Used In |
+|--------|-------|---------|
+| `latitude` | `lat` | POST /api/attendance/checkin, POST /api/attendance/checkout |
+| `longitude` | `lng` | POST /api/attendance/checkin, POST /api/attendance/checkout |
+| `document_id` | `foto` | POST /api/attendance/checkin, POST /api/attendance/checkout |
+| Upload response `document_id` | Upload response `uuid` | POST /api/upload |
+| `confirm_password` | (removed) | POST /api/auth/reset-password |
+| `join_date` | (auto-set) | POST /api/users |
+
+### Validation Results
+
+- ✅ Removed dedicated endpoints consolidated into their parent PUT endpoints
+- ✅ Upload response field name matches implementation (`uuid` not `document_id`)
+- ✅ Attendance payload field names match implementation (`lat`, `lng`, `foto`)
+- ✅ Reset password payload simplified (no `confirm_password` — frontend-only validation)
+- ✅ User creation no longer requires manual `join_date` input
+- ✅ Location form no longer shows manual coordinate input fields
+- ✅ All documents have YAML frontmatter with version 1.4.0
+
 ## v1.3.1 - 2026-06-08
 
 ### Mermaid Diagram Fixes

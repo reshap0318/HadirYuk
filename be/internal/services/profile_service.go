@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"github.com/reshap0318/hadirYuk/internal/dtos"
@@ -101,4 +103,53 @@ func (s *Services) ProfileUpdate(ctx context.Context, userID uint, req dtos.Prof
 
 	s.Logger.LogEnd("ProfileUpdate", "Profile updated for user: %s", dto.Email)
 	return &dto, nil
+}
+
+// ProfileChangePassword changes the authenticated user's password.
+func (s *Services) ProfileChangePassword(ctx context.Context, userID uint, req dtos.ChangePasswordRequest) error {
+	s.Logger.LogStart("ProfileChangePassword", "Changing password for user ID: %d", userID)
+
+	existing, err := s.repo.User.FindByID(nil, userID)
+	if err != nil {
+		s.Logger.LogEndWithError("ProfileChangePassword", "User not found: %v", err)
+		return helpers.ErrNotFound
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), 12)
+	if err != nil {
+		s.Logger.LogEndWithError("ProfileChangePassword", "Failed to hash password: %v", err)
+		return err
+	}
+
+	if err := s.repo.TxManager.WithinTransaction(func(tx *gorm.DB) error {
+		_, err := s.repo.User.UpdateMap(tx, &models.User{ID: userID}, map[string]interface{}{
+			"password": string(hashedPassword),
+		})
+		return err
+	}); err != nil {
+		s.Logger.LogEndWithError("ProfileChangePassword", "Failed to update password: %v", err)
+		return err
+	}
+
+	// Invalidate Redis session cache — user must re-login
+	if s.RedisClient.IsCacheAvailable() {
+		sessionKey := fmt.Sprintf("session:%d", existing.ID)
+		if err := s.RedisClient.Delete(sessionKey); err != nil {
+			s.Logger.LogWarn("ProfileChangePassword", "Failed to delete session cache: %v", err)
+		} else {
+			s.Logger.LogStep("ProfileChangePassword", "Session cache invalidated")
+		}
+	}
+
+	s.Access.Invalidate(userID)
+
+	_ = s.NotificationCreate(ctx, &NotificationCreateParams{
+		Type:    "success",
+		Title:   "Password Changed",
+		Message: "Your password has been changed successfully. Please re-login.",
+		Data:    map[string]interface{}{"user_id": userID, "email": existing.Email},
+	})
+
+	s.Logger.LogEnd("ProfileChangePassword", "Password changed for user: %s", existing.Email)
+	return nil
 }

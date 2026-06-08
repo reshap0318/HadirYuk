@@ -13,5 +13,6 @@ func RegisterProfileRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, acc 
 	{
 		me.GET("", handlers.ProfileGet)
 		me.PUT("", handlers.ProfileUpdate)
+		me.POST("/change-password", handlers.ProfileChangePassword)
 	}
 }

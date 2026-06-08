@@ -14,6 +14,14 @@ type ShiftAssignmentRequest struct {
 	EndDate   string `json:"end_date"`
 }
 
+// ShiftBulkAssignRequest is used for bulk assigning a shift to multiple users.
+type ShiftBulkAssignRequest struct {
+	Users     []uint `json:"users" validate:"required,min=1"`
+	Shift     uint   `json:"shift" validate:"required"`
+	StartDate string `json:"start_date" validate:"required"`
+	EndDate   string `json:"end_date" validate:"required"`
+}
+
 type ShiftAssignmentUpdateRequest struct {
 	ShiftID   uint   `json:"shift_id"`
 	StartDate string `json:"start_date"`

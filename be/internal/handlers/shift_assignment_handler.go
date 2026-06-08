@@ -10,9 +10,9 @@ import (
 	"github.com/reshap0318/hadirYuk/internal/repositories"
 )
 
-// ShiftAssignToUser handles POST /api/shifts/assignments
+// ShiftAssignToUser handles POST /api/shifts/assign (bulk assignment)
 func (h *Handlers) ShiftAssignToUser(c *gin.Context) {
-	var req dtos.ShiftAssignmentRequest
+	var req dtos.ShiftBulkAssignRequest
 	if err := c.BindJSON(&req); err != nil {
 		helpers.BadRequest(c, "Invalid JSON payload")
 		return
@@ -23,12 +23,12 @@ func (h *Handlers) ShiftAssignToUser(c *gin.Context) {
 		return
 	}
 
-	dto, err := h.svcs.ShiftAssignToUser(c.Request.Context(), req)
-	if helpers.HandleError(c, err, "Failed to assign shift") {
+	results, err := h.svcs.ShiftBulkAssign(c.Request.Context(), req)
+	if helpers.HandleError(c, err, "Failed to assign shifts") {
 		return
 	}
 
-	helpers.Created(c, "Shift assigned successfully", dto)
+	helpers.Created(c, "Shifts assigned successfully", results)
 }
 
 // ShiftGetUserAssignments handles GET /api/shifts/assignments and GET /api/shifts/assignments/:user_id

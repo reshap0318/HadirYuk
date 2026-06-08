@@ -104,7 +104,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
   async function fetchTodayStatus(): Promise<void> {
     try {
       const { get } = await import('@/plugins/axios')
-      const { data } = await get<IApiResponse<ITodayStatus>>('/attendance/today-status')
+      const { data } = await get<IApiResponse<ITodayStatus>>('/attendance/today')
       todayStatus.value = data.data
     } catch (error: any) {
       console.error('Failed to fetch today status', error)
