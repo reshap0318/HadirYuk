@@ -59,6 +59,7 @@ func (s *Services) ShiftCreate(ctx context.Context, req dtos.ShiftRequest) (*dto
 		StartTime:     req.StartTime,
 		EndTime:       req.EndTime,
 		BreakDuration: req.BreakDuration,
+		FlexiMinutes:  req.FlexiMinutes,
 		ColorCode:     req.ColorCode,
 		TotalHours:    calculateTotalHours(req.StartTime, req.EndTime, req.BreakDuration),
 	}
@@ -152,7 +153,7 @@ func (s *Services) ShiftUpdate(ctx context.Context, id uint, req dtos.ShiftReque
 		return nil, helpers.ErrNotFound
 	}
 
-	exists, err := s.repo.Shift.Exists(nil, map[string]interface{}{"name": req.Name, "id <>": id})
+	exists, err := s.repo.Shift.ExistsByCondition(nil, "name = ? AND id <> ?", req.Name, id)
 	if err != nil {
 		s.Logger.LogEndWithError("ShiftUpdate", "Failed to check duplicate: %v", err)
 		return nil, err
@@ -167,6 +168,7 @@ func (s *Services) ShiftUpdate(ctx context.Context, id uint, req dtos.ShiftReque
 		StartTime:     req.StartTime,
 		EndTime:       req.EndTime,
 		BreakDuration: req.BreakDuration,
+		FlexiMinutes:  req.FlexiMinutes,
 		ColorCode:     req.ColorCode,
 		TotalHours:    calculateTotalHours(req.StartTime, req.EndTime, req.BreakDuration),
 	}

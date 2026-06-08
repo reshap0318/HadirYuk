@@ -12,6 +12,7 @@ type Shift struct {
 	StartTime     string         `gorm:"type:varchar(5);not null" json:"start_time"`
 	EndTime       string         `gorm:"type:varchar(5);not null" json:"end_time"`
 	BreakDuration int            `gorm:"not null;default:0" json:"break_duration"`
+	FlexiMinutes  int            `gorm:"not null;default:10" json:"flexi_minutes"`
 	ColorCode     string         `gorm:"type:varchar(7);not null" json:"color_code"`
 	TotalHours    float64        `gorm:"type:decimal(5,2)" json:"total_hours"`
 	CreatedAt     time.Time      `json:"created_at"`

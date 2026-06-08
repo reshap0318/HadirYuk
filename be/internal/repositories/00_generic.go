@@ -447,3 +447,35 @@ func (r *GenericRepository[T]) ExistsByField(tx *gorm.DB, filter *T) (bool, erro
 
 	return count > 0, nil
 }
+
+// ExistsByCondition checks if a record exists using a raw WHERE condition
+func (r *GenericRepository[T]) ExistsByCondition(tx *gorm.DB, condition string, args ...interface{}) (bool, error) {
+	db := r.getDB(tx)
+	var instance *T
+	var count int64
+
+	if err := db.Model(&instance).Where(condition, args...).Limit(1).Count(&count).Error; err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+// FindByCondition finds records using a raw WHERE condition with optional preloads
+func (r *GenericRepository[T]) FindByCondition(tx *gorm.DB, condition string, preloads ...string) ([]T, error) {
+	db := r.getDB(tx)
+	var instance *T
+	query := db.Model(&instance).Where(condition)
+
+	// Preload relations
+	for _, preload := range preloads {
+		query = query.Preload(preload)
+	}
+
+	datas := []T{}
+	if err := query.Find(&datas).Error; err != nil {
+		return nil, err
+	}
+
+	return datas, nil
+}

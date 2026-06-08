@@ -32,3 +32,6 @@ export type { ILeaveType, ILeaveTypePayload } from './leaveType'
 
 export { useShiftAssignmentStore } from './shiftAssignment'
 export type { IShiftAssignment, IShiftAssignmentPayload } from './shiftAssignment'
+
+export { useAttendanceStore } from './attendance'
+export type { ICheckInPayload, ICheckInResponse, IOfficeLocation } from './attendance'

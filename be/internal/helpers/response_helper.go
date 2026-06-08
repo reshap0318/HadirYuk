@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -121,6 +122,17 @@ func HandleError(c *gin.Context, err error, fallbackMsg string) bool {
 		return true
 	}
 
+	// Handle error with custom CustomError type
+	var customErr *CustomError
+	if errors.As(err, &customErr) {
+		status := customErr.Status
+		if status == 0 {
+			status = http.StatusBadRequest
+		}
+		ErrorResponse(c, status, customErr.Message)
+		return true
+	}
+
 	switch err {
 	case ErrNotFound:
 		NotFound(c, "Data not found")
@@ -129,6 +141,10 @@ func HandleError(c *gin.Context, err error, fallbackMsg string) bool {
 	case ErrInvalidToken, ErrExpiredToken, ErrInvalidCredential, ErrTokenExpired, ErrTokenUsed, ErrTokenInvalid:
 		Unauthorized(c, err.Error())
 	default:
+		if fallbackMsg == "" {
+			BadRequest(c, err.Error())
+			return true
+		}
 		InternalServerError(c, fallbackMsg)
 	}
 	return true

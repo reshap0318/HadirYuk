@@ -1,3 +1,5 @@
 export { useCrud } from './useCrud'
 export type { UseCrudOptions } from './useCrud'
 export { withFile } from './withFile'
+export { useCamera } from './useCamera'
+export type { UseCameraReturn } from './useCamera'

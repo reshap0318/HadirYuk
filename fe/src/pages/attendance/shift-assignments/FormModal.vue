@@ -165,6 +165,7 @@ defineExpose({ show, close })
           :searchable="true"
           :loading="usersLoading"
           :validation="v$.user_id"
+          :disabled="isEdit"
         />
 
         <!-- Shift Select -->
@@ -208,6 +209,12 @@ defineExpose({ show, close })
                 <span class="font-medium text-gray-900">{{
                   formatDuration(selectedShift.break_duration)
                 }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-600">Flexi:</span>
+                <span class="font-medium text-gray-900"
+                  >{{ selectedShift.flexi_minutes }} menit</span
+                >
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-gray-600">Total:</span>
