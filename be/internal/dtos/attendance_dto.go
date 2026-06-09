@@ -27,11 +27,14 @@ type NearestOfficeResponse struct {
 }
 
 type AttendanceStatusResponse struct {
-	HasCheckedIn bool       `json:"has_checked_in"`
-	TimeIn       *time.Time `json:"time_in,omitempty"`
-	ShiftID      uint       `json:"shift_id,omitempty"`
-	Status       string     `json:"status,omitempty"`
-	Distance     *float64   `json:"distance_meters,omitempty"`
+	HasCheckedIn  bool       `json:"has_checked_in"`
+	TimeIn        *time.Time `json:"time_in,omitempty"`
+	HasCheckedOut bool       `json:"has_checked_out"`
+	TimeOut       *time.Time `json:"time_out,omitempty"`
+	Duration      string     `json:"duration,omitempty"`
+	ShiftID       uint       `json:"shift_id,omitempty"`
+	Status        string     `json:"status,omitempty"`
+	Distance      *float64   `json:"distance_meters,omitempty"`
 }
 
 type AttendanceDTO struct {
@@ -39,13 +42,22 @@ type AttendanceDTO struct {
 	UserID         uint       `json:"user_id"`
 	ShiftID        uint       `json:"shift_id"`
 	Date           time.Time  `json:"date"`
-	TimeIn         *time.Time `json:"time_in"`
-	Lat            *float64   `json:"lat"`
-	Lng            *float64   `json:"lng"`
 	OfficeID       uint       `json:"office_id"`
 	Status         string     `json:"status"`
-	DistanceMeters *float64   `json:"distance_meters"`
+
+	// Check-in
+	TimeIn         *time.Time `json:"time_in"`
+	LatIn          *float64   `json:"lat_in"`
+	LngIn          *float64   `json:"lng_in"`
 	ImageIn        string     `json:"image_in"`
+	DistanceMeters *float64   `json:"distance_meters"`
+
+	// Check-out
+	TimeOut        *time.Time `json:"time_out"`
+	LatOut         *float64   `json:"lat_out"`
+	LngOut         *float64   `json:"lng_out"`
+	ImageOut       string     `json:"image_out"`
+	Duration       string     `json:"duration"`
 }
 
 func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
@@ -54,13 +66,18 @@ func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
 		UserID:         a.UserID,
 		ShiftID:        a.ShiftID,
 		Date:           a.Date,
-		TimeIn:         a.TimeIn,
-		Lat:            a.Lat,
-		Lng:            a.Lng,
 		OfficeID:       a.OfficeID,
 		Status:         a.Status,
-		DistanceMeters: a.DistanceMeters,
+		TimeIn:         a.TimeIn,
+		LatIn:          a.LatIn,
+		LngIn:          a.LngIn,
 		ImageIn:        a.ImageIn,
+		DistanceMeters: a.DistanceMeters,
+		TimeOut:        a.TimeOut,
+		LatOut:         a.LatOut,
+		LngOut:         a.LngOut,
+		ImageOut:       a.ImageOut,
+		Duration:       a.Duration,
 	}
 }
 

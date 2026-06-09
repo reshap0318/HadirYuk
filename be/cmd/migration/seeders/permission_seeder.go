@@ -38,7 +38,10 @@ func SeedPermissions(db *gorm.DB) map[string]uint {
 		{"shift.create", "Can create new shift"},
 		{"shift.update", "Can update shift"},
 		{"shift.delete", "Can delete shift"},
-		{"shift.assign", "Can assign shift to employee"},
+		{"shift-assign.index", "Can view shift assignments"},
+		{"shift-assign.create", "Can assign shift to employee"},
+		{"shift-assign.update", "Can update shift assignment"},
+		{"shift-assign.delete", "Can delete shift assignment"},
 		// Leave
 		{"leave.submit", "Can submit leave request"},
 		{"leave.view", "Can view own leave history"},

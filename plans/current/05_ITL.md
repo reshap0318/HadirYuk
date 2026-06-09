@@ -307,7 +307,29 @@ last_modified: 2026-06-08
 - **FSD Ref:**
   - §2.3.2 Functional Requirements — Assign Shift to Employee
 - **TDD Ref:**
-  - POST /api/shifts/assign (request payload uses `shift`, `users` — not `shift_id`, `user_ids`)
+  - POST /api/shifts/assignments (request payload uses `shift`, `users` — not `shift_id`, `user_ids`)
+
+### T-021b: Backend — Update Shift Assignment Endpoint
+
+- **Feature/Module:** Shift Assignment
+- **Priority:** P0
+- **Estimated Effort:** 2h
+- **Status:** [x]
+- **FSD Ref:**
+  - §2.3.2 Functional Requirements — Assign Shift to Employee
+- **TDD Ref:**
+  - PUT /api/shifts/assignments/:id (request payload uses `shift`, `users`, `start_date`, `end_date`)
+
+### T-021c: Backend — Delete Shift Assignment Endpoint
+
+- **Feature/Module:** Shift Assignment
+- **Priority:** P0
+- **Estimated Effort:** 1h
+- **Status:** [x]
+- **FSD Ref:**
+  - §2.3.2 Functional Requirements — Assign Shift to Employee
+- **TDD Ref:**
+  - DELETE /api/shifts/assignments/:id
 
 ### T-022: Frontend — Form Assign Shift ke Multiple Employee
 
@@ -318,7 +340,20 @@ last_modified: 2026-06-08
 - **FSD Ref:**
   - §2.3.2 Functional Requirements — Assign Shift to Employee
 - **TDD Ref:**
-  - POST /api/shifts/assign (sends `shift`, `users` — not `shift_id`, `user_ids`)
+  - POST /api/shifts/assignments (sends `shift`, `users` — not `shift_id`, `user_ids`)
+
+### T-022b: Frontend — Shift Assignment List (View, Edit, Delete)
+
+- **Feature/Module:** Shift Assignment
+- **Priority:** P0
+- **Estimated Effort:** 3h
+- **Status:** [x]
+- **FSD Ref:**
+  - §2.3.2 Functional Requirements — Assign Shift to Employee
+- **TDD Ref:**
+  - GET /api/shifts/assignments
+  - PUT /api/shifts/assignments/:id
+  - DELETE /api/shifts/assignments/:id
 
 ### T-023: Backend — Get Employee Schedule Endpoint
 
@@ -359,12 +394,12 @@ last_modified: 2026-06-08
 - **Feature/Module:** Attendance Check-in
 - **Priority:** P0
 - **Estimated Effort:** 4h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
   - §3.5 User Interaction — Attendance Check-in (Geotagging)
 - **TDD Ref:**
-  - POST /api/attendance/checkin (receives `lat`, `lng`, `foto` where `foto` = UUID from upload)
+  - POST /api/attendance/checkin (receives `lat`, `lng`, `image` where `image` = UUID from upload)
   - POST /api/upload (used by frontend before check-in)
 
 ### T-028: Backend — Photo UUID Validation for Attendance Evidence
@@ -372,13 +407,13 @@ last_modified: 2026-06-08
 - **Feature/Module:** Attendance Check-in
 - **Priority:** P0
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
   - §2.2.3 Functional Requirements — Check-out (Geotagging + Photo Evidence)
 - **TDD Ref:**
-  - POST /api/attendance/checkin (validates `foto`)
-  - POST /api/attendance/checkout (validates `foto`)
+  - POST /api/attendance/checkin (validates `image`)
+  - POST /api/attendance/checkout (validates `image`)
   - POST /api/upload (returns `uuid`)
 
 ### T-029: Frontend — Check-in Page (Location + Camera + Photo Upload → foto UUID)
@@ -386,13 +421,13 @@ last_modified: 2026-06-08
 - **Feature/Module:** Attendance Check-in
 - **Priority:** P0
 - **Estimated Effort:** 5h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
   - §3.5 User Interaction — Attendance Check-in (Geotagging)
   - §5.1 Feature Logic Flow — Check-in (Geotagging + Photo Evidence) Flow
 - **TDD Ref:**
-  - POST /api/attendance/checkin (sends `lat`, `lng`, `foto`)
+  - POST /api/attendance/checkin (sends `lat`, `lng`, `image`)
   - POST /api/upload (upload photo first, get `uuid`)
 
 ### T-030: Backend — Check-out Geotagging + Duration Calculation + Photo Evidence
@@ -400,23 +435,24 @@ last_modified: 2026-06-08
 - **Feature/Module:** Attendance Check-out
 - **Priority:** P0
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.3 Functional Requirements — Check-out (Geotagging + Photo Evidence)
 - **TDD Ref:**
-  - POST /api/attendance/checkout (receives `lat`, `lng`, `foto` where `foto` = UUID from upload)
+  - POST /api/attendance/checkout (receives `lat`, `lng`, `image` where `image` = UUID from upload)
   - POST /api/upload (used by frontend before check-out)
 
-### T-031: Frontend — Check-out Page (Location + Camera + Photo Upload → foto UUID)
+### T-031: Frontend — Combined Check-in/Check-out Page (Location + Camera + Photo Upload → image UUID)
 
 - **Feature/Module:** Attendance Check-out
 - **Priority:** P0
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** Digabung dengan T-029 dalam satu halaman — tombol berubah dari Check In → Check Out → Selesai
 - **FSD Ref:**
   - §2.2.3 Functional Requirements — Check-out (Geotagging + Photo Evidence)
 - **TDD Ref:**
-  - POST /api/attendance/checkout (sends `lat`, `lng`, `foto`)
+  - POST /api/attendance/checkout (sends `lat`, `lng`, `image`)
   - POST /api/upload (upload photo first, get `uuid`)
 
 ### T-033: Backend — Generate QR Code with Signature + Expiry
@@ -1109,9 +1145,9 @@ last_modified: 2026-06-08
 | Phase                             | Total Tasks | Completed | Remaining | Est. Hours |
 | --------------------------------- | ----------- | --------- | --------- | ---------- |
 | Phase 1 (Foundation)              | 20          | 20        | 0         | ~48h       |
-| Phase 2 (Core Attendance)         | 25          | 0         | 25        | ~66h       |
+| Phase 2 (Core Attendance)         | 28          | 13        | 15        | ~72h       |
 | Phase 3 (Self-Service)            | 13          | 0         | 13        | ~28h       |
 | Phase 4 (HR Operations)           | 15          | 0         | 15        | ~38h       |
 | Phase 5 (Analytics)               | 8           | 0         | 8         | ~20h       |
 | Phase 6 (Face Recognition — Opt.) | 6           | 0         | 6         | ~20h       |
-| **Total**                         | **87**      | **20**    | **67**    | **~220h**  |
+| **Total**                         | **90**      | **33**    | **57**    | **~226h**  |

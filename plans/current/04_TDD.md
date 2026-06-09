@@ -423,13 +423,13 @@ erDiagram
 
 ### §4.2 Attendance Endpoints
 
-> **Note:** Photo field in check-in/check-out endpoints uses `foto` (UUID) obtained from `POST /api/upload`. Frontend MUST upload photo first via `/api/upload`, then pass the returned `uuid` as `foto` field to check-in/check-out. Photo is for **evidence purposes only**. No face recognition matching is performed unless the optional face recognition feature is enabled.
+> **Note:** Photo field in check-in/check-out endpoints uses `image` (UUID) obtained from `POST /api/upload`. Frontend MUST upload photo first via `/api/upload`, then pass the returned `uuid` as `image` field to check-in/check-out. Photo is for **evidence purposes only**. No face recognition matching is performed unless the optional face recognition feature is enabled.
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/attendance/checkin` | POST | ✅ | baseline | `{ "lat": float, "lng": float, "foto": "uuid-string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
+| `/api/attendance/checkin` | POST | ✅ | baseline | `{ "lat": float, "lng": float, "image": "uuid-string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
 | `/api/attendance/checkin/qr` | POST | ✅ | baseline | `{ "qr_code": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
-| `/api/attendance/checkout` | POST | ✅ | baseline | `{ "lat": float, "lng": float, "foto": "uuid-string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
+| `/api/attendance/checkout` | POST | ✅ | baseline | `{ "lat": float, "lng": float, "image": "uuid-string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
 | `/api/attendance/checkout/qr` | POST | ✅ | baseline | `{ "qr_code": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
 | `/api/attendance/history` | GET | ✅ | baseline | `?date_from=...&date_to=...&page=1&page_size=20` | Paginated response |
 | `/api/attendance/today` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "status": "checked_in", "check_in_time": "...", "shift": {...} } }` |
@@ -446,10 +446,15 @@ erDiagram
 | `/api/shifts/:id` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/shifts/:id` | PUT | ✅ | `shift.update` | `{ "name": "string", "start_time": "08:00", "end_time": "17:00", "break_duration": 60, "flexi_minutes": 15 }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/shifts/:id` | DELETE | ✅ | `shift.delete` | - | `{ "code": 200, "message": "Shift deleted successfully" }` |
-| `/api/shifts/assign` | POST | ✅ | `shift.assign` | `{ "users": [1,2,3], "shift": 1, "start_date": "...", "end_date": "..." }` | `{ "code": 200, "message": "Shift assigned successfully" }` |
+| `/api/shifts/assignments` | POST | ✅ | `shift-assign.create` | `{ "users": [1,2,3], "shift": 1, "start_date": "...", "end_date": "..." }` | `{ "code": 200, "message": "Shift assigned successfully" }` |
+| `/api/shifts/assignments/:id` | PUT | ✅ | `shift-assign.update` | `{ "users": [1,2,3], "shift": 1, "start_date": "...", "end_date": "..." }` | `{ "code": 200, "message": "Shift assignment updated successfully" }` |
+| `/api/shifts/assignments/:id` | DELETE | ✅ | `shift-assign.delete` | - | `{ "code": 200, "message": "Shift assignment deleted successfully" }` |
 
 > **Note:** Both `start_date` and `end_date` are required fields.
 | `/api/shifts/schedule` | GET | ✅ | baseline | `?user=1&month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "schedule": [...] } }` |
+| `/api/shifts/assignments` | GET | ✅ | `shift-assign.index` | `?page=1&page_size=20&search=string` | Paginated response |
+| `/api/shifts/assignments/:user_id` | GET | ✅ | `shift-assign.index` | - | `[{ "id": 1, "user_id": 1, "shift_id": 1, "start_date": "...", "end_date": "...", "is_active": true }]` |
+| `/api/shifts/assignments/:user_id/active` | GET | ✅ | `shift-assign.index` | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 
 ### §4.4 Leave Endpoints
 
@@ -573,7 +578,10 @@ erDiagram
 | `shift.create` | POST /api/shifts |
 | `shift.update` | PUT /api/shifts/:id |
 | `shift.delete` | DELETE /api/shifts/:id |
-| `shift.assign` | POST /api/shifts/assign |
+| `shift-assign.create` | POST /api/shifts/assignments |
+| `shift-assign.update` | PUT /api/shifts/assignments/:id |
+| `shift-assign.delete` | DELETE /api/shifts/assignments/:id |
+| `shift-assign.index` | GET /api/shifts/assignments, GET /api/shifts/assignments/:user_id, GET /api/shifts/assignments/:user_id/active |
 | `leave.view-all` | GET /api/leave?user=all |
 | `leave.manage-types` | CRUD /api/leave-types |
 | `user.index` | GET /api/users, GET /api/users/:id |

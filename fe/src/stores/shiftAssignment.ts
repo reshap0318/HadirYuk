@@ -26,7 +26,7 @@ export interface IShiftAssignmentPayload {
 
 export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
   const crud = useCrud<IShiftAssignment, IShiftAssignmentPayload>({
-    endpoint: '/shifts/assign',
+    endpoint: '/shifts/assignments',
     entityName: 'penugasan shift',
     initialForm: {
       users: [],
@@ -110,13 +110,9 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
         start_date: crud.form.start_date,
         end_date: crud.form.end_date,
       }
-      await post('/shifts/assign', payload)
+      await post('/shifts/assignments', payload)
       swal.success('Berhasil', 'Penugasan shift berhasil dibuat.')
       await fetchAllWithSearch()
-    } catch (error: any) {
-      const message = error?.response?.data?.message || 'Gagal membuat penugasan shift.'
-      swal.error('Gagal', message)
-      throw error
     } finally {
       crud.loading.value.Form = false
     }
@@ -131,15 +127,6 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
     }
   }
 
-  async function update(id: number) {
-    try {
-      await crud.update(id)
-    } catch (error: any) {
-      console.error('Failed to update shift assignment', error)
-      throw error
-    }
-  }
-
   return {
     ...crud,
     formRules,
@@ -148,6 +135,5 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
     fetchAllWithSearch,
     create,
     createAssignment,
-    update,
   }
 })

@@ -42,7 +42,15 @@ func (s *Services) GetTodayStatus(ctx context.Context) (*dtos.AttendanceStatusRe
 		response.ShiftID = existing.ShiftID
 		response.Status = existing.Status
 		response.Distance = existing.DistanceMeters
-		s.Logger.LogEnd("GetTodayStatus", "User %d already checked in at %v", userID, *existing.TimeIn)
+
+		if existing.TimeOut != nil {
+			response.HasCheckedOut = true
+			response.TimeOut = existing.TimeOut
+			response.Duration = existing.Duration
+			s.Logger.LogEnd("GetTodayStatus", "User %d checked in at %v, checked out at %v", userID, *existing.TimeIn, *existing.TimeOut)
+		} else {
+			s.Logger.LogEnd("GetTodayStatus", "User %d checked in at %v, not yet checked out", userID, *existing.TimeIn)
+		}
 	} else {
 		s.Logger.LogEnd("GetTodayStatus", "User %d has not checked in today", userID)
 	}
@@ -125,7 +133,7 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 	maxSizeMB := 5.0
 	if fileMeta.SizeMB > maxSizeMB {
 		s.Logger.LogEndWithError("AttendanceCheckIn", "Photo size too large: %.2fMB", fileMeta.SizeMB)
-		return nil, &helpers.CustomError{Message: fmt.Sprintf("Ukuran foto terlalu besar (maks %dMB)", maxSizeMB)}
+		return nil, &helpers.CustomError{Message: fmt.Sprintf("Ukuran foto terlalu besar (maks %.0fMB)", maxSizeMB)}
 	}
 
 	s.Logger.LogStep("AttendanceCheckIn", "Photo validated: %s, size: %.2fMB, ext: %s", req.Image, fileMeta.SizeMB, fileMeta.Extension)
@@ -240,8 +248,8 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 		ShiftID:        userShift.ShiftID,
 		Date:           today,
 		TimeIn:         &now,
-		Lat:            &req.Lat,
-		Lng:            &req.Lng,
+		LatIn:          &req.Lat,
+		LngIn:          &req.Lng,
 		OfficeID:       nearestOffice.ID,
 		Status:         status,
 		DistanceMeters: &minDistance,
@@ -280,6 +288,153 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 	dto := dtos.ToAttendanceDTO(result)
 	s.Logger.LogEnd("AttendanceCheckIn", "Check-in successful: user %d, status %s, distance %.2fm", userID, status, minDistance)
 	return &dto, nil
+}
+
+// AttendanceCheckOut handles the check-out process with geotagging, photo evidence, and duration calculation.
+func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCheckInRequest) (*dtos.AttendanceDTO, error) {
+	s.Logger.LogStart("AttendanceCheckOut", "Processing check-out for user")
+
+	userID := helpers.GetCallerID(ctx)
+	if userID == 0 {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "Invalid token: caller ID not found")
+		return nil, helpers.ErrInvalidToken
+	}
+
+	// Validate photo UUID - check file exists in tmp
+	s.Logger.LogStep("AttendanceCheckOut", "Validating photo evidence UUID: %s", req.Image)
+	fileMeta, err := helpers.GetFileMetadata(req.Image, "storage/tmp")
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "Photo validation failed: %v", err)
+		return nil, &helpers.CustomError{Message: "Foto bukti tidak valid atau tidak ditemukan"}
+	}
+
+	// Validate file extension
+	allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
+	if !allowedExts[fileMeta.Extension] {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "Photo extension not allowed: %s", fileMeta.Extension)
+		return nil, &helpers.CustomError{Message: "Format foto tidak didukung. Gunakan JPG, PNG, atau WEBP"}
+	}
+
+	// Validate file size (max 5MB)
+	maxSizeMB := 5.0
+	if fileMeta.SizeMB > maxSizeMB {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "Photo size too large: %.2fMB", fileMeta.SizeMB)
+		return nil, &helpers.CustomError{Message: fmt.Sprintf("Ukuran foto terlalu besar (maks %.0fMB)", maxSizeMB)}
+	}
+
+	s.Logger.LogStep("AttendanceCheckOut", "Photo validated: %s, size: %.2fMB, ext: %s", req.Image, fileMeta.SizeMB, fileMeta.Extension)
+
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	// Find existing attendance record for today
+	existing, err := s.repo.Attendance.FindByUserAndDate(nil, userID, today)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			s.Logger.LogEndWithError("AttendanceCheckOut", "No check-in record found for today")
+			return nil, &helpers.CustomError{Message: "Belum melakukan check-in hari ini"}
+		}
+		s.Logger.LogEndWithError("AttendanceCheckOut", "Failed to fetch attendance: %v", err)
+		return nil, err
+	}
+
+	// Check if already checked out
+	if existing.TimeOut != nil {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "User already checked out today")
+		return nil, &helpers.CustomError{Message: "Anda sudah melakukan check-out hari ini"}
+	}
+
+	// Find nearest active office location
+	locations, err := s.repo.OfficeLocation.FindByFieldMap(nil, map[string]interface{}{
+		"is_active": true,
+	})
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "Failed to fetch office locations: %v", err)
+		return nil, err
+	}
+
+	if len(locations) == 0 {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "No active office locations found")
+		return nil, &helpers.CustomError{Message: "Tidak ada lokasi kantor yang aktif"}
+	}
+
+	// Find nearest office using Haversine distance
+	var nearestOffice *models.OfficeLocation
+	minDistance := math.MaxFloat64
+
+	for i := range locations {
+		dist := haversineDistance(req.Lat, req.Lng, locations[i].Latitude, locations[i].Longitude)
+		if dist < minDistance {
+			minDistance = dist
+			nearestOffice = &locations[i]
+		}
+	}
+
+	s.Logger.LogStep("AttendanceCheckOut", "Nearest office: %s, distance: %.2f meters", nearestOffice.Name, minDistance)
+
+	// Validate distance against office radius
+	if minDistance > float64(nearestOffice.RadiusMeters) {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "User outside office area: %.2f > %d", minDistance, nearestOffice.RadiusMeters)
+		return nil, &helpers.CustomError{Message: "Anda berada di luar area kantor"}
+	}
+
+	// Move photo from tmp to attendance-evidence
+	fotoPath, err := helpers.MoveFile(req.Image, "storage/tmp", "storage/attendance-evidence")
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "Failed to move photo evidence: %v", err)
+		return nil, &helpers.CustomError{Message: "Gagal menyimpan foto bukti"}
+	}
+
+	// Calculate duration
+	duration := calculateDuration(*existing.TimeIn, now)
+
+	// Update attendance record
+	existing.TimeOut = &now
+	existing.LatOut = &req.Lat
+	existing.LngOut = &req.Lng
+	existing.ImageOut = fotoPath
+	existing.Duration = duration
+
+	var result *models.Attendance
+	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
+		var err error
+		result, err = s.repo.Attendance.Update(tx, &models.Attendance{ID: existing.ID}, existing)
+		if err != nil {
+			return nil, err
+		}
+
+		_ = s.NotificationCreate(ctx, &NotificationCreateParams{
+			Type:    "info",
+			Title:   "Check-out Berhasil",
+			Message: fmt.Sprintf("Check-out berhasil di %s. Durasi kerja: %s", nearestOffice.Name, duration),
+			Data: map[string]interface{}{
+				"id":              result.ID,
+				"user_id":         userID,
+				"duration":        duration,
+				"distance_meters": minDistance,
+				"office":          nearestOffice.Name,
+			},
+		})
+
+		return result, nil
+	})
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceCheckOut", "Failed to update attendance: %v", err)
+		return nil, err
+	}
+
+	result = res.(*models.Attendance)
+	dto := dtos.ToAttendanceDTO(result)
+	s.Logger.LogEnd("AttendanceCheckOut", "Check-out successful: user %d, duration %s", userID, duration)
+	return &dto, nil
+}
+
+// calculateDuration calculates the duration between two times and returns a human-readable string.
+func calculateDuration(start, end time.Time) string {
+	diff := end.Sub(start)
+	hours := int(diff.Hours())
+	minutes := int(diff.Minutes()) % 60
+	return fmt.Sprintf("%dh %dm", hours, minutes)
 }
 
 // haversineDistance calculates the distance between two points on Earth using the Haversine formula.

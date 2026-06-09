@@ -26,7 +26,10 @@ last_modified: 2026-06-08
 | `shift.create` | shift | create | Can create new shift |
 | `shift.update` | shift | update | Can update shift |
 | `shift.delete` | shift | delete | Can delete shift |
-| `shift.assign` | shift | assign | Can assign shift to employee |
+| `shift-assign.index` | shift-assign | index | Can view shift assignments |
+| `shift-assign.create` | shift-assign | create | Can assign shift to employee |
+| `shift-assign.update` | shift-assign | update | Can update shift assignment |
+| `shift-assign.delete` | shift-assign | delete | Can delete shift assignment |
 | `leave.view-all` | leave | view-all | Can view all leave history |
 | `leave.manage-types` | leave | manage-types | Can manage leave types |
 | `user.index` | user | index | Can view user list |
@@ -70,7 +73,10 @@ last_modified: 2026-06-08
 | `shift.create` | ✅ | ✅ | ❌ |
 | `shift.update` | ✅ | ✅ | ❌ |
 | `shift.delete` | ✅ | ✅ | ❌ |
-| `shift.assign` | ✅ | ✅ | ❌ |
+| `shift-assign.index` | ✅ | ✅ | ✅ |
+| `shift-assign.create` | ✅ | ✅ | ❌ |
+| `shift-assign.update` | ✅ | ✅ | ❌ |
+| `shift-assign.delete` | ✅ | ✅ | ❌ |
 | **Leave** | | | |
 | `leave.view-all` | ✅ | ✅ | ❌ |
 | `leave.manage-types` | ✅ | ✅ | ❌ |

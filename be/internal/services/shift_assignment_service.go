@@ -276,70 +276,44 @@ func (s *Services) ShiftUpdateAssignment(ctx context.Context, id uint, req dtos.
 		return nil, helpers.ErrNotFound
 	}
 
-	updates := map[string]interface{}{}
-
-	// Determine effective values for overlap check
-	effectiveUserID := existing.UserID
-	effectiveShiftID := existing.ShiftID
-	effectiveStartDate := existing.StartDate
-	effectiveEndDate := existing.EndDate
-
-	if req.ShiftID != 0 {
-		// Check new shift exists
-		_, err := s.repo.Shift.FindByID(nil, req.ShiftID)
-		if err != nil {
-			s.Logger.LogEndWithError("ShiftUpdateAssignment", "New shift not found: %v", err)
-			return nil, &helpers.FieldError{Field: "shift_id", Message: "Shift not found"}
-		}
-		updates["shift_id"] = req.ShiftID
-		effectiveShiftID = req.ShiftID
+	// Check shift exists
+	_, err = s.repo.Shift.FindByID(nil, req.Shift)
+	if err != nil {
+		s.Logger.LogEndWithError("ShiftUpdateAssignment", "Shift not found: %v", err)
+		return nil, &helpers.FieldError{Field: "shift", Message: "Shift not found"}
 	}
 
-	if req.StartDate != "" {
-		startDate, err := time.Parse("2006-01-02", req.StartDate)
-		if err != nil {
-			s.Logger.LogEndWithError("ShiftUpdateAssignment", "Invalid start_date format: %v", err)
-			return nil, &helpers.FieldError{Field: "start_date", Message: "Invalid date format, use YYYY-MM-DD"}
-		}
-		updates["start_date"] = startDate
-		effectiveStartDate = startDate
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		s.Logger.LogEndWithError("ShiftUpdateAssignment", "Invalid start_date format: %v", err)
+		return nil, &helpers.FieldError{Field: "start_date", Message: "Invalid date format, use YYYY-MM-DD"}
 	}
 
+	var endDate *time.Time
 	if req.EndDate != "" {
-		endDate, err := time.Parse("2006-01-02", req.EndDate)
+		end, err := time.Parse("2006-01-02", req.EndDate)
 		if err != nil {
 			s.Logger.LogEndWithError("ShiftUpdateAssignment", "Invalid end_date format: %v", err)
 			return nil, &helpers.FieldError{Field: "end_date", Message: "Invalid date format, use YYYY-MM-DD"}
 		}
-		updates["end_date"] = &endDate
-		effectiveEndDate = &endDate
-	} else if req.EndDate == "" && existing.EndDate != nil && req.StartDate != "" {
-		// If end_date not provided in request but start_date changed, keep existing end_date
-		// (already set above via effectiveEndDate)
-	}
-
-	if req.IsActive != nil {
-		updates["is_active"] = *req.IsActive
-	}
-
-	if len(updates) == 0 {
-		dto := dtos.ToShiftAssignmentDTO(existing)
-		s.Logger.LogEnd("ShiftUpdateAssignment", "No updates provided for assignment ID: %d", id)
-		return &dto, nil
+		endDate = &end
 	}
 
 	// Check for overlapping active assignment (same user + shift, exclude current record)
-	// Only check if dates or shift changed
-	if req.StartDate != "" || req.EndDate != "" || req.ShiftID != 0 {
-		overlapping, err := s.repo.UserShiftAssignment.FindOverlappingAssignments(nil, effectiveUserID, effectiveShiftID, effectiveStartDate, effectiveEndDate, id)
-		if err != nil {
-			s.Logger.LogEndWithError("ShiftUpdateAssignment", "Failed to check existing assignment: %v", err)
-			return nil, err
-		}
-		if len(overlapping) > 0 {
-			s.Logger.LogEndWithError("ShiftUpdateAssignment", "User already has an overlapping shift assignment for this period")
-			return nil, &helpers.FieldError{Field: "start_date", Message: "User already has an overlapping shift assignment for this period"}
-		}
+	overlapping, err := s.repo.UserShiftAssignment.FindOverlappingAssignments(nil, existing.UserID, req.Shift, startDate, endDate, id)
+	if err != nil {
+		s.Logger.LogEndWithError("ShiftUpdateAssignment", "Failed to check existing assignment: %v", err)
+		return nil, err
+	}
+	if len(overlapping) > 0 {
+		s.Logger.LogEndWithError("ShiftUpdateAssignment", "User already has an overlapping shift assignment for this period")
+		return nil, &helpers.FieldError{Field: "start_date", Message: "User already has an overlapping shift assignment for this period"}
+	}
+
+	updates := map[string]interface{}{
+		"shift_id":   req.Shift,
+		"start_date": startDate,
+		"end_date":   endDate,
 	}
 
 	var result *models.UserShiftAssignment

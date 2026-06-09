@@ -91,9 +91,6 @@ export const useProfileStore = defineStore('profile', () => {
         form.department = profile.value.department ?? ''
         form.position = profile.value.position ?? ''
       }
-    } catch (error: any) {
-      console.error('Failed to fetch profile', error)
-      swal.error('Gagal', 'Gagal memuat data profile.')
     } finally {
       loading.value.Fetch = false
     }
@@ -149,10 +146,6 @@ export const useProfileStore = defineStore('profile', () => {
       form.avatar = null
 
       swal.success('Berhasil', 'Profile berhasil diperbarui.')
-    } catch (error: any) {
-      const message = error?.response?.data?.message || 'Gagal memperbarui profile.'
-      swal.error('Gagal', message)
-      throw error
     } finally {
       loading.value.Update = false
     }
@@ -169,10 +162,6 @@ export const useProfileStore = defineStore('profile', () => {
       changePasswordForm.new_password = ''
 
       swal.success('Berhasil', 'Password berhasil diubah.')
-    } catch (error: any) {
-      const message = error?.response?.data?.message || 'Gagal mengubah password.'
-      swal.error('Gagal', message)
-      throw error
     } finally {
       loading.value.ChangePassword = false
     }

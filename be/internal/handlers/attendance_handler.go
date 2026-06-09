@@ -36,6 +36,26 @@ func (h *Handlers) AttendanceCheckIn(c *gin.Context) {
 	helpers.Created(c, "Check-in berhasil", dto)
 }
 
+func (h *Handlers) AttendanceCheckOut(c *gin.Context) {
+	var req dtos.AttendanceCheckInRequest
+	if err := c.BindJSON(&req); err != nil {
+		helpers.BadRequest(c, "Invalid JSON payload")
+		return
+	}
+
+	if err := h.Validate.Struct(&req); err != nil {
+		helpers.ValidationResponse(c, h.getErrorsMap(err))
+		return
+	}
+
+	dto, err := h.svcs.AttendanceCheckOut(c.Request.Context(), req)
+	if helpers.HandleError(c, err, "") {
+		return
+	}
+
+	helpers.OK(c, "Check-out berhasil", dto)
+}
+
 func (h *Handlers) GetNearestOffice(c *gin.Context) {
 	var req dtos.NearestOfficeRequest
 	if err := c.BindJSON(&req); err != nil {

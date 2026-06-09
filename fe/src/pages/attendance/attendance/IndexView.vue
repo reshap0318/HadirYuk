@@ -13,7 +13,6 @@ import {
 } from '@phosphor-icons/vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { uploadFile } from '@/helpers/upload'
 import swal from '@/plugins/swal'
 
 const attendanceStore = useAttendanceStore()
@@ -33,7 +32,9 @@ const showCameraModal = ref(false)
 const photoPreview = ref<string | null>(null)
 const capturedFile = ref<File | null>(null)
 const processingCheckIn = ref(false)
+const processingCheckOut = ref(false)
 const facePhotoCaptureRef = ref<InstanceType<typeof FacePhotoCapture> | null>(null)
+const isCheckOutMode = ref(false)
 
 const formattedDate = computed(() => {
   return currentTime.value.toLocaleDateString('id-ID', {
@@ -63,6 +64,10 @@ const hasCheckedIn = computed(() => {
   return attendanceStore.todayStatus?.has_checked_in || !!attendanceStore.checkInData
 })
 
+const hasCheckedOut = computed(() => {
+  return !!attendanceStore.checkOutData
+})
+
 const checkInTime = computed(() => {
   if (attendanceStore.checkInData) {
     return attendanceStore.checkInData.time_in
@@ -70,14 +75,41 @@ const checkInTime = computed(() => {
   return attendanceStore.todayStatus?.time_in
 })
 
+const checkOutTime = computed(() => {
+  if (attendanceStore.checkOutData) {
+    return attendanceStore.checkOutData.time_out
+  }
+  return attendanceStore.checkInData?.time_out
+})
+
+const duration = computed(() => {
+  if (attendanceStore.checkOutData) {
+    return attendanceStore.checkOutData.duration
+  }
+  return attendanceStore.checkInData?.duration
+})
+
 const canStartCheckIn = computed(() => {
   return (
     attendanceStore.isInsideRadius &&
     attendanceStore.userLocation !== null &&
-    !attendanceStore.loading &&
     !hasCheckedIn.value &&
     !processingCheckIn.value
   )
+})
+
+const canStartCheckOut = computed(() => {
+  return (
+    attendanceStore.isInsideRadius &&
+    attendanceStore.userLocation !== null &&
+    hasCheckedIn.value &&
+    !hasCheckedOut.value &&
+    !processingCheckOut.value
+  )
+})
+
+const isAttendanceComplete = computed(() => {
+  return hasCheckedIn.value && hasCheckedOut.value
 })
 
 function initMap() {
@@ -149,7 +181,8 @@ async function handleGetLocation() {
 }
 
 function openCamera() {
-  if (!canStartCheckIn.value) return
+  if (!canStartCheckIn.value && !canStartCheckOut.value) return
+  isCheckOutMode.value = canStartCheckOut.value
   showCameraModal.value = true
 }
 
@@ -165,15 +198,24 @@ async function handleCameraError(message: string) {
 async function submitCheckIn() {
   if (!capturedFile.value || !attendanceStore.userLocation) return
 
-  processingCheckIn.value = true
+  if (isCheckOutMode.value) {
+    processingCheckOut.value = true
+  } else {
+    processingCheckIn.value = true
+  }
 
   try {
-    const uploaded = await uploadFile(capturedFile.value)
-    const success = await attendanceStore.checkIn(
-      attendanceStore.userLocation.latitude,
-      attendanceStore.userLocation.longitude,
-      uploaded.uuid,
-    )
+    const success = isCheckOutMode.value
+      ? await attendanceStore.checkOut(
+          attendanceStore.userLocation.latitude,
+          attendanceStore.userLocation.longitude,
+          capturedFile.value,
+        )
+      : await attendanceStore.checkIn(
+          attendanceStore.userLocation.latitude,
+          attendanceStore.userLocation.longitude,
+          capturedFile.value,
+        )
 
     if (success) {
       await attendanceStore.fetchTodayStatus()
@@ -183,17 +225,21 @@ async function submitCheckIn() {
       facePhotoCaptureRef.value?.reset()
     }
   } catch (error: any) {
-    const message = error?.response?.data?.message || 'Gagal memproses check-in.'
+    const message =
+      error?.response?.data?.message ||
+      `Gagal memproses ${isCheckOutMode.value ? 'check-out' : 'check-in'}.`
     swal.error('Gagal', message)
   }
 
   processingCheckIn.value = false
+  processingCheckOut.value = false
 }
 
 function closeModal() {
   showCameraModal.value = false
   photoPreview.value = null
   capturedFile.value = null
+  isCheckOutMode.value = false
   facePhotoCaptureRef.value?.reset()
 }
 
@@ -245,13 +291,54 @@ onBeforeUnmount(() => {
         <UiCard
           :classes="{
             wrapper: '',
-            card: hasCheckedIn
-              ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
-              : 'bg-gray-50',
-            body: hasCheckedIn ? 'p-4 text-white' : 'p-4',
+            card: isAttendanceComplete
+              ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white'
+              : hasCheckedIn
+                ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
+                : 'bg-gray-50',
+            body: isAttendanceComplete || hasCheckedIn ? 'p-4 text-white' : 'p-4',
           }"
         >
-          <div v-if="hasCheckedIn && checkInTime" class="flex items-center gap-3">
+          <div v-if="isAttendanceComplete && checkInTime && checkOutTime" class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <PhCheckCircle class="w-5 h-5" />
+              </div>
+              <div class="flex-1">
+                <p class="text-xs opacity-80">Absensi Hari Ini</p>
+                <p class="text-lg font-bold">Selesai</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p class="text-xs opacity-80">Check-in</p>
+                <p class="font-semibold">
+                  {{
+                    new Date(checkInTime).toLocaleTimeString('id-ID', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs opacity-80">Check-out</p>
+                <p class="font-semibold">
+                  {{
+                    new Date(checkOutTime).toLocaleTimeString('id-ID', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  }}
+                </p>
+              </div>
+            </div>
+            <div v-if="duration" class="p-2 rounded-lg bg-white/10 text-center">
+              <p class="text-xs opacity-80">Durasi Kerja</p>
+              <p class="text-lg font-bold">{{ duration }}</p>
+            </div>
+          </div>
+          <div v-else-if="hasCheckedIn && checkInTime" class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
               <PhCheckCircle class="w-5 h-5" />
             </div>
@@ -347,30 +434,52 @@ onBeforeUnmount(() => {
           </div>
         </UiCard>
 
-        <!-- Check-in Button -->
+        <!-- Check-in/Check-out Button -->
         <div class="flex flex-col gap-2">
           <UiButton
+            v-if="!isAttendanceComplete"
             size="lg"
-            :disabled="!canStartCheckIn"
-            :loading="processingCheckIn"
+            :disabled="!canStartCheckIn && !canStartCheckOut"
+            :loading="processingCheckIn || processingCheckOut"
             :class="[
               'w-full px-6 py-3 text-base font-semibold transition-all',
               canStartCheckIn
                 ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200'
-                : hasCheckedIn
-                  ? 'bg-green-100 text-green-700 cursor-default'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed',
+                : canStartCheckOut
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-200'
+                  : hasCheckedIn
+                    ? 'bg-green-100 text-green-700 cursor-default'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed',
             ]"
             @click="openCamera"
           >
             <template #icon>
               <PhCamera class="w-5 h-5" />
             </template>
-            {{ processingCheckIn ? 'Memproses...' : hasCheckedIn ? 'Sudah Check-in' : 'Check In' }}
+            {{
+              processingCheckIn || processingCheckOut
+                ? 'Memproses...'
+                : canStartCheckOut
+                  ? 'Check Out'
+                  : hasCheckedIn
+                    ? 'Sudah Check-in'
+                    : 'Check In'
+            }}
           </UiButton>
 
+          <div
+            v-else
+            class="w-full px-6 py-3 text-base font-semibold text-center bg-purple-100 text-purple-700 rounded-lg"
+          >
+            Absensi Hari Ini Selesai
+          </div>
+
           <p
-            v-if="!attendanceStore.isInsideRadius && attendanceStore.userLocation && !hasCheckedIn"
+            v-if="
+              !attendanceStore.isInsideRadius &&
+              attendanceStore.userLocation &&
+              !isAttendanceComplete
+            "
             class="flex items-center justify-center gap-1 text-xs text-red-600"
           >
             <PhXCircle class="w-3 h-3" />
@@ -384,8 +493,7 @@ onBeforeUnmount(() => {
         <UiCard :classes="{ body: 'p-2' }">
           <div
             ref="mapContainer"
-            class="rounded-lg border border-gray-200 overflow-hidden z-0"
-            style="height: 500px"
+            class="rounded-lg border border-gray-200 overflow-hidden z-0 h-64 sm:h-80 md:h-96 lg:h-125"
           />
           <div
             class="mt-2 flex flex-col lg:flex-row items-center justify-between gap-2 px-2 text-xs text-gray-500"
@@ -413,7 +521,15 @@ onBeforeUnmount(() => {
     <!-- Camera Modal -->
     <UiModal
       v-model="showCameraModal"
-      :title="photoPreview ? 'Konfirmasi Foto' : 'Ambil Foto'"
+      :title="
+        isCheckOutMode
+          ? photoPreview
+            ? 'Konfirmasi Foto Check-out'
+            : 'Ambil Foto Check-out'
+          : photoPreview
+            ? 'Konfirmasi Foto Check-in'
+            : 'Ambil Foto Check-in'
+      "
       size="md"
     >
       <FacePhotoCapture
@@ -431,21 +547,27 @@ onBeforeUnmount(() => {
         >
           <img :src="photoPreview" alt="Preview foto" class="w-full h-full object-cover" />
         </div>
-        <p class="text-xs text-gray-500 text-center">Foto siap dikirim sebagai bukti check-in.</p>
+        <p class="text-xs text-gray-500 text-center">
+          Foto siap dikirim sebagai bukti {{ isCheckOutMode ? 'check-out' : 'check-in' }}.
+        </p>
       </div>
 
       <template #footer>
         <div class="flex gap-2 justify-end">
-          <UiButton variant="secondary" :disabled="processingCheckIn" @click="closeModal">
+          <UiButton
+            variant="secondary"
+            :disabled="processingCheckIn || processingCheckOut"
+            @click="closeModal"
+          >
             Batal
           </UiButton>
           <UiButton
             v-if="photoPreview"
             variant="primary"
-            :loading="processingCheckIn"
+            :loading="processingCheckIn || processingCheckOut"
             @click="submitCheckIn"
           >
-            Check In
+            {{ isCheckOutMode ? 'Check Out' : 'Check In' }}
           </UiButton>
         </div>
       </template>

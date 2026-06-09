@@ -11,13 +11,23 @@ type Attendance struct {
 	UserID         uint           `gorm:"not null;index" json:"user_id"`
 	ShiftID        uint           `gorm:"not null;index" json:"shift_id"`
 	Date           time.Time      `gorm:"type:date;not null;index" json:"date"`
-	TimeIn         *time.Time     `json:"time_in"`
-	Lat            *float64       `json:"lat"`
-	Lng            *float64       `json:"lng"`
 	OfficeID       uint           `gorm:"not null;index" json:"office_id"`
 	Status         string         `gorm:"type:varchar(20);not null;default:'absent'" json:"status"`
-	DistanceMeters *float64       `json:"distance_meters"`
+
+	// Check-in
+	TimeIn         *time.Time     `json:"time_in"`
+	LatIn          *float64       `json:"lat_in"`
+	LngIn          *float64       `json:"lng_in"`
 	ImageIn        string         `gorm:"type:varchar(255)" json:"image_in"`
+	DistanceMeters *float64       `json:"distance_meters"`
+
+	// Check-out
+	TimeOut        *time.Time     `json:"time_out"`
+	LatOut         *float64       `json:"lat_out"`
+	LngOut         *float64       `json:"lng_out"`
+	ImageOut       string         `gorm:"type:varchar(255)" json:"image_out"`
+	Duration       string         `gorm:"type:varchar(20)" json:"duration"`
+
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`

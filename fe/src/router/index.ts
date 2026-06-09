@@ -71,7 +71,7 @@ const routes: RouteRecordRaw[] = [
         path: 'attendance/shift-assignments',
         name: 'ShiftAssignments',
         component: () => import('@/pages/attendance/shift-assignments/IndexView.vue'),
-        meta: { requiresAuth: true, permissions: ['shift.assign'] },
+        meta: { requiresAuth: true, permissions: ['shift-assign.index'] },
       },
       {
         path: 'attendance',

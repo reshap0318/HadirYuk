@@ -23,10 +23,10 @@ type ShiftBulkAssignRequest struct {
 }
 
 type ShiftAssignmentUpdateRequest struct {
-	ShiftID   uint   `json:"shift_id"`
-	StartDate string `json:"start_date"`
-	EndDate   string `json:"end_date"`
-	IsActive  *bool  `json:"is_active"`
+	Users     []uint `json:"users" validate:"required,min=1"`
+	Shift     uint   `json:"shift" validate:"required"`
+	StartDate string `json:"start_date" validate:"required"`
+	EndDate   string `json:"end_date" validate:"required"`
 }
 
 type ShiftAssignmentDTO struct {

@@ -12,11 +12,11 @@ func RegisterShiftAssignmentRoutes(r *gin.RouterGroup, handlers *handlers.Handle
 	shifts := r.Group("/shifts")
 	{
 		// Assignment routes
-		shifts.POST("/assign", middleware.RequirePermission(acc, "shift.assign"), handlers.ShiftAssignToUser)
-		shifts.GET("/assignments", middleware.RequirePermission(acc, "shift.index"), handlers.ShiftGetUserAssignments)
-		shifts.GET("/assignments/:user_id", middleware.RequirePermission(acc, "shift.index"), handlers.ShiftGetUserAssignments)
-		shifts.GET("/assignments/:user_id/active", middleware.RequirePermission(acc, "shift.index"), handlers.ShiftGetUserActiveAssignment)
-		shifts.PUT("/assignments/:id", middleware.RequirePermission(acc, "shift.assign"), handlers.ShiftUpdateAssignment)
-		shifts.DELETE("/assignments/:id", middleware.RequirePermission(acc, "shift.assign"), handlers.ShiftDeleteAssignment)
+		shifts.POST("/assignments", middleware.RequirePermission(acc, "shift-assign.create"), handlers.ShiftAssignToUser)
+		shifts.GET("/assignments", middleware.RequirePermission(acc, "shift-assign.index"), handlers.ShiftGetUserAssignments)
+		shifts.GET("/assignments/:user_id", middleware.RequirePermission(acc, "shift-assign.index"), handlers.ShiftGetUserAssignments)
+		shifts.GET("/assignments/:user_id/active", middleware.RequirePermission(acc, "shift-assign.index"), handlers.ShiftGetUserActiveAssignment)
+		shifts.PUT("/assignments/:id", middleware.RequirePermission(acc, "shift-assign.update"), handlers.ShiftUpdateAssignment)
+		shifts.DELETE("/assignments/:id", middleware.RequirePermission(acc, "shift-assign.delete"), handlers.ShiftDeleteAssignment)
 	}
 }
