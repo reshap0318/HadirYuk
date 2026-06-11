@@ -27,6 +27,68 @@ export interface ICheckOutResponse {
   duration: string
 }
 
+/**
+ * Represents a single attendance session (one check-in/check-out pair)
+ */
+export interface IAttendanceSession {
+  id: number
+  shift_id: number
+  shift_name: string
+  shift_start: string // HH:mm
+  shift_end: string // HH:mm
+  time_in?: string // ISO datetime
+  time_out?: string // ISO datetime
+  status?: 'present' | 'late'
+  duration?: string
+  overtime_minutes?: number
+  distance_meters?: number
+  office_id?: number
+}
+
+/**
+ * Represents a shift assigned to the user today
+ */
+export interface ITodaysShift {
+  id: number
+  name: string
+  start_time: string // HH:mm
+  end_time: string // HH:mm
+  color_code: string
+  session?: IAttendanceSession // undefined if not yet checked in
+  status: 'not_started' | 'active' | 'completed'
+}
+
+/**
+ * Current action state returned from /attendance/today
+ */
+export interface ICurrentAction {
+  action: 'checkin' | 'checkout' | 'done'
+  shift: {
+    id: number
+    name: string
+    start_time: string
+    end_time: string
+  } | null
+  /** If there's an active session from a previous day */
+  cross_day_session?: {
+    id: number
+    shift_name: string
+    date: string
+  } | null
+}
+
+/**
+ * Enriched response from GET /attendance/today
+ */
+export interface ITodayStatusResponse {
+  sessions: IAttendanceSession[]
+  current_action: ICurrentAction
+  todays_shifts: ITodaysShift[]
+}
+
+/**
+ * Legacy compatibility — kept for backward compatibility during transition
+ */
 export interface ITodayStatus {
   has_checked_in: boolean
   time_in?: string
@@ -47,9 +109,21 @@ export interface IOfficeLocation {
 
 export const useAttendanceStore = defineStore('attendance', () => {
   const loading = ref<Record<string, boolean>>({})
+
+  // MS-19: sessions[] replaces checkInData
+  const sessions = ref<IAttendanceSession[]>([])
+
+  // MS-20: currentAction from /attendance/today endpoint
+  const currentAction = ref<ICurrentAction | null>(null)
+
+  // MS-21: todaysShifts — list of shifts assigned today
+  const todaysShifts = ref<ITodaysShift[]>([])
+
+  // Legacy fields — kept for backward compatibility, derived from sessions
   const checkInData = ref<ICheckInResponse | null>(null)
   const checkOutData = ref<ICheckOutResponse | null>(null)
   const todayStatus = ref<ITodayStatus | null>(null)
+
   const nearestOffice = ref<IOfficeLocation | null>(null)
   const userLocation = ref<{ latitude: number; longitude: number } | null>(null)
   const distanceToOffice = ref<number | null>(null)
@@ -113,34 +187,82 @@ export const useAttendanceStore = defineStore('attendance', () => {
   }
 
   /**
-   * Fetch today's attendance status
+   * MS-23: Fetch today's attendance status — enriched response with sessions, currentAction, todaysShifts
    */
   async function fetchTodayStatus(): Promise<void> {
     try {
       const { get } = await import('@/plugins/axios')
-      const { data } = await get<IApiResponse<ITodayStatus>>('/attendance/today')
-      todayStatus.value = data.data
+      const { data } = await get<IApiResponse<ITodayStatusResponse>>('/attendance/today')
 
-      // Populate checkOutData if user has already checked out (for page reload persistence)
-      if (data.data?.has_checked_out && data.data.time_out) {
-        checkOutData.value = {
-          id: 0,
-          time_out: data.data.time_out,
-          duration: data.data.duration || '',
-        }
+      const response = data.data
+
+      // MS-19: Update sessions array
+      if (response?.sessions) {
+        sessions.value = response.sessions
       }
 
-      // Populate checkInData if user has checked in (for page reload persistence)
-      if (data.data?.has_checked_in && data.data.time_in) {
-        checkInData.value = {
-          id: 0,
-          time_in: data.data.time_in,
-          status: data.data.status || '',
-          distance_meters: data.data.distance_meters || 0,
-          office_id: 0,
-          time_out: data.data.time_out,
-          duration: data.data.duration,
+      // MS-20: Update currentAction
+      if (response?.current_action) {
+        currentAction.value = response.current_action
+      }
+
+      // MS-21: Update todaysShifts
+      if (response?.todays_shifts) {
+        todaysShifts.value = response.todays_shifts
+      }
+
+      // --- Legacy compatibility: derive old-style todayStatus from sessions ---
+      const activeSession = sessions.value.find((s) => s.time_in && !s.time_out)
+      const completedSessions = sessions.value.filter((s) => s.time_in && s.time_out)
+      const lastCompleted = completedSessions[completedSessions.length - 1]
+
+      if (activeSession) {
+        todayStatus.value = {
+          has_checked_in: true,
+          time_in: activeSession.time_in,
+          has_checked_out: false,
+          status: activeSession.status,
+          distance_meters: activeSession.distance_meters,
         }
+        checkInData.value = {
+          id: activeSession.id,
+          time_in: activeSession.time_in!,
+          status: activeSession.status || '',
+          distance_meters: activeSession.distance_meters || 0,
+          office_id: activeSession.office_id || 0,
+        }
+        checkOutData.value = null
+      } else if (lastCompleted) {
+        todayStatus.value = {
+          has_checked_in: true,
+          time_in: lastCompleted.time_in,
+          has_checked_out: true,
+          time_out: lastCompleted.time_out,
+          duration: lastCompleted.duration,
+          status: lastCompleted.status,
+          distance_meters: lastCompleted.distance_meters,
+        }
+        checkInData.value = {
+          id: lastCompleted.id,
+          time_in: lastCompleted.time_in!,
+          status: lastCompleted.status || '',
+          distance_meters: lastCompleted.distance_meters || 0,
+          office_id: lastCompleted.office_id || 0,
+          time_out: lastCompleted.time_out,
+          duration: lastCompleted.duration,
+        }
+        checkOutData.value = {
+          id: lastCompleted.id,
+          time_out: lastCompleted.time_out!,
+          duration: lastCompleted.duration || '',
+        }
+      } else {
+        todayStatus.value = {
+          has_checked_in: false,
+          has_checked_out: false,
+        }
+        checkInData.value = null
+        checkOutData.value = null
       }
     } catch (error: any) {
       console.error('Failed to fetch today status', error)
@@ -216,7 +338,63 @@ export const useAttendanceStore = defineStore('attendance', () => {
   }
 
   /**
-   * Submit check-in to backend with photo upload
+   * MS-22: Execute the current action (check-in or check-out) based on currentAction
+   */
+  async function executeAction(lat: number, lng: number, image: string | File): Promise<boolean> {
+    if (!currentAction.value) {
+      swal.error('Gagal', 'Tidak ada aksi yang tersedia saat ini.')
+      return false
+    }
+
+    const { action, shift } = currentAction.value
+
+    if (action === 'done') {
+      swal.info('Selesai', 'Absensi hari ini sudah selesai.')
+      return false
+    }
+
+    if (!shift) {
+      swal.error('Gagal', 'Tidak ada shift yang applicable saat ini.')
+      return false
+    }
+
+    loading.value[action === 'checkin' ? 'CheckIn' : 'CheckOut'] = true
+    try {
+      let imageUuid: string
+
+      // If image is a File, upload it first to get UUID
+      if (image instanceof File) {
+        const uploaded = await uploadFile(image)
+        imageUuid = uploaded.uuid
+      } else {
+        imageUuid = image
+      }
+
+      const endpoint = action === 'checkin' ? '/attendance/checkin' : '/attendance/checkout'
+      await post<IApiResponse<ICheckInResponse | ICheckOutResponse>>(endpoint, {
+        lat,
+        lng,
+        image: imageUuid,
+      })
+
+      const actionLabel = action === 'checkin' ? 'Absensi masuk' : 'Absensi keluar'
+      swal.success('Berhasil', `${actionLabel} berhasil dicatat.`)
+
+      // Refresh state after successful action
+      await fetchTodayStatus()
+      return true
+    } catch (error: any) {
+      const actionLabel = action === 'checkin' ? 'check-in' : 'check-out'
+      const message = error?.response?.data?.message || `Gagal memproses ${actionLabel}.`
+      swal.error('Gagal', message)
+      return false
+    } finally {
+      loading.value[action === 'checkin' ? 'CheckIn' : 'CheckOut'] = false
+    }
+  }
+
+  /**
+   * Submit check-in to backend with photo upload (legacy, kept for backward compat)
    */
   async function checkIn(lat: number, lng: number, image: string | File): Promise<boolean> {
     loading.value.CheckIn = true
@@ -236,7 +414,21 @@ export const useAttendanceStore = defineStore('attendance', () => {
         lng,
         image: imageUuid,
       })
-      checkInData.value = data.data
+
+      // MS-19: Add to sessions array
+      const newSession: IAttendanceSession = {
+        id: data.data.id,
+        shift_id: currentAction.value?.shift?.id || 0,
+        shift_name: currentAction.value?.shift?.name || '',
+        shift_start: currentAction.value?.shift?.start_time || '',
+        shift_end: currentAction.value?.shift?.end_time || '',
+        time_in: data.data.time_in,
+        status: (data.data.status as 'present' | 'late') || undefined,
+        distance_meters: data.data.distance_meters,
+        office_id: data.data.office_id,
+      }
+      sessions.value.push(newSession)
+
       swal.success('Berhasil', 'Absensi masuk berhasil dicatat.')
       return true
     } finally {
@@ -245,7 +437,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
   }
 
   /**
-   * Submit check-out to backend with photo upload
+   * Submit check-out to backend with photo upload (legacy, kept for backward compat)
    */
   async function checkOut(lat: number, lng: number, image: string | File): Promise<boolean> {
     loading.value.CheckOut = true
@@ -277,6 +469,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
    * Reset state
    */
   function resetState() {
+    sessions.value = []
+    currentAction.value = null
+    todaysShifts.value = []
     checkInData.value = null
     checkOutData.value = null
     todayStatus.value = null
@@ -289,6 +484,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
   return {
     loading,
+    // MS-19, MS-20, MS-21: New multi-session state
+    sessions,
+    currentAction,
+    todaysShifts,
+    // Legacy fields (backward compatibility)
     checkInData,
     checkOutData,
     todayStatus,
@@ -302,6 +502,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
     checkIn,
     checkOut,
     fetchTodayStatus,
+    // MS-22: Execute current action
+    executeAction,
     resetState,
   }
 })

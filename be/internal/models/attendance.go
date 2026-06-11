@@ -27,6 +27,7 @@ type Attendance struct {
 	LngOut         *float64       `json:"lng_out"`
 	ImageOut       string         `gorm:"type:varchar(255)" json:"image_out"`
 	Duration       string         `gorm:"type:varchar(20)" json:"duration"`
+	OvertimeMinutes int           `gorm:"not null;default:0" json:"overtime_minutes"`
 
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
@@ -40,4 +41,31 @@ type Attendance struct {
 
 func (Attendance) TableName() string {
 	return "attendances"
+}
+
+func (Attendance) GORMIndexes() []gorm.Index {
+	return []gorm.Index{
+		&AttendanceUserDateShiftIndex{},
+	}
+}
+
+// AttendanceUserDateShiftIndex defines the unique constraint (user_id, date, shift_id).
+type AttendanceUserDateShiftIndex struct {
+	gorm.Index
+}
+
+func (AttendanceUserDateShiftIndex) TableName() string {
+	return "attendances"
+}
+
+func (AttendanceUserDateShiftIndex) Name() string {
+	return "idx_user_date_shift"
+}
+
+func (AttendanceUserDateShiftIndex) IsUnique() bool {
+	return true
+}
+
+func (AttendanceUserDateShiftIndex) Columns() []string {
+	return []string{"user_id", "date", "shift_id"}
 }

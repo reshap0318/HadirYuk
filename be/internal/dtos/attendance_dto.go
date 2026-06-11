@@ -58,6 +58,7 @@ type AttendanceDTO struct {
 	LngOut         *float64   `json:"lng_out"`
 	ImageOut       string     `json:"image_out"`
 	Duration       string     `json:"duration"`
+	OvertimeMinutes int       `json:"overtime_minutes"`
 }
 
 func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
@@ -78,6 +79,7 @@ func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
 		LngOut:         a.LngOut,
 		ImageOut:       a.ImageOut,
 		Duration:       a.Duration,
+		OvertimeMinutes: a.OvertimeMinutes,
 	}
 }
 
@@ -87,4 +89,42 @@ func ToAttendanceDTOList(attendances []models.Attendance) []AttendanceDTO {
 		result[i] = ToAttendanceDTO(&a)
 	}
 	return result
+}
+
+// AttendanceTodayResponse is the enriched response for GET /attendance/today.
+type AttendanceTodayResponse struct {
+	Sessions       []AttendanceSessionDTO `json:"sessions"`
+	CurrentAction  CurrentActionDTO       `json:"current_action"`
+	TodaysShifts   []TodaysShiftDTO       `json:"todays_shifts"`
+}
+
+// CurrentActionDTO represents the action the user can take right now.
+type CurrentActionDTO struct {
+	Action          string     `json:"action"` // "checkin", "checkout", or "done"
+	Shift           *ShiftDTO  `json:"shift,omitempty"`
+	CrossDaySession *CrossDaySessionDTO `json:"cross_day_session,omitempty"`
+}
+
+// CrossDaySessionDTO represents an active session from a previous day.
+type CrossDaySessionDTO struct {
+	ID        uint   `json:"id"`
+	ShiftName string `json:"shift_name"`
+	Date      string `json:"date"`
+}
+
+// TodaysShiftDTO represents a shift assigned to the user today.
+type TodaysShiftDTO struct {
+	ID        uint                 `json:"id"`
+	Name      string               `json:"name"`
+	StartTime string               `json:"start_time"`
+	EndTime   string               `json:"end_time"`
+	ColorCode string               `json:"color_code"`
+	Status    string               `json:"status"` // "not_started", "active", "completed"
+	Session   *AttendanceSessionDTO `json:"session,omitempty"`
+}
+
+// AttendanceSessionDTO represents a single attendance session in the today response.
+type AttendanceSessionDTO struct {
+	AttendanceDTO
+	ShiftName string `json:"shift_name"`
 }

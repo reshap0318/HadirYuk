@@ -40,6 +40,27 @@ func (r *UserShiftAssignmentRepository) FindByUserID(tx *gorm.DB, userID uint, p
 	return instance, nil
 }
 
+// FindAllActiveForUserDate finds all active shift assignments for a user on a given date.
+func (r *UserShiftAssignmentRepository) FindAllActiveForUserDate(tx *gorm.DB, userID uint, date time.Time, preloads ...string) ([]models.UserShiftAssignment, error) {
+	db := r.getDB(tx)
+	dateStr := date.Format("2006-01-02")
+
+	query := db.Model(&models.UserShiftAssignment{}).
+		Where("user_id = ? AND is_active = ?", userID, true).
+		Where("start_date <= ?", dateStr).
+		Where("end_date IS NULL OR end_date >= ?", dateStr)
+
+	for _, preload := range preloads {
+		query = query.Preload(preload)
+	}
+
+	var assignments []models.UserShiftAssignment
+	if err := query.Find(&assignments).Error; err != nil {
+		return nil, err
+	}
+	return assignments, nil
+}
+
 // FindByUserIDWithHistory finds all shift assignments for a user (including inactive).
 func (r *UserShiftAssignmentRepository) FindByUserIDWithHistory(tx *gorm.DB, userID uint, opts *QueryOptions, preloads ...string) (*PagedResult[models.UserShiftAssignment], error) {
 	db := r.getDB(tx)

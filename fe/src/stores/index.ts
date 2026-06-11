@@ -34,4 +34,12 @@ export { useShiftAssignmentStore } from './shiftAssignment'
 export type { IShiftAssignment, IShiftAssignmentPayload } from './shiftAssignment'
 
 export { useAttendanceStore } from './attendance'
-export type { ICheckInPayload, ICheckInResponse, IOfficeLocation } from './attendance'
+export type {
+  ICheckInPayload,
+  ICheckInResponse,
+  IOfficeLocation,
+  IAttendanceSession,
+  ITodaysShift,
+  ICurrentAction,
+  ITodayStatusResponse,
+} from './attendance'
