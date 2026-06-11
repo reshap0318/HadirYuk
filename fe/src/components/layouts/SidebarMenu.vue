@@ -8,6 +8,7 @@ export interface IMenuItem {
   to?: string
   children?: IMenuItem[]
   isTitle?: boolean
+  permissions?: string[]
 }
 
 const props = defineProps<{

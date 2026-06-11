@@ -17,6 +17,7 @@ type Repositories struct {
 	LeaveType             *LeaveTypeRepository
 	UserShiftAssignment   *UserShiftAssignmentRepository
 	Attendance            *AttendanceRepository
+	QRCode                *QRCodeRepository
 }
 
 func NewRepositories(db *gorm.DB) (*Repositories, error) {
@@ -34,6 +35,7 @@ func NewRepositories(db *gorm.DB) (*Repositories, error) {
 	leaveTypeRepo := NewLeaveTypeRepository(db)
 	userShiftAssignmentRepo := NewUserShiftAssignmentRepository(db)
 	attendanceRepo := NewAttendanceRepository(db)
+	qrCodeRepo := NewQRCodeRepository(db)
 
 	return &Repositories{
 		TxManager:             txManager,
@@ -50,5 +52,6 @@ func NewRepositories(db *gorm.DB) (*Repositories, error) {
 		LeaveType:             leaveTypeRepo,
 		UserShiftAssignment:   userShiftAssignmentRepo,
 		Attendance:            attendanceRepo,
+		QRCode:                qrCodeRepo,
 	}, nil
 }

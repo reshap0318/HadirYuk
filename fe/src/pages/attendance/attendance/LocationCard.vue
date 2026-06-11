@@ -39,10 +39,7 @@ const emit = defineEmits<{
         </div>
         <div class="p-2 rounded-lg bg-gray-50">
           <p class="text-[10px] text-gray-500 mb-0.5">Status</p>
-          <p
-            class="text-sm font-bold"
-            :class="isInsideRadius ? 'text-green-600' : 'text-red-600'"
-          >
+          <p class="text-sm font-bold" :class="isInsideRadius ? 'text-green-600' : 'text-red-600'">
             {{ isInsideRadius ? 'Dalam area ✅' : 'Luar area ❌' }}
           </p>
         </div>
@@ -53,10 +50,7 @@ const emit = defineEmits<{
       <p class="text-xs text-gray-500">Mendeteksi lokasi...</p>
     </div>
 
-    <div
-      v-if="geolocationError"
-      class="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg"
-    >
+    <div v-if="geolocationError" class="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
       <p class="text-[10px] text-red-700">{{ geolocationError }}</p>
       <UiButton size="sm" outline variant="danger" class="mt-1.5" @click="emit('retry-location')">
         <template #icon>

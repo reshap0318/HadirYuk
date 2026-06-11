@@ -103,6 +103,7 @@ func runMigration(db *gorm.DB, command string) {
 			&models.LeaveType{},
 			&models.UserShiftAssignment{},
 			&models.Attendance{},
+			&models.QRCode{},
 		)
 		if err != nil {
 			log.Fatalf("Migration failed: %v", err)
@@ -117,6 +118,7 @@ func runMigration(db *gorm.DB, command string) {
 		err := db.Migrator().DropTable(
 			&models.UserShiftAssignment{},
 			&models.Attendance{},
+			&models.QRCode{},
 			&models.LeaveType{},
 			&models.OfficeLocation{},
 			&models.Shift{},
@@ -147,6 +149,14 @@ func runSeed(db *gorm.DB) {
 	userEmails := seeders.SeedUsers(db)
 	seeders.SeedRolePermissions(db, roleIDs, permIDs)
 	seeders.SeedUserRoles(db, userEmails, roleIDs)
+
+	// Seed master data
+	shiftIDs := seeders.SeedShifts(db)
+	seeders.SeedOfficeLocations(db)
+	seeders.SeedLeaveTypes(db)
+
+	// Seed shift assignments for all users
+	seeders.SeedShiftAssignments(db, shiftIDs)
 
 	fmt.Println("\n✅ Seeding completed!")
 }

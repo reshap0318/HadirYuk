@@ -66,6 +66,7 @@ func main() {
 		routes.RegisterLeaveTypeRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterFaceRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterAttendanceRoutes(protected, container.Handlers, container.Access)
+		routes.RegisterQRCodeRoutes(protected, container.Handlers, container.Access)
 	}
 
 	addr := host + ":" + port

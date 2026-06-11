@@ -36,6 +36,7 @@ const routes: RouteRecordRaw[] = [
         path: 'users',
         name: 'Users',
         component: () => import('@/pages/users/IndexView.vue'),
+        meta: { permissions: ['user.index'] },
       },
       {
         path: 'profile',
@@ -46,38 +47,49 @@ const routes: RouteRecordRaw[] = [
         path: 'uam/permissions',
         name: 'Permissions',
         component: () => import('@/pages/uam/permissions/IndexView.vue'),
+        meta: { permissions: ['permission.index'] },
       },
       {
         path: 'uam/roles',
         name: 'Roles',
         component: () => import('@/pages/uam/roles/IndexView.vue'),
+        meta: { permissions: ['role.index'] },
       },
       {
         path: 'master/shifts',
         name: 'MasterShifts',
         component: () => import('@/pages/master/shifts/IndexView.vue'),
+        meta: { permissions: ['shift.index'] },
       },
       {
         path: 'master/locations',
         name: 'MasterLocations',
         component: () => import('@/pages/master/locations/IndexView.vue'),
+        meta: { permissions: ['location.index'] },
       },
       {
         path: 'master/leave-types',
         name: 'MasterLeaveTypes',
         component: () => import('@/pages/master/leave-types/IndexView.vue'),
+        meta: { permissions: ['leave.manage-types'] },
+      },
+      {
+        path: 'master/qrcodes',
+        name: 'MasterQRCodes',
+        component: () => import('@/pages/master/qrcodes/IndexView.vue'),
+        meta: { permissions: ['qrcode.view'] },
       },
       {
         path: 'attendance/shift-assignments',
         name: 'ShiftAssignments',
         component: () => import('@/pages/attendance/shift-assignments/IndexView.vue'),
-        meta: { requiresAuth: true, permissions: ['shift-assign.index'] },
+        meta: { permissions: ['shift-assign.index'] },
       },
       {
         path: 'attendance',
         name: 'Attendance',
         component: () => import('@/pages/attendance/attendance/IndexView.vue'),
-        meta: { requiresAuth: true },
+        meta: {},
       },
     ],
   },
@@ -106,6 +118,16 @@ router.beforeEach((to) => {
   if (to.meta.guest && token) {
     return { name: 'Home' }
   }
+
+  if (to.meta.permissions && token) {
+    const userPermissions = authStore.user?.permissions?.map((p) => p.name) || []
+    const requiredPermissions = to.meta.permissions as string[]
+    const hasAccess = requiredPermissions.some((p) => userPermissions.includes(p))
+    if (!hasAccess) {
+      return { name: 'Home' }
+    }
+  }
+
   return true
 })
 

@@ -43,3 +43,6 @@ export type {
   ICurrentAction,
   ITodayStatusResponse,
 } from './attendance'
+
+export { useQrcodeStore } from './qrcode'
+export type { IQRCode, IQRCodeGeneratePayload } from './qrcode'

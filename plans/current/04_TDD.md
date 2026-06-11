@@ -29,6 +29,7 @@ last_modified: 2026-06-08
 | **UI Components** | Custom (Tailwind CSS) | 4+ | Tailwind-based UI primitives |
 | **Validation (FE)** | Vuelidate | 2+ | Form validation |
 | **QR Scanner** | vue-qrcode-reader | Latest | QR code scanning |
+| **QR Generator** | qrcode (npm) | Latest | QR code image generation on frontend |
 | **Charts** | Chart.js / ECharts | Latest | Dashboard visualizations |
 | **Export Excel** | xlsx (Go backend) | Latest | Excel export |
 | **Export PDF** | gofpdf (Go backend) | Latest | PDF export |
@@ -507,9 +508,11 @@ erDiagram
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/qr-codes/generate` | POST | ✅ | `qrcode.generate` | `{ "office": 1, "expiry_minutes": 5 }` | `{ "code": 201, "message": "...", "data": { "id": 1, "code_value": "...", "qr_image": "base64", "expires_at": "..." } }` |
+| `/api/qr-codes/generate` | POST | ✅ | `qrcode.generate` | `{ "office": 1, "end_date": "YYYY-MM-DD", "end_time": "HH:MM" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "code_value": "...", "expires_at": "..." } }` |
 | `/api/qr-codes` | GET | ✅ | `qrcode.view` | `?office=1&page=1&page_size=20` | Paginated response |
 | `/api/qr-codes/:id/revoke` | POST | ✅ | `qrcode.revoke` | `{}` | `{ "code": 200, "message": "QR code revoked successfully" }` |
+
+> **Note:** QR code image is generated on the **frontend** using the `qrcode` npm library from `code_value`. This reduces server CPU load and response size. Backend only stores and returns the `code_value` UUID string.
 
 ### §4.9 Dashboard Endpoints
 

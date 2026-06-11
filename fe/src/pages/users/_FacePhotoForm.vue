@@ -7,15 +7,16 @@ import { ref } from 'vue'
 withDefaults(
   defineProps<{
     currentPhoto?: string | null
-    activeTab: 'upload' | 'camera'
-    facePhotoPreview: string | null
-    facePhotoFile: File[] | null
-    isLoading: boolean
-    embedded: boolean
-    resetKey: number
+    activeTab?: 'upload' | 'camera'
+    facePhotoPreview?: string | null
+    facePhotoFile?: File[] | null
+    isLoading?: boolean
+    embedded?: boolean
+    resetKey?: number
   }>(),
   {
     currentPhoto: null,
+    activeTab: 'upload',
     facePhotoPreview: null,
     facePhotoFile: null,
     isLoading: false,

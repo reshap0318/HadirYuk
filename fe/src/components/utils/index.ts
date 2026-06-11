@@ -15,6 +15,7 @@ export { default as FormSelect } from './FormSelect.vue'
 export { default as FacePhotoCapture } from './FacePhotoCapture.vue'
 export { default as FacePhotoManager } from './FacePhotoManager.vue'
 export { default as FormMap } from './FormMap.vue'
+export { default as QRCodeDisplay } from './QRCodeDisplay.vue'
 
 export type {
   UiButtonProps,

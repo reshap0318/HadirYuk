@@ -4,6 +4,7 @@ import './assets/styles/main.css'
 import App from './App.vue'
 import router from './router'
 import vClickOutside from './components/directives/v-click-outside'
+import { vPermission } from './components/directives/v-permission'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -11,5 +12,6 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.directive('click-outside', vClickOutside)
+app.directive('permission', vPermission)
 
 app.mount('#app')
