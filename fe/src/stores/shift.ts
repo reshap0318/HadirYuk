@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { required, minLength, helpers } from '@vuelidate/validators'
-import { useCrud } from '@/composables/useCrud'
+import { useCrud } from '@/composables'
 
 export interface IShift {
   id: number

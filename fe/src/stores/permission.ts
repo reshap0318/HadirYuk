@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { required, minLength } from '@vuelidate/validators'
 import { get, type IApiResponse } from '@/plugins/axios'
-import { useCrud } from '@/composables/useCrud'
+import { useCrud } from '@/composables'
 
 export interface IPermission {
   id: number

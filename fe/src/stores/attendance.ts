@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { post } from '@/plugins/axios'
-import type { IApiResponse } from '@/plugins/axios'
+import { get, post, type IApiResponse } from '@/plugins/axios'
 import swal from '@/plugins/swal'
 import { uploadFile } from '@/helpers/upload'
 
@@ -191,7 +190,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
    */
   async function fetchTodayStatus(): Promise<void> {
     try {
-      const { get } = await import('@/plugins/axios')
       const { data } = await get<IApiResponse<ITodayStatusResponse>>('/attendance/today')
 
       const response = data.data
@@ -296,7 +294,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
    */
   async function checkProximityFallback(lat: number, lng: number): Promise<void> {
     try {
-      const { get } = await import('@/plugins/axios')
       const { data } = await get<IApiResponse<any[]>>('/locations', {
         params: { page: 1, page_size: 100 },
       })

@@ -27,11 +27,11 @@ export type { IShift, IShiftPayload } from './shift'
 export { useLocationStore } from './location'
 export type { ILocation, ILocationPayload } from './location'
 
-export { useLeaveTypeStore } from './leaveType'
-export type { ILeaveType, ILeaveTypePayload } from './leaveType'
+export { useLeaveTypeStore } from './leave-type'
+export type { ILeaveType, ILeaveTypePayload } from './leave-type'
 
-export { useShiftAssignmentStore } from './shiftAssignment'
-export type { IShiftAssignment, IShiftAssignmentPayload } from './shiftAssignment'
+export { useShiftAssignmentStore } from './shift-assignment'
+export type { IShiftAssignment, IShiftAssignmentPayload } from './shift-assignment'
 
 export { useAttendanceStore } from './attendance'
 export type {

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { required, minLength, helpers } from '@vuelidate/validators'
-import { useCrud } from '@/composables/useCrud'
+import { useCrud } from '@/composables'
 
 export interface ILeaveType {
   id: number

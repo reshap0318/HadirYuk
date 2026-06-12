@@ -138,16 +138,17 @@ onMounted(() => {
               >
                 <PhEye class="w-5 h-5" />
               </button>
-              <button
-                v-if="qr.is_active"
-                v-permission="['qrcode.revoke']"
-                class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                title="Cabut"
-                :disabled="qrcodeStore.loading.Revoke"
-                @click="handleRevoke(qr)"
-              >
-                <PhXCircle class="w-5 h-5" />
-              </button>
+              <template v-if="qr.is_active">
+                <button
+                  v-permission="['qrcode.revoke']"
+                  class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  title="Cabut"
+                  :disabled="qrcodeStore.loading.Revoke"
+                  @click="handleRevoke(qr)"
+                >
+                  <PhXCircle class="w-5 h-5" />
+                </button>
+              </template>
             </div>
           </div>
 
