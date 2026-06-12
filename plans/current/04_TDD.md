@@ -1,8 +1,8 @@
 ---
 title: 04_TDD.md
-version: 1.6.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-08
+last_modified: 2026-06-12
 ---
 
 # Technical Design Document (TDD)
@@ -198,7 +198,7 @@ erDiagram
     ROLES ||--o{ ROLE_HAS_PERMISSIONS : contains
     PERMISSIONS ||--o{ ROLE_HAS_PERMISSIONS : belongs
 
-    SHIFTS ||--o{ EMPLOYEE_SHIFTS : assigned
+    SHIFTS ||--o{ USER_SHIFT_ASSIGNMENTS : assigned
 
     OFFICE_LOCATIONS ||--o{ ATTENDANCES : recorded_at
     OFFICE_LOCATIONS ||--o{ QR_CODES : generates
@@ -206,7 +206,7 @@ erDiagram
     LEAVE_TYPES ||--o{ LEAVE_REQUESTS : categorized
     LEAVE_TYPES ||--o{ LEAVE_BALANCES : tracks
 
-    QR_CODES ||--o{ ATTENDANCES : scanned_at
+    QR_CODES ||--o| ATTENDANCES : scanned_at
 
     USERS {
         bigint id PK
@@ -275,12 +275,16 @@ erDiagram
         datetime deleted_at
     }
 
-    EMPLOYEE_SHIFTS {
-        bigint user_id PK,FK
-        bigint shift_id PK,FK
-        date start_date PK
+    USER_SHIFT_ASSIGNMENTS {
+        bigint id PK
+        bigint user_id FK
+        bigint shift_id FK
+        date start_date
         date end_date
+        boolean is_active
         datetime created_at
+        datetime updated_at
+        datetime deleted_at
     }
 
     OFFICE_LOCATIONS {
@@ -299,25 +303,24 @@ erDiagram
     ATTENDANCES {
         bigint id PK
         bigint user_id FK
-        bigint location_id FK
-        bigint qr_code_id FK
-        date attendance_date
-        datetime check_in_time
-        datetime check_out_time
-        decimal check_in_lat
-        decimal check_in_lng
-        decimal check_out_lat
-        decimal check_out_lng
-        string check_in_method
-        string check_out_method
-        string check_in_photo_url
-        string check_out_photo_url
-        string status
-        bigint corrected_by FK
-        datetime corrected_at
-        string correction_reason
+        bigint shift_id FK
+        bigint office_id FK
+        date date
+        datetime time_in
+        datetime time_out
+        decimal lat_in
+        decimal lng_in
+        decimal lat_out
+        decimal lng_out
+        varchar image_in
+        varchar image_out
+        varchar status
+        decimal distance_meters
+        varchar duration
+        int overtime_minutes
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     LEAVE_TYPES {
@@ -358,11 +361,14 @@ erDiagram
     QR_CODES {
         bigint id PK
         bigint office_id FK
+        bigint created_by FK
         string code_value UK
         string signature
         datetime expires_at
         boolean is_active
+        datetime revoked_at
         datetime created_at
+        datetime updated_at
         datetime deleted_at
     }
 
@@ -395,11 +401,12 @@ erDiagram
 | Field | Possible Values |
 |-------|-----------------|
 | `ATTENDANCES.status` | `present`, `late`, `absent`, `leave` |
-| `ATTENDANCES.check_in_method` | `geotagging`, `qr_code` |
 | `LEAVE_REQUESTS.status` | `submitted`, `active`, `cancelled`, `expired` |
 | `NOTIFICATIONS.type` | `info`, `warning`, `success`, `error` |
 
 > **Note**: Leave requests have no approval workflow (per PRD). Status `submitted` means request is recorded, `active` means currently on leave, `cancelled` means employee cancelled, `expired` means past date without action.
+
+> **Note**: Check-in/check-out method (`geotagging` vs `qr_code`) is NOT stored as a separate field. The presence of `lat_in`/`lng_in` indicates geotagging method. QR code check-in/out is NOT yet implemented.
 
 ### Leave Balance Initialization Strategy
 
@@ -425,18 +432,29 @@ erDiagram
 ### §4.2 Attendance Endpoints
 
 > **Note:** Photo field in check-in/check-out endpoints uses `image` (UUID) obtained from `POST /api/upload`. Frontend MUST upload photo first via `/api/upload`, then pass the returned `uuid` as `image` field to check-in/check-out. Photo is for **evidence purposes only**. No face recognition matching is performed unless the optional face recognition feature is enabled.
+>
+> **Multi-Session:** The attendance system supports multiple sessions per day (one per shift). The unique constraint is `(user_id, date, shift_id)`. The backend auto-detects the applicable shift based on the current time window.
+>
+> **Geolocation:** Server validates location using Haversine formula against the nearest active office location. User must be within the office's `radius_meters` to check-in/out.
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
-| `/api/attendance/checkin` | POST | ✅ | baseline | `{ "lat": float, "lng": float, "image": "uuid-string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
-| `/api/attendance/checkin/qr` | POST | ✅ | baseline | `{ "qr_code": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, "check_in_time": "...", "status": "present" } }` |
-| `/api/attendance/checkout` | POST | ✅ | baseline | `{ "lat": float, "lng": float, "image": "uuid-string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
-| `/api/attendance/checkout/qr` | POST | ✅ | baseline | `{ "qr_code": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "check_out_time": "...", "duration": "8h 0m" } }` |
-| `/api/attendance/history` | GET | ✅ | baseline | `?date_from=...&date_to=...&page=1&page_size=20` | Paginated response |
-| `/api/attendance/today` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "status": "checked_in", "check_in_time": "...", "shift": {...} } }` |
-| `/api/attendance/stats` | GET | ✅ | baseline | `?month=YYYY-MM` | `{ "code": 200, "message": "...", "data": { "present": 20, "late": 2, "absent": 1, "leave": 2 } }` |
-| `/api/attendance/:id/correct` | PUT | ✅ | `attendance.correct` | `{ "check_in_time": "...", "check_out_time": "...", "reason": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, "corrected_at": "..." } }` |
-| `/api/attendance/late-statistics` | GET | ✅ | `late-statistic.view` | `?date_from=...&date_to=...&user=1` | Paginated response |
+| `/api/attendance/checkin` | POST | ✅ | `attendance.checkin` | `{ "lat": float, "lng": float, "image": "uuid-string" }` | `{ "code": 201, "message": "Check-in berhasil", "data": { "id": 1, "time_in": "...", "status": "present", "distance_meters": 45.2 } }` |
+| `/api/attendance/checkout` | POST | ✅ | `attendance.checkout` | `{ "lat": float, "lng": float, "image": "uuid-string" }` | `{ "code": 200, "message": "Check-out berhasil", "data": { "id": 1, "time_out": "...", "duration": "8h 0m", "overtime_minutes": 0 } }` |
+| `/api/attendance/today` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "sessions": [...], "current_action": { "action": "checkin\|checkout\|done", "shift": {...}, "cross_day_session": {...} }, "todays_shifts": [...] } }` |
+| `/api/attendance/nearest-office` | POST | ✅ | baseline | `{ "latitude": float, "longitude": float }` | `{ "code": 200, "message": "Nearest office found", "data": { "id": 1, "name": "...", "latitude": float, "longitude": float, "radius_meters": 100, "distance": 45.2 } }` |
+
+> **Note:** QR code check-in/out (`/api/attendance/checkin/qr`, `/api/attendance/checkout/qr`), attendance history, stats, correction, and late-statistics endpoints are **NOT YET IMPLEMENTED**. They remain in the plan for future phases.
+
+> **Photo Validation:** Backend validates the `image` UUID by checking file existence in `storage/tmp`, verifying file extension (`.jpg`, `.jpeg`, `.png`, `.webp`), and ensuring file size ≤ 5MB. On success, the file is moved from `storage/tmp` to `storage/attendance-evidence`.
+
+> **Check-in Window Logic:** User can check-in within `[shiftStart - 15min, shiftEnd]`. Status is `present` if check-in is within `[shiftStart - 15min, shiftStart + 15min]`, otherwise `late`. Check-in outside this window is rejected.
+
+> **Check-out Window Logic:** User can check-out from `shiftEnd - 15min` onwards. Check-out before `shiftEnd - 15min` is rejected. Check-out after `shiftEnd + 15min` triggers `overtime_minutes` calculation (from `shiftEnd + 15min`).
+
+> **Auto-Detect Shift:** Backend uses `findApplicableShift()` to determine which shift the user should check-in/out based on the current time. No `shift_id` is required from the frontend.
+
+> **Cross-Day Support:** Active sessions are checked across ALL dates (not just today). If a user has an unchecked-out session from a previous day, they must check-out that session before starting a new one.
 
 ### §4.3 Shift Endpoints
 
@@ -575,9 +593,11 @@ erDiagram
 
 | Permission | Protected Endpoints |
 |------------|---------------------|
-| `attendance.view-all` | GET /api/attendance/history?user=all |
-| `attendance.export` | GET /api/reports/attendance/export/* |
-| `attendance.correct` | PUT /api/attendance/:id/correct |
+| `attendance.checkin` | POST /api/attendance/checkin |
+| `attendance.checkout` | POST /api/attendance/checkout |
+| `attendance.view-all` | GET /api/attendance/history?user=all (NOT YET IMPLEMENTED) |
+| `attendance.export` | GET /api/reports/attendance/export/* (NOT YET IMPLEMENTED) |
+| `attendance.correct` | PUT /api/attendance/:id/correct (NOT YET IMPLEMENTED) |
 | `shift.create` | POST /api/shifts |
 | `shift.update` | PUT /api/shifts/:id |
 | `shift.delete` | DELETE /api/shifts/:id |
@@ -736,12 +756,14 @@ Connection Pool:
 | permissions | name | UNIQUE |
 | roles | name | UNIQUE |
 | password_resets | token | UNIQUE |
-| attendances | user_id + attendance_date | COMPOSITE |
-| attendances | attendance_date | BTREE |
-| attendances | qr_code_id | BTREE |
+| attendances | user_id + date + shift_id | COMPOSITE UNIQUE (idx_user_date_shift) |
+| attendances | date | BTREE |
+| attendances | user_id | BTREE |
+| attendances | shift_id | BTREE |
+| attendances | office_id | BTREE |
 | leave_requests | user_id + status | COMPOSITE |
 | leave_balances | user_id + leave_type_id + year | COMPOSITE UNIQUE |
-| employee_shifts | user_id + shift_id + start_date | COMPOSITE PK |
+| user_shift_assignments | user_id + shift_id | BTREE |
 | qr_codes | code_value | UNIQUE |
 | qr_codes | office_id + is_active + expires_at | COMPOSITE |
 | office_locations | name | BTREE |

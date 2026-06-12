@@ -2,8 +2,8 @@
 title: Multi-Session Attendance
 version: 1.0.0
 created: 2026-06-11
-last_modified: 2026-06-11
-status: draft
+last_modified: 2026-06-12
+status: implemented
 ---
 
 # Plan: Multi-Session Attendance (Single Button, Auto-Detect Shift)

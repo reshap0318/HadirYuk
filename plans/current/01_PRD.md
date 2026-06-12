@@ -1,8 +1,8 @@
 ---
 title: 01_PRD.md
-version: 1.6.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-08
+last_modified: 2026-06-12
 ---
 
 # Product Requirements Document (PRD)

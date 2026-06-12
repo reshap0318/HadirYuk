@@ -1,8 +1,8 @@
 ---
 title: 02_FSD.md
-version: 1.6.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-08
+last_modified: 2026-06-12
 ---
 
 # Functional Specification Document (FSD)
@@ -145,21 +145,28 @@ HadirYuk
 
 #### §2.2.1 Check-in (Geotagging + Photo Evidence)
 
-- **Pre-condition:** User login, belum check-in hari ini
+- **Pre-condition:** User login, tidak ada session aktif (belum check-out dari shift manapun)
 - **Business Logic:**
   - User klik tombol Check-in
   - Browser meminta akses lokasi (GPS)
-  - Validasi lokasi dalam radius kantor yang diassign
-  - Jika lokasi valid, user capture foto atau upload foto sebagai bukti kehadiran
   - Frontend upload foto via `POST /api/upload` terlebih dahulu, mendapat `uuid` (UUID)
-  - Frontend kirim `foto` (berisi UUID dari upload) bersama `lat`/`lng` ke `POST /api/attendance/checkin`
-  - Backend simpan record absensi dengan referensi foto dari `foto` (UUID)
-  - Foto disimpan sebagai evidence (TIDAK dilakukan face recognition matching)
-  - Catat: user_id, timestamp, latitude, longitude, method=geotagging, check_in_photo_url (dari UUID)
+  - Frontend kirim `image` (berisi UUID dari upload) bersama `lat`/`lng` ke `POST /api/attendance/checkin`
+  - Backend auto-detect shift yang applicable berdasarkan waktu sekarang (`findApplicableShift`)
+  - Backend validasi tidak ada session aktif (TimeIn != nil AND TimeOut == nil) untuk user ini — **cek semua tanggal, bukan hanya hari ini**
+  - Backend cari lokasi kantor terdekat yang aktif, hitung jarak menggunakan Haversine formula
+  - Validasi lokasi dalam radius kantor terdekat
+  - Backend validasi foto: file ada di `storage/tmp`, extension `.jpg`/`.jpeg`/`.png`/`.webp`, ukuran ≤ 5MB
+  - Backend pindahkan foto dari `storage/tmp` ke `storage/attendance-evidence`
+  - Backend tentukan status: `present` jika check-in dalam `[shiftStart - 15min, shiftStart + 15min]`, `late` jika setelahnya
+  - Validasi check-in window: `[shiftStart - 15min, shiftEnd]` — di luar window = error
+  - Backend simpan record absensi dengan: user_id, shift_id, date, time_in, lat_in, lng_in, office_id, status, distance_meters, image_in (file path)
   - Jika lokasi tidak valid, tampilkan error "Anda berada di luar area kantor"
-  - Jika upload foto gagal, tampilkan error "Gagal mengupload foto. Pastikan koneksi internet stabil"
-  - Jika `foto` tidak valid, tampilkan error "Foto tidak valid. Silakan upload ulang"
+  - Jika upload foto gagal, tampilkan error "Foto bukti tidak valid atau tidak ditemukan"
+  - Jika ada session aktif dari tanggal sebelumnya, tampilkan error "Anda memiliki sesi check-in yang belum di-checkout dari tanggal [DD/MM]. Silakan check-out terlebih dahulu."
 - **Post-condition:** Record absensi tersimpan, status check-in tercatat
+- **Edge Cases:**
+  - User dengan multiple shift di hari yang sama: harus check-out shift A sebelum check-in shift B
+  - Cross-day scenario: shift malam yang lembur sampai pagi hari berikutnya — `date` field berdasarkan tanggal check-in
 
 #### §2.2.2 Check-in (QR Code)
 
@@ -176,24 +183,28 @@ HadirYuk
 
 #### §2.2.3 Check-out (Geotagging + Photo Evidence)
 
-- **Pre-condition:** User sudah check-in hari ini, belum check-out
+- **Pre-condition:** User sudah check-in (ada session aktif: TimeIn != nil AND TimeOut == nil), belum check-out
 - **Business Logic:**
   - User klik tombol Check-out
   - Browser meminta akses lokasi (GPS)
-  - Validasi lokasi dalam radius kantor yang sama dengan check-in
-  - Jika lokasi valid, user capture foto atau upload foto sebagai bukti kehadiran
   - Frontend upload foto via `POST /api/upload` terlebih dahulu, mendapat `uuid` (UUID)
-  - Frontend kirim `foto` (berisi UUID dari upload) bersama `lat`/`lng` ke `POST /api/attendance/checkout`
-  - Backend update record absensi dengan referensi foto dari `foto` (UUID)
-  - Foto disimpan sebagai evidence (TIDAK dilakukan face recognition matching)
-  - Hitung duration = check_out_time - check_in_time - break_duration
-  - Tentukan status: "present" jika on-time, "late" jika check_in > shift start + tolerance
-  - Catat: check_out_time, check_out_lat, check_out_lng, check_out_method, check_out_photo_url (dari UUID), duration, status
+  - Frontend kirim `image` (berisi UUID dari upload) bersama `lat`/`lng` ke `POST /api/attendance/checkout`
+  - Backend validasi ada session aktif untuk user ini
+  - Backend cari lokasi kantor terdekat yang aktif, hitung jarak menggunakan Haversine formula
+  - Validasi lokasi dalam radius kantor terdekat
+  - Backend validasi foto: file ada di `storage/tmp`, extension `.jpg`/`.jpeg`/`.png`/`.webp`, ukuran ≤ 5MB
+  - Backend pindahkan foto dari `storage/tmp` ke `storage/attendance-evidence`
+  - Backend validasi check-out window: tidak bisa check-out sebelum `shiftEnd - 15min`
+  - Backend hitung `overtime_minutes` jika check-out > `shiftEnd + 15min` (selisih dari `shiftEnd + 15min`)
+  - Backend hitung duration = check_out_time - check_in_time (human-readable: "Xh Ym")
+  - Backend update record absensi dengan: time_out, lat_out, lng_out, image_out (file path), duration, overtime_minutes
+  - Catat: check_out_time, check_out_lat, check_out_lng, check_out_photo_url (dari UUID), duration, overtime_minutes
 - **Post-condition:** Attendance record updated dengan check-out data
 - **Edge Cases:**
-  - Check-out sebelum minimum work hours: warning tapi tetap allow (dengan flag)
-  - User lupa check-out: HR Admin bisa koreksi (lihat §2.2.6)
-  - Check-out di lokasi berbeda dari check-in: allow tapi catat perbedaan lokasi
+  - Check-out sebelum minimum window (`shiftEnd - 15min`): **BLOCK** dengan error "Belum waktunya check-out. Check-out dapat dilakukan setelah [HH:mm]"
+  - Check-out lembur (> `shiftEnd + 15min`): `overtime_minutes` dihitung dan disimpan
+  - User lupa check-out: session tetap aktif, block check-in baru sampai di-checkout (cross-day scenario)
+  - Check-out di lokasi berbeda dari check-in: allow (validasi terhadap kantor terdekat, bukan kantor check-in)
 
 #### §2.2.4 Check-out (QR Code)
 
@@ -380,10 +391,10 @@ HadirYuk
 
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
-  - Input: office name, address, latitude, longitude, radius (meter)
-  - Validasi: latitude/longitude valid format
+  - Input: office name, address, latitude, longitude, radius (meter), is_active
+  - Validasi: latitude/longitude valid format (-90 to 90, -180 to 180)
   - Validasi: radius antara 50-500 meter
-  - Simpan lokasi
+  - Simpan lokasi dengan is_active default true
 - **Post-condition:** Lokasi kantor tersimpan
 
 ### §2.10 Reporting
@@ -872,13 +883,16 @@ flowchart TD
 | ---------------------------------- | ---------------------------------------- | ----------------------- |
 | GPS tidak tersedia                 | "Aktifkan GPS untuk absensi"             | Redirect ke settings    |
 | Lokasi di luar radius              | "Anda berada di luar area kantor"        | Tidak simpan absensi    |
-| Foto gagal diupload                | "Gagal mengupload foto. Coba lagi"       | Retry upload            |
-| foto tidak valid                   | "Foto tidak valid. Silakan upload ulang" | Tidak simpan absensi    |
-| Sudah check-in hari ini            | "Anda sudah check-in hari ini"           | Disable check-in button |
-| Belum check-out saat check-in      | "Silakan check-out terlebih dahulu"      | Redirect ke check-out   |
-| QR Code invalid                    | "QR Code tidak valid"                    | Retry scan              |
-| QR Code expired                    | "QR Code sudah expired. Scan ulang"      | Request new QR          |
-| Attendance correction reason empty | "Alasan koreksi harus diisi"             | Disable submit          |
+| Foto gagal diupload                | "Foto bukti tidak valid atau tidak ditemukan" | Retry upload         |
+| Format foto tidak didukung         | "Format foto tidak didukung. Gunakan JPG, PNG, atau WEBP" | Retry upload        |
+| Ukuran foto terlalu besar          | "Ukuran foto terlalu besar (maks 5MB)"   | Retry upload            |
+| Sudah check-in untuk shift ini     | "Anda sudah melakukan check-in untuk shift [nama] hari ini" | Disable check-in button |
+| Ada session aktif belum check-out  | "Anda memiliki sesi check-in yang belum di-checkout dari tanggal [DD/MM]. Silakan check-out terlebih dahulu." | Redirect ke check-out |
+| Belum check-in saat check-out      | "Belum melakukan check-in"               | Redirect ke check-in    |
+| Check-out sebelum window           | "Belum waktunya check-out. Check-out dapat dilakukan setelah [HH:mm]" | Tidak simpan absensi |
+| Check-in di luar window            | "Waktu check-in di luar jendela shift yang diperbolehkan" | Tidak simpan absensi |
+| Tidak ada shift applicable         | "Tidak ada shift yang tersedia untuk check-in saat ini" | Tidak simpan absensi |
+| Tidak ada lokasi kantor aktif      | "Tidak ada lokasi kantor yang aktif"     | Tidak simpan absensi    |
 
 ### §6.3 Leave Validation
 

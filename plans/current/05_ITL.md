@@ -1,8 +1,8 @@
 ---
 title: 05_ITL.md
-version: 1.6.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-08
+last_modified: 2026-06-12
 ---
 
 # Implementation Task List (ITL)
@@ -395,11 +395,12 @@ last_modified: 2026-06-08
 - **Priority:** P0
 - **Estimated Effort:** 4h
 - **Status:** [x]
+- **Note:** Implemented with auto-detect shift, window logic (15min buffer), multi-session support, photo validation (UUID + extension + size ≤ 5MB), file move from tmp to evidence
 - **FSD Ref:**
   - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
   - §3.5 User Interaction — Attendance Check-in (Geotagging)
 - **TDD Ref:**
-  - POST /api/attendance/checkin (receives `lat`, `lng`, `image` where `image` = UUID from upload)
+  - POST /api/attendance/checkin (receives `lat`, `lng`, `image` where `image` = UUID from upload; requires `attendance.checkin` permission)
   - POST /api/upload (used by frontend before check-in)
 
 ### T-028: Backend — Photo UUID Validation for Attendance Evidence
@@ -408,6 +409,7 @@ last_modified: 2026-06-08
 - **Priority:** P0
 - **Estimated Effort:** 2h
 - **Status:** [x]
+- **Note:** Validates UUID existence in `storage/tmp`, file extension (.jpg/.jpeg/.png/.webp), file size ≤ 5MB, moves file to `storage/attendance-evidence`
 - **FSD Ref:**
   - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
   - §2.2.3 Functional Requirements — Check-out (Geotagging + Photo Evidence)
@@ -416,12 +418,13 @@ last_modified: 2026-06-08
   - POST /api/attendance/checkout (validates `image`)
   - POST /api/upload (returns `uuid`)
 
-### T-029: Frontend — Check-in Page (Location + Camera + Photo Upload → foto UUID)
+### T-029: Frontend — Check-in Page (Location + Camera + Photo Upload → image UUID)
 
 - **Feature/Module:** Attendance Check-in
 - **Priority:** P0
 - **Estimated Effort:** 5h
 - **Status:** [x]
+- **Note:** Implemented as multi-session page with single button (Check In → Check Out → Selesai), auto-detect shift, MapCard, ActionSection, StatusCard, ClockCard, LocationCard, ShiftCarousel, CameraModal components
 - **FSD Ref:**
   - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
   - §3.5 User Interaction — Attendance Check-in (Geotagging)
@@ -436,10 +439,11 @@ last_modified: 2026-06-08
 - **Priority:** P0
 - **Estimated Effort:** 3h
 - **Status:** [x]
+- **Note:** Implemented with window validation (block before shiftEnd-15min), overtime calculation (after shiftEnd+15min), auto-detect active session, photo validation
 - **FSD Ref:**
   - §2.2.3 Functional Requirements — Check-out (Geotagging + Photo Evidence)
 - **TDD Ref:**
-  - POST /api/attendance/checkout (receives `lat`, `lng`, `image` where `image` = UUID from upload)
+  - POST /api/attendance/checkout (receives `lat`, `lng`, `image` where `image` = UUID from upload; requires `attendance.checkout` permission)
   - POST /api/upload (used by frontend before check-out)
 
 ### T-031: Frontend — Combined Check-in/Check-out Page (Location + Camera + Photo Upload → image UUID)
@@ -448,12 +452,14 @@ last_modified: 2026-06-08
 - **Priority:** P0
 - **Estimated Effort:** 3h
 - **Status:** [x]
-- **Note:** Digabung dengan T-029 dalam satu halaman — tombol berubah dari Check In → Check Out → Selesai
+- **Note:** Digabung dengan T-029 dalam satu halaman — single button berubah state: Check In (green) → Check Out (orange) → Selesai (purple). Includes: MapCard, ActionSection, StatusCard, ClockCard, LocationCard, ShiftCarousel, CameraModal. Store supports multi-session with `sessions[]`, `currentAction`, `todaysShifts[]`, `executeAction()`
 - **FSD Ref:**
   - §2.2.3 Functional Requirements — Check-out (Geotagging + Photo Evidence)
 - **TDD Ref:**
   - POST /api/attendance/checkout (sends `lat`, `lng`, `image`)
   - POST /api/upload (upload photo first, get `uuid`)
+  - GET /api/attendance/today (enriched response with sessions, current_action, todays_shifts)
+  - POST /api/attendance/nearest-office (find nearest office by coordinates)
 
 ### T-033: Backend — Generate QR Code with Signature + Expiry
 
@@ -557,7 +563,8 @@ last_modified: 2026-06-08
 - **Feature/Module:** Attendance Model
 - **Priority:** P0
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** Model includes: `ShiftID`, `OfficeID`, `DistanceMeters`, `OvertimeMinutes`, `ImageIn`/`ImageOut` (file paths). Unique constraint: `(user_id, date, shift_id)` for multi-session support. Fields `check_in_method`, `check_out_method`, `qr_code_id`, correction fields NOT included (future implementation)
 - **FSD Ref:**
   - §2.2 Attendance (Absensi) — Functional Requirements
 - **TDD Ref:**
@@ -574,16 +581,17 @@ last_modified: 2026-06-08
 - **TDD Ref:**
   - ERD — QR_CODES table
 
-### T-043: Backend — EmployeeShift GORM Model + Migration
+### T-043: Backend — UserShiftAssignment GORM Model + Migration
 
 - **Feature/Module:** Attendance Model
 - **Priority:** P0
 - **Estimated Effort:** 1h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** Model renamed from `EmployeeShift` to `UserShiftAssignment`. Includes: `ID` (auto), `UserID`, `ShiftID`, `StartDate`, `EndDate` (nullable = ongoing), `IsActive`. Table: `user_shift_assignments`
 - **FSD Ref:**
   - §2.3.2 Functional Requirements — Assign Shift to Employee
 - **TDD Ref:**
-  - ERD — EMPLOYEE_SHIFTS table
+  - ERD — USER_SHIFT_ASSIGNMENTS table
 
 ### T-044: Backend — LeaveBalance GORM Model + Migration
 
@@ -606,6 +614,76 @@ last_modified: 2026-06-08
   - §2.4.1 Functional Requirements — Submit Leave Request
 - **TDD Ref:**
   - ERD — LEAVE_REQUESTS table
+
+---
+
+### T-046: Backend — Multi-Session Attendance (Auto-Detect Shift + Window Logic)
+
+- **Feature/Module:** Attendance Check-in/Check-out
+- **Priority:** P0
+- **Estimated Effort:** 6h
+- **Status:** [x]
+- **Note:** Implements `findApplicableShift()` for auto-detecting shift based on current time window. Check-in window: `[shiftStart - 15min, shiftEnd]`. Check-out window: `[shiftEnd - 15min, ∞)`. Status logic: `present` if within `[shiftStart - 15min, shiftStart + 15min]`, else `late`. Overtime calculation: minutes after `shiftEnd + 15min`. Cross-day support: active session check across ALL dates.
+- **FSD Ref:**
+  - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
+  - §2.2.3 Functional Requirements — Check-out (Geotagging + Photo Evidence)
+- **TDD Ref:**
+  - POST /api/attendance/checkin
+  - POST /api/attendance/checkout
+  - Service: `findApplicableShift(userID, now)`
+
+### T-047: Backend — Nearest Office Endpoint
+
+- **Feature/Module:** Attendance Geolocation
+- **Priority:** P0
+- **Estimated Effort:** 2h
+- **Status:** [x]
+- **Note:** `POST /api/attendance/nearest-office` — finds nearest active office by coordinates using Haversine formula, returns distance in meters
+- **FSD Ref:**
+  - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
+- **TDD Ref:**
+  - POST /api/attendance/nearest-office
+
+### T-048: Backend — Enriched Today Status Endpoint
+
+- **Feature/Module:** Attendance Status
+- **Priority:** P0
+- **Estimated Effort:** 3h
+- **Status:** [x]
+- **Note:** `GET /api/attendance/today` returns enriched response: `{ sessions[], current_action{action, shift, cross_day_session}, todays_shifts[] }`. Supports multi-session display and cross-day scenario detection.
+- **FSD Ref:**
+  - §2.2.5 Functional Requirements — Attendance History
+- **TDD Ref:**
+  - GET /api/attendance/today
+
+### T-049: Frontend — Multi-Session Attendance Store
+
+- **Feature/Module:** Attendance Store
+- **Priority:** P0
+- **Estimated Effort:** 3h
+- **Status:** [x]
+- **Note:** Store supports `sessions[]`, `currentAction`, `todaysShifts[]`, `executeAction()` method. Legacy fields (`checkInData`, `checkOutData`, `todayStatus`) kept for backward compatibility. Haversine distance calculation on frontend for proximity check.
+- **FSD Ref:**
+  - §2.2.1 Functional Requirements — Check-in (Geotagging + Photo Evidence)
+  - §2.2.3 Functional Requirements — Check-out (Geotagging + Photo Evidence)
+- **TDD Ref:**
+  - GET /api/attendance/today
+  - POST /api/attendance/checkin
+  - POST /api/attendance/checkout
+  - POST /api/attendance/nearest-office
+
+### T-049b: Frontend — Attendance Page Components
+
+- **Feature/Module:** Attendance UI
+- **Priority:** P0
+- **Estimated Effort:** 4h
+- **Status:** [x]
+- **Note:** Components: `IndexView.vue` (main page), `MapCard.vue` (Leaflet map), `ActionSection.vue` (single button), `StatusCard.vue` (session status), `ClockCard.vue` (real-time clock), `LocationCard.vue` (distance info), `ShiftCarousel.vue` (today's shifts), `CameraModal.vue` (photo capture). Single button changes state: Check In (green) → Check Out (orange) → Selesai (purple).
+- **FSD Ref:**
+  - §3.5 User Interaction — Attendance Check-in (Geotagging)
+  - §3.4 User Interaction — Karyawan Dashboard
+- **TDD Ref:**
+  - Frontend components (no API endpoint)
 
 ---
 
@@ -1118,12 +1196,24 @@ last_modified: 2026-06-08
 
 | Task ID | Test Scenario                 | Expected Result                                | Status |
 | ------- | ----------------------------- | ---------------------------------------------- | ------ |
-| T-021   | Assign shift to employee      | Employee ter-assign, record di employee_shifts | [ ]    |
+| T-021   | Assign shift to employee      | Employee ter-assign, record di user_shift_assignments | [ ]    |
 | T-027   | Check-in dalam radius + foto  | Absensi tersimpan dengan status present + foto | [ ]    |
 | T-027   | Check-in luar radius          | Error "Anda berada di luar area kantor"        | [ ]    |
+| T-027   | Check-in di luar window       | Error "Waktu check-in di luar jendela shift"   | [ ]    |
+| T-027   | Check-in saat ada session aktif | Error "Anda memiliki sesi check-in yang belum di-checkout" | [ ]    |
 | T-028   | Upload foto evidence (UUID)   | Foto tersimpan sebagai bukti kehadiran         | [ ]    |
+| T-028   | Foto format tidak valid       | Error "Format foto tidak didukung"             | [ ]    |
+| T-028   | Foto terlalu besar (>5MB)     | Error "Ukuran foto terlalu besar"              | [ ]    |
 | T-030   | Check-out setelah check-in    | Record updated dengan duration                 | [ ]    |
-| T-030   | Check-out sebelum check-in    | Error "Belum check-in"                         | [ ]    |
+| T-030   | Check-out sebelum window      | Error "Belum waktunya check-out"               | [ ]    |
+| T-030   | Check-out lembur (> shiftEnd + 15min) | overtime_minutes terhitung              | [ ]    |
+| T-030   | Check-out tanpa check-in      | Error "Belum melakukan check-in"               | [ ]    |
+| T-046   | 2 shift berurutan (06-12 + 18-24) | Check-in/out keduanya berhasil          | [ ]    |
+| T-046   | Cross-day (malam 11/06 → pagi 12/06) | Session date tetap 11/06, overtime terhitung | [ ]    |
+| T-046   | Auto-detect shift             | Sistem pilih shift yang applicable berdasarkan waktu | [ ]    |
+| T-047   | Nearest office endpoint       | Return office terdekat + distance              | [ ]    |
+| T-048   | Today status enriched         | Return sessions[], current_action, todays_shifts[] | [ ]    |
+| T-048   | Cross-day session detection   | current_action.cross_day_session terisi        | [ ]    |
 | T-033   | Generate QR code              | QR code tersimpan dengan signature + expiry    | [ ]    |
 | T-037   | Check-in QR valid             | Absensi tersimpan                              | [ ]    |
 | T-037   | Check-in QR expired           | Error "QR Code sudah expired"                  | [ ]    |
@@ -1145,9 +1235,9 @@ last_modified: 2026-06-08
 | Phase                             | Total Tasks | Completed | Remaining | Est. Hours |
 | --------------------------------- | ----------- | --------- | --------- | ---------- |
 | Phase 1 (Foundation)              | 20          | 20        | 0         | ~48h       |
-| Phase 2 (Core Attendance)         | 28          | 13        | 15        | ~72h       |
+| Phase 2 (Core Attendance)         | 31          | 19        | 12        | ~83h       |
 | Phase 3 (Self-Service)            | 13          | 0         | 13        | ~28h       |
 | Phase 4 (HR Operations)           | 15          | 0         | 15        | ~38h       |
 | Phase 5 (Analytics)               | 8           | 0         | 8         | ~20h       |
 | Phase 6 (Face Recognition — Opt.) | 6           | 0         | 6         | ~20h       |
-| **Total**                         | **90**      | **33**    | **57**    | **~226h**  |
+| **Total**                         | **93**      | **39**    | **54**    | **~237h**  |

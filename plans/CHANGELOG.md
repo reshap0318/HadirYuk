@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## v1.7.0 - 2026-06-12
+
+### Multi-Session Attendance Implementation Aligned with Plan
+
+- **04_TDD.md:** Updated ATTENDANCES ERD table — replaced `attendance_date` → `date`, `check_in_time`/`check_out_time` → `time_in`/`time_out`, `check_in_lat`/`check_in_lng` → `lat_in`/`lng_in`, `check_in_photo_url`/`check_out_photo_url` → `image_in`/`image_out` (file paths), removed `check_in_method`/`check_out_method`, `qr_code_id`, `location_id`, correction fields; added `shift_id`, `office_id`, `distance_meters`, `overtime_minutes`, `duration`; updated unique constraint from `(user_id, attendance_date)` → `(user_id, date, shift_id)`; renamed `EMPLOYEE_SHIFTS` → `USER_SHIFT_ASSIGNMENTS` with `id` PK and `is_active` field; updated `QR_CODES` with `created_by`, `revoked_at`, `updated_at` fields; updated indexing strategy to match new constraint
+- **04_TDD.md:** Updated §4.2 Attendance Endpoints — removed QR check-in/checkout, history, stats, correction, late-statistics (marked as NOT YET IMPLEMENTED); added `POST /api/attendance/nearest-office`; updated permissions: `attendance.checkin`, `attendance.checkout` (new), removed `baseline` from check-in/checkout; added notes for multi-session, geolocation validation, photo validation, check-in/check-out window logic, auto-detect shift, cross-day support
+- **04_TDD.md:** Updated Permission-to-API Mapping — added `attendance.checkin` → POST /api/attendance/checkin, `attendance.checkout` → POST /api/attendance/checkout; marked `attendance.view-all`, `attendance.export`, `attendance.correct` as NOT YET IMPLEMENTED
+- **03_Role_Matrix.md:** Added `attendance.checkin` and `attendance.checkout` permissions (✅ for all roles); marked `attendance.view-all`, `attendance.export`, `attendance.correct` as NOT YET IMPLEMENTED
+- **02_FSD.md:** Updated §2.2.1 Check-in — auto-detect shift via `findApplicableShift`, window logic `[shiftStart - 15min, shiftEnd]`, present/late status, cross-day session validation, photo validation (UUID + extension + size ≤ 5MB), file move from tmp to evidence; updated §2.2.3 Check-out — window validation (block before `shiftEnd - 15min`), overtime calculation (after `shiftEnd + 15min`), duration calculation; updated §2.9.1 Location — added `is_active` field; updated §6.2 Attendance Validation — added new error messages for window validation, session state, photo format/size
+- **05_ITL.md:** Updated T-027, T-028, T-029, T-030, T-031 with implementation notes; updated T-041 (Attendance model) to [x] with notes on new fields; renamed T-043 from EmployeeShift to UserShiftAssignment; added T-046 (Multi-Session Attendance), T-047 (Nearest Office Endpoint), T-048 (Enriched Today Status); updated Testing Checklist with new test scenarios; updated Summary table (93 total tasks, 39 completed)
+
+### Key Implementation Changes vs Original Plan
+
+| Area | Original Plan | Actual Implementation |
+|------|--------------|----------------------|
+| Unique constraint | `(user_id, attendance_date)` | `(user_id, date, shift_id)` — multi-session |
+| Attendance fields | `check_in_method`, `qr_code_id`, `location_id`, correction fields | `shift_id`, `office_id`, `distance_meters`, `overtime_minutes`, `image_in`/`image_out` (file paths) |
+| Check-in payload field | `foto` | `image` |
+| Photo validation | UUID only | UUID + extension (.jpg/.jpeg/.png/.webp) + size ≤ 5MB + file move |
+| Check-in logic | Simple duplicate check | Auto-detect shift, window logic, present/late status |
+| Check-out logic | Allow early with warning | BLOCK before `shiftEnd - 15min`, overtime after `shiftEnd + 15min` |
+| API endpoints | 8 endpoints | 4 endpoints (QR/history/stats/correct/late-stats NOT implemented) |
+| Permissions | `attendance.view-all`, `attendance.export`, `attendance.correct` | `attendance.checkin`, `attendance.checkout` (new) |
+| GET /attendance/today | Simple status object | Enriched: sessions[], current_action{}, todays_shifts[] |
+| Nearest office | Not an endpoint | `POST /api/attendance/nearest-office` (new) |
+
+### Validation Results
+
+- ✅ ATTENDANCES ERD matches actual `models.Attendance` struct
+- ✅ USER_SHIFT_ASSIGNMENTS ERD matches actual `models.UserShiftAssignment` struct
+- ✅ API contract reflects actual implemented endpoints
+- ✅ Permissions match actual route middleware (`attendance.checkin`, `attendance.checkout`)
+- ✅ FSD check-in/check-out logic matches actual service implementation
+- ✅ Error handling matches actual custom error messages
+- ✅ ITL tasks updated with completion status and implementation notes
+- ✅ All documents have YAML frontmatter with version 1.7.0
+
 ## v1.6.0 - 2026-06-08
 
 ### Change Password Endpoint Moved from Auth to Profile

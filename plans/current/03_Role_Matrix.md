@@ -1,8 +1,8 @@
 ---
 title: 03_Role_Matrix.md
-version: 1.6.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-08
+last_modified: 2026-06-12
 ---
 
 # Role & Permissions Matrix
@@ -19,9 +19,11 @@ last_modified: 2026-06-08
 
 | Permission | Module | Action | Description |
 |------------|--------|--------|-------------|
-| `attendance.view-all` | attendance | view-all | Can view all attendance history |
-| `attendance.export` | attendance | export | Can export attendance report |
-| `attendance.correct` | attendance | correct | Can correct attendance record |
+| `attendance.checkin` | attendance | checkin | Can check-in (geotagging) |
+| `attendance.checkout` | attendance | checkout | Can check-out (geotagging) |
+| `attendance.view-all` | attendance | view-all | Can view all attendance history (NOT YET IMPLEMENTED) |
+| `attendance.export` | attendance | export | Can export attendance report (NOT YET IMPLEMENTED) |
+| `attendance.correct` | attendance | correct | Can correct attendance record (NOT YET IMPLEMENTED) |
 | `shift.index` | shift | index | Can view shift list |
 | `shift.create` | shift | create | Can create new shift |
 | `shift.update` | shift | update | Can update shift |
@@ -65,6 +67,8 @@ last_modified: 2026-06-08
 | Permission | Super Admin | HR Admin | Karyawan |
 |------------|-------------|----------|----------|
 | **Attendance** | | | |
+| `attendance.checkin` | ✅ | ✅ | ✅ |
+| `attendance.checkout` | ✅ | ✅ | ✅ |
 | `attendance.view-all` | ✅ | ✅ | ❌ |
 | `attendance.export` | ✅ | ✅ | ❌ |
 | `attendance.correct` | ✅ | ✅ | ❌ |
