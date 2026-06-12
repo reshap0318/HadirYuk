@@ -479,6 +479,50 @@ export const useAttendanceStore = defineStore('attendance', () => {
     geolocationError.value = null
   }
 
+  /**
+   * Execute check-in via QR Code (no photo, no GPS)
+   */
+  async function qrCheckIn(codeValue: string): Promise<boolean> {
+    loading.value.CheckIn = true
+    try {
+      await post<IApiResponse<ICheckInResponse>>('/attendance/checkin/qr', {
+        code_value: codeValue,
+      })
+
+      swal.success('Berhasil', 'Absensi masuk via QR Code berhasil dicatat.')
+      await fetchTodayStatus()
+      return true
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal memproses check-in via QR Code.'
+      swal.error('Gagal', message)
+      return false
+    } finally {
+      loading.value.CheckIn = false
+    }
+  }
+
+  /**
+   * Execute check-out via QR Code (no photo, no GPS)
+   */
+  async function qrCheckOut(codeValue: string): Promise<boolean> {
+    loading.value.CheckOut = true
+    try {
+      await post<IApiResponse<ICheckOutResponse>>('/attendance/checkout/qr', {
+        code_value: codeValue,
+      })
+
+      swal.success('Berhasil', 'Absensi keluar via QR Code berhasil dicatat.')
+      await fetchTodayStatus()
+      return true
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal memproses check-out via QR Code.'
+      swal.error('Gagal', message)
+      return false
+    } finally {
+      loading.value.CheckOut = false
+    }
+  }
+
   return {
     loading,
     // MS-19, MS-20, MS-21: New multi-session state
@@ -501,6 +545,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
     fetchTodayStatus,
     // MS-22: Execute current action
     executeAction,
+    // QR Code methods
+    qrCheckIn,
+    qrCheckOut,
     resetState,
   }
 })

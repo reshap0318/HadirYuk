@@ -14,6 +14,8 @@ func RegisterAttendanceRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, a
 		attendance.GET("/today", handlers.GetTodayStatus)
 		attendance.POST("/checkin", middleware.RequirePermission(acc, "attendance.checkin"), handlers.AttendanceCheckIn)
 		attendance.POST("/checkout", middleware.RequirePermission(acc, "attendance.checkout"), handlers.AttendanceCheckOut)
+		attendance.POST("/checkin/qr", middleware.RequirePermission(acc, "attendance.checkin"), handlers.AttendanceQRCheckIn)
+		attendance.POST("/checkout/qr", middleware.RequirePermission(acc, "attendance.checkout"), handlers.AttendanceQRCheckOut)
 		attendance.POST("/nearest-office", handlers.GetNearestOffice)
 	}
 }

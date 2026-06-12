@@ -378,6 +378,228 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 	return &dto, nil
 }
 
+// AttendanceQRCheckIn handles check-in via QR Code (no photo, no GPS).
+func (s *Services) AttendanceQRCheckIn(ctx context.Context, req dtos.AttendanceQRCheckInRequest) (*dtos.AttendanceDTO, error) {
+	s.Logger.LogStart("AttendanceQRCheckIn", "Processing QR check-in")
+
+	userID := helpers.GetCallerID(ctx)
+	if userID == 0 {
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "Invalid token: caller ID not found")
+		return nil, helpers.ErrInvalidToken
+	}
+
+	// Validate QR Code
+	qrCode, err := s.QRCodeValidate(ctx, req.CodeValue)
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "QR validation failed: %v", err)
+		return nil, &helpers.CustomError{Message: "QR Code tidak valid"}
+	}
+
+	s.Logger.LogStep("AttendanceQRCheckIn", "QR code validated: office_id=%d", qrCode.OfficeID)
+
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	// Validate NO active session exists (check ALL dates)
+	activeSession, err := s.repo.Attendance.FindActiveSessionByUserID(nil, userID, "Shift")
+	if err != nil && err != gorm.ErrRecordNotFound {
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "Failed to check active session: %v", err)
+		return nil, err
+	}
+	if activeSession != nil {
+		sessionDate := activeSession.Date.Format("02/01")
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "User has active session from %s", sessionDate)
+		return nil, &helpers.CustomError{
+			Message: fmt.Sprintf("Anda memiliki sesi check-in yang belum di-checkout dari tanggal %s. Silakan check-out terlebih dahulu.", sessionDate),
+		}
+	}
+
+	// Auto-detect shift
+	applicableShift := s.findApplicableShift(userID, now)
+	if applicableShift == nil {
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "No applicable shift found")
+		return nil, &helpers.CustomError{Message: "Tidak ada shift yang tersedia untuk check-in saat ini"}
+	}
+
+	s.Logger.LogStep("AttendanceQRCheckIn", "Applicable shift: %s", applicableShift.Shift.Name)
+
+	// Duplicate check per shift
+	existing, err := s.repo.Attendance.FindByUserDateShift(nil, userID, today, applicableShift.ShiftID)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "Failed to check existing attendance: %v", err)
+		return nil, err
+	}
+	if existing != nil && existing.TimeIn != nil {
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "User already checked in for this shift")
+		return nil, &helpers.CustomError{Message: fmt.Sprintf("Anda sudah melakukan check-in untuk shift %s hari ini", applicableShift.Shift.Name)}
+	}
+
+	// Window validation
+	shiftStart, _ := time.Parse("15:04", applicableShift.Shift.StartTime)
+	shiftEnd, _ := time.Parse("15:04", applicableShift.Shift.EndTime)
+	shiftStartTime := time.Date(now.Year(), now.Month(), now.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
+	shiftEndTime := time.Date(now.Year(), now.Month(), now.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
+
+	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
+	flexiStart := shiftStartTime.Add(-buffer)
+	flexiThreshold := shiftStartTime.Add(buffer)
+
+	checkInTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), 0, now.Location())
+
+	if checkInTime.Before(flexiStart) || checkInTime.After(shiftEndTime) {
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "Check-in outside window")
+		return nil, &helpers.CustomError{Message: "Waktu check-in di luar jendela shift yang diperbolehkan"}
+	}
+
+	status := "present"
+	if checkInTime.After(flexiThreshold) {
+		status = "late"
+	}
+
+	// Create attendance record (no photo, no GPS)
+	attendance := &models.Attendance{
+		UserID:   userID,
+		ShiftID:  applicableShift.ShiftID,
+		Date:     today,
+		TimeIn:   &now,
+		OfficeID: qrCode.OfficeID,
+		Status:   status,
+	}
+
+	var result *models.Attendance
+	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
+		var err error
+		result, err = s.repo.Attendance.Create(tx, attendance)
+		if err != nil {
+			return nil, err
+		}
+
+		_ = s.NotificationCreate(ctx, &NotificationCreateParams{
+			Type:    "success",
+			Title:   "Check-in Berhasil (QR Code)",
+			Message: fmt.Sprintf("Check-in via QR Code berhasil — Shift %s", applicableShift.Shift.Name),
+			Data: map[string]interface{}{
+				"id":       result.ID,
+				"user_id":  userID,
+				"status":   status,
+				"office":   qrCode.OfficeID,
+				"shift_id": applicableShift.ShiftID,
+			},
+		})
+
+		return result, nil
+	})
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceQRCheckIn", "Failed to create attendance: %v", err)
+		return nil, err
+	}
+
+	result = res.(*models.Attendance)
+	dto := dtos.ToAttendanceDTO(result)
+	s.Logger.LogEnd("AttendanceQRCheckIn", "QR check-in successful: user %d, shift %s, status %s", userID, applicableShift.Shift.Name, status)
+	return &dto, nil
+}
+
+// AttendanceQRCheckOut handles check-out via QR Code (no photo, no GPS).
+func (s *Services) AttendanceQRCheckOut(ctx context.Context, req dtos.AttendanceQRCheckInRequest) (*dtos.AttendanceDTO, error) {
+	s.Logger.LogStart("AttendanceQRCheckOut", "Processing QR check-out")
+
+	userID := helpers.GetCallerID(ctx)
+	if userID == 0 {
+		s.Logger.LogEndWithError("AttendanceQRCheckOut", "Invalid token: caller ID not found")
+		return nil, helpers.ErrInvalidToken
+	}
+
+	// Validate QR Code
+	qrCode, err := s.QRCodeValidate(ctx, req.CodeValue)
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceQRCheckOut", "QR validation failed: %v", err)
+		return nil, &helpers.CustomError{Message: "QR Code tidak valid"}
+	}
+
+	s.Logger.LogStep("AttendanceQRCheckOut", "QR code validated: office_id=%d", qrCode.OfficeID)
+
+	now := time.Now()
+
+	// Validate active session exists
+	activeSession, err := s.repo.Attendance.FindActiveSessionByUserID(nil, userID, "Shift")
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			s.Logger.LogEndWithError("AttendanceQRCheckOut", "No active session found")
+			return nil, &helpers.CustomError{Message: "Belum melakukan check-in"}
+		}
+		s.Logger.LogEndWithError("AttendanceQRCheckOut", "Failed to fetch active session: %v", err)
+		return nil, err
+	}
+
+	s.Logger.LogStep("AttendanceQRCheckOut", "Active session found: ID=%d, Shift=%s", activeSession.ID, activeSession.Shift.Name)
+
+	// Window validation
+	shiftEnd, _ := time.Parse("15:04", activeSession.Shift.EndTime)
+	shiftEndTime := time.Date(activeSession.Date.Year(), activeSession.Date.Month(), activeSession.Date.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, activeSession.Date.Location())
+
+	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
+	earliestCheckout := shiftEndTime.Add(-buffer)
+	latestNormalCheckout := shiftEndTime.Add(buffer)
+
+	if now.Before(earliestCheckout) {
+		s.Logger.LogEndWithError("AttendanceQRCheckOut", "Check-out before window")
+		return nil, &helpers.CustomError{Message: fmt.Sprintf("Belum waktunya check-out. Check-out dapat dilakukan setelah %s", earliestCheckout.Format("15:04"))}
+	}
+
+	// Calculate overtime
+	overtimeMinutes := 0
+	if now.After(latestNormalCheckout) {
+		overtimeMinutes = int(now.Sub(latestNormalCheckout).Minutes())
+		s.Logger.LogStep("AttendanceQRCheckOut", "Overtime detected: %d minutes", overtimeMinutes)
+	}
+
+	// Calculate duration
+	duration := calculateDuration(*activeSession.TimeIn, now)
+
+	// Update attendance record
+	activeSession.TimeOut = &now
+	activeSession.Duration = duration
+	activeSession.OvertimeMinutes = overtimeMinutes
+
+	var result *models.Attendance
+	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
+		var err error
+		result, err = s.repo.Attendance.Update(tx, &models.Attendance{ID: activeSession.ID}, activeSession)
+		if err != nil {
+			return nil, err
+		}
+
+		msg := fmt.Sprintf("Check-out via QR Code berhasil. Durasi kerja: %s", duration)
+		if overtimeMinutes > 0 {
+			msg += fmt.Sprintf(" (Lembur: %d menit)", overtimeMinutes)
+		}
+
+		_ = s.NotificationCreate(ctx, &NotificationCreateParams{
+			Type:    "info",
+			Title:   "Check-out Berhasil (QR Code)",
+			Message: msg,
+			Data: map[string]interface{}{
+				"id":               result.ID,
+				"user_id":          userID,
+				"duration":         duration,
+				"overtime_minutes": overtimeMinutes,
+			},
+		})
+
+		return result, nil
+	})
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceQRCheckOut", "Failed to update attendance: %v", err)
+		return nil, err
+	}
+
+	result = res.(*models.Attendance)
+	dto := dtos.ToAttendanceDTO(result)
+	s.Logger.LogEnd("AttendanceQRCheckOut", "QR check-out successful: user %d, duration %s, overtime %dm", userID, duration, overtimeMinutes)
+	return &dto, nil
+}
+
 // AttendanceCheckOut handles the check-out process with window validation and overtime calculation.
 func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCheckInRequest) (*dtos.AttendanceDTO, error) {
 	s.Logger.LogStart("AttendanceCheckOut", "Processing check-out for user")

@@ -12,6 +12,10 @@ type AttendanceCheckInRequest struct {
 	Image string  `json:"image" validate:"required"`
 }
 
+type AttendanceQRCheckInRequest struct {
+	CodeValue string `json:"code_value" validate:"required"`
+}
+
 type NearestOfficeRequest struct {
 	Lat float64 `json:"latitude" validate:"required"`
 	Lng float64 `json:"longitude" validate:"required"`

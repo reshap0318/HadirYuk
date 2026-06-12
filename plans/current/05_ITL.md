@@ -466,7 +466,8 @@ last_modified: 2026-06-12
 - **Feature/Module:** QR Code
 - **Priority:** P0
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** Implemented with UUID code_value, HMAC-SHA256 signature, expiry datetime, notification on generate
 - **FSD Ref:**
   - §2.11.1 Functional Requirements — Generate QR Code
   - §3.12 User Interaction — QR Code Management
@@ -478,7 +479,8 @@ last_modified: 2026-06-12
 - **Feature/Module:** QR Code
 - **Priority:** P0
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** Implemented with filter active+non-expired, revoke sets IsActive=false+RevokedAt, QRCodeValidate service exists but not yet exposed as route
 - **FSD Ref:**
   - §2.11.2 Functional Requirements — View Active QR Codes
   - §2.11.3 Functional Requirements — Revoke QR Code
@@ -491,7 +493,8 @@ last_modified: 2026-06-12
 - **Feature/Module:** QR Code
 - **Priority:** P0
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** Implemented with card grid layout, GenerateModal (office picker + date/time), QRCodeDisplay component (npm qrcode), preview modal, revoke with confirmation, permission-gated buttons
 - **FSD Ref:**
   - §2.11 QR Code Management — Functional Requirements
   - §3.12 User Interaction — QR Code Management
@@ -505,7 +508,8 @@ last_modified: 2026-06-12
 - **Feature/Module:** QR Code
 - **Priority:** P0
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** `QRCodeValidate()` implemented in `qr_code_service.go` — validates is_active, not revoked, not expired, HMAC signature constant-time comparison
 - **FSD Ref:**
   - §2.2.2 Functional Requirements — Check-in (QR Code)
 - **TDD Ref:**
@@ -516,7 +520,8 @@ last_modified: 2026-06-12
 - **Feature/Module:** QR Check-in
 - **Priority:** P0
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** `AttendanceQRCheckIn()` — validates QR code, checks active session, auto-detects shift, window validation, creates attendance without photo/GPS, office from QR
 - **FSD Ref:**
   - §2.2.2 Functional Requirements — Check-in (QR Code)
   - §3.6 User Interaction — Attendance Check-in (QR Code)
@@ -524,12 +529,13 @@ last_modified: 2026-06-12
 - **TDD Ref:**
   - POST /api/attendance/checkin/qr
 
-### T-038: Frontend — QR Scanner Component (vue-qrcode-reader)
+### T-038: Frontend — QR Scanner Component (html5-qrcode)
 
 - **Feature/Module:** QR Check-in
 - **Priority:** P0
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** `QRScanner.vue` — uses `html5-qrcode` library, start/stop/reset controls, scan result display, emits `scan` event with code_value, rear camera default
 - **FSD Ref:**
   - §2.2.2 Functional Requirements — Check-in (QR Code)
   - §3.6 User Interaction — Attendance Check-in (QR Code)
@@ -541,7 +547,8 @@ last_modified: 2026-06-12
 - **Feature/Module:** QR Check-out
 - **Priority:** P0
 - **Estimated Effort:** 1h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** `AttendanceQRCheckOut()` — validates QR code, checks active session, window validation (block before shiftEnd-15min), overtime calculation, updates attendance without photo/GPS
 - **FSD Ref:**
   - §2.2.4 Functional Requirements — Check-out (QR Code)
 - **TDD Ref:**
@@ -552,11 +559,8 @@ last_modified: 2026-06-12
 - **Feature/Module:** QR Check-out
 - **Priority:** P0
 - **Estimated Effort:** 1h
-- **Status:** [ ]
-- **FSD Ref:**
-  - §2.2.4 Functional Requirements — Check-out (QR Code)
-- **TDD Ref:**
-  - POST /api/attendance/checkout/qr
+- **Status:** [x]
+- **Note:** Reuses `QRScanner.vue` component — tab toggle (Geotagging / QR Code) in `IndexView.vue`, `qrCheckIn()` and `qrCheckOut()` methods in attendance store, auto-detects action from `currentAction`
 
 ### T-041: Backend — Attendance GORM Model + Migration
 
@@ -575,7 +579,8 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance Model
 - **Priority:** P0
 - **Estimated Effort:** 1h
-- **Status:** [ ]
+- **Status:** [x]
+- **Note:** Model includes: `ID`, `OfficeID`, `CodeValue` (UUID, unique), `Signature` (HMAC-SHA256), `ExpiresAt`, `IsActive`, `CreatedBy`, `RevokedAt`. Table: `qr_codes`
 - **FSD Ref:**
   - §2.11 QR Code Management — Functional Requirements
 - **TDD Ref:**
@@ -1214,8 +1219,16 @@ last_modified: 2026-06-12
 | T-047   | Nearest office endpoint       | Return office terdekat + distance              | [ ]    |
 | T-048   | Today status enriched         | Return sessions[], current_action, todays_shifts[] | [ ]    |
 | T-048   | Cross-day session detection   | current_action.cross_day_session terisi        | [ ]    |
-| T-033   | Generate QR code              | QR code tersimpan dengan signature + expiry    | [ ]    |
-| T-037   | Check-in QR valid             | Absensi tersimpan                              | [ ]    |
+| T-033   | Generate QR code              | QR code tersimpan dengan signature + expiry    | [x]    |
+| T-034   | View active QR codes          | List QR aktif (non-expired, non-revoked)       | [x]    |
+| T-034   | Revoke QR code                | QR code tidak aktif setelah revoke             | [x]    |
+| T-035   | QR management page            | Generate, view, revoke berjalan di frontend    | [x]    |
+| T-036   | QR validation service         | Validasi signature, expiry, revoke             | [x]    |
+| T-037   | Check-in QR valid             | Absensi tersimpan tanpa foto/GPS               | [x]    |
+| T-037   | Check-in QR expired           | Error "QR Code sudah expired"                  | [x]    |
+| T-038   | QR scanner component          | Scan QR dari kamera, emit code_value           | [x]    |
+| T-039   | Check-out QR valid            | Record updated dengan duration + overtime      | [x]    |
+| T-040   | QR scanner reuse check-out    | Tab toggle Geotagging/QR di IndexView          | [x]    |
 | T-037   | Check-in QR expired           | Error "QR Code sudah expired"                  | [ ]    |
 | T-057   | Submit cuti valid             | Leave request tersimpan, balance berkurang     | [ ]    |
 | T-057   | Submit cuti saldo tidak cukup | Error "Sisa cuti tidak mencukupi"              | [ ]    |
@@ -1235,9 +1248,9 @@ last_modified: 2026-06-12
 | Phase                             | Total Tasks | Completed | Remaining | Est. Hours |
 | --------------------------------- | ----------- | --------- | --------- | ---------- |
 | Phase 1 (Foundation)              | 20          | 20        | 0         | ~48h       |
-| Phase 2 (Core Attendance)         | 31          | 19        | 12        | ~83h       |
+| Phase 2 (Core Attendance)         | 31          | 28        | 3         | ~83h       |
 | Phase 3 (Self-Service)            | 13          | 0         | 13        | ~28h       |
 | Phase 4 (HR Operations)           | 15          | 0         | 15        | ~38h       |
 | Phase 5 (Analytics)               | 8           | 0         | 8         | ~20h       |
 | Phase 6 (Face Recognition — Opt.) | 6           | 0         | 6         | ~20h       |
-| **Total**                         | **93**      | **39**    | **54**    | **~237h**  |
+| **Total**                         | **93**      | **48**    | **45**    | **~237h**  |

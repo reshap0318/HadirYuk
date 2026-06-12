@@ -73,7 +73,11 @@ function handleGetLocation() {
   emit('update-location')
 }
 
-defineExpose({ initMap, updateUserMarker, showOfficeRadius })
+function invalidateSize() {
+  setTimeout(() => map?.invalidateSize(), 100)
+}
+
+defineExpose({ initMap, updateUserMarker, showOfficeRadius, invalidateSize })
 </script>
 
 <template>

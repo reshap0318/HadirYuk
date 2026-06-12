@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance'
 import type { IAttendanceSession } from '@/stores/attendance'
 import { UiCard } from '@/components/utils'
-import { PhWarning } from '@phosphor-icons/vue'
+import { PhWarning, PhMapPin, PhQrCode } from '@phosphor-icons/vue'
 import MapCard from './MapCard.vue'
 import ActionSection from './ActionSection.vue'
 import StatusCard from './StatusCard.vue'
@@ -11,12 +11,16 @@ import ClockCard from './ClockCard.vue'
 import LocationCard from './LocationCard.vue'
 import ShiftCarousel from './ShiftCarousel.vue'
 import CameraModal from './CameraModal.vue'
+import QRScanner from './QRScanner.vue'
 
 const attendanceStore = useAttendanceStore()
 
 const mapRef = ref<InstanceType<typeof MapCard> | null>(null)
+const qrScannerRef = ref<InstanceType<typeof QRScanner> | null>(null)
 const processingAction = ref(false)
 const showCameraModal = ref(false)
+
+const mode = ref<'geotagging' | 'qrcode'>('geotagging')
 
 const currentTime = ref(new Date())
 let timeInterval: ReturnType<typeof setInterval> | null = null
@@ -79,7 +83,12 @@ const isButtonDisabled = computed(() => {
   const action = attendanceStore.currentAction?.action
   if (action === 'done') return true
   if (!action) return true
-  if (!attendanceStore.isInsideRadius && attendanceStore.userLocation) return true
+  if (
+    mode.value === 'geotagging' &&
+    !attendanceStore.isInsideRadius &&
+    attendanceStore.userLocation
+  )
+    return true
   if (processingAction.value) return true
   return false
 })
@@ -181,6 +190,22 @@ async function handleCameraSubmit(file: File) {
   }
 }
 
+async function handleQRScan(codeValue: string) {
+  const action = attendanceStore.currentAction?.action
+  if (!action || action === 'done') return
+
+  processingAction.value = true
+  try {
+    if (action === 'checkin') {
+      await attendanceStore.qrCheckIn(codeValue)
+    } else if (action === 'checkout') {
+      await attendanceStore.qrCheckOut(codeValue)
+    }
+  } finally {
+    processingAction.value = false
+  }
+}
+
 // --- Lifecycle ---
 
 onMounted(async () => {
@@ -197,12 +222,49 @@ onBeforeUnmount(() => {
   if (timeInterval) clearInterval(timeInterval)
   attendanceStore.resetState()
 })
+
+watch(mode, (newMode) => {
+  if (newMode === 'geotagging') {
+    qrScannerRef.value?.forceStop()
+    if (mapRef.value) {
+      mapRef.value.invalidateSize()
+    }
+  }
+})
 </script>
 
 <template>
   <div class="px-4 sm:px-6 lg:px-8">
     <div class="mb-3">
       <h1 class="text-2xl font-bold text-gray-900">Absensi</h1>
+    </div>
+
+    <!-- Mode Tabs -->
+    <div class="mb-4 flex gap-2">
+      <button
+        @click="mode = 'geotagging'"
+        :class="[
+          'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+          mode === 'geotagging'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+        ]"
+      >
+        <PhMapPin class="w-4 h-4" />
+        Geotagging
+      </button>
+      <button
+        @click="mode = 'qrcode'"
+        :class="[
+          'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+          mode === 'qrcode'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+        ]"
+      >
+        <PhQrCode class="w-4 h-4" />
+        QR Code
+      </button>
     </div>
 
     <!-- Cross-day alert -->
@@ -220,7 +282,8 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Geotagging Mode -->
+    <div v-show="mode === 'geotagging'" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- Map Section -->
       <div class="lg:col-span-2">
         <MapCard
@@ -293,8 +356,85 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Camera Modal -->
+    <!-- QR Code Mode -->
+    <div v-show="mode === 'qrcode'" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- QR Scanner Section -->
+      <div class="lg:col-span-2">
+        <UiCard :classes="{ wrapper: '', body: 'p-4' }">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">Scan QR Code</h3>
+          <QRScanner
+            ref="qrScannerRef"
+            :disabled="processingAction || isAllDone"
+            @scan="handleQRScan"
+          />
+          <p class="text-xs text-gray-500 mt-3">
+            Arahkan kamera ke QR Code yang ditampilkan di kantor. Check-in dan check-out tidak
+            memerlukan foto bukti.
+          </p>
+        </UiCard>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div class="flex flex-col gap-3">
+        <!-- Action Button (QR mode - no GPS validation) -->
+        <ActionSection
+          :button-text="buttonText"
+          :button-color-class="buttonColorClass"
+          :is-button-disabled="
+            processingAction ||
+            isAllDone ||
+            !attendanceStore.currentAction?.action ||
+            attendanceStore.currentAction?.action === 'done'
+          "
+          :processing-action="processingAction"
+          :button-shift-info="buttonShiftInfo"
+          :is-all-done="isAllDone"
+          :is-inside-radius="true"
+          :user-location="null"
+          @click="showCameraModal = true"
+        />
+
+        <!-- Status Card -->
+        <StatusCard
+          :is-all-done="isAllDone"
+          :active-session="!!activeSession"
+          :total-duration-today="totalDurationToday"
+          :active-session-info="activeSessionInfo"
+        />
+
+        <!-- Clock Card -->
+        <ClockCard :formatted-date="formattedDate" :formatted-time="formattedTime" />
+
+        <!-- Shift Carousel -->
+        <UiCard :classes="{ wrapper: '', body: 'p-3' }">
+          <h3 class="text-xs font-semibold text-gray-700 mb-2">Shift Hari Ini</h3>
+
+          <div v-if="attendanceStore.todaysShifts.length === 0" class="text-center py-3">
+            <p class="text-xs text-gray-500">Tidak ada shift hari ini.</p>
+          </div>
+
+          <ShiftCarousel v-else :shifts="attendanceStore.todaysShifts" />
+
+          <!-- Total summary -->
+          <div
+            v-if="attendanceStore.todaysShifts.length > 0"
+            class="mt-2 pt-2 border-t border-gray-200 flex items-center justify-between text-xs"
+          >
+            <span class="text-gray-600">Total</span>
+            <span class="font-bold text-gray-900">
+              {{ totalDurationToday }}
+              <span v-if="activeSessionCount > 0" class="text-[10px] text-gray-500 font-normal">
+                ({{ activeSessionCount }} aktif)
+              </span>
+            </span>
+          </div>
+        </UiCard>
+      </div>
+    </div>
+
+    <!-- Camera Modal (Geotagging only) -->
     <CameraModal
+      v-if="mode === 'geotagging'"
       :show="showCameraModal"
       :button-text="buttonText"
       :processing-action="processingAction"
