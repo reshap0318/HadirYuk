@@ -63,6 +63,11 @@ type AttendanceDTO struct {
 	ImageOut       string     `json:"image_out"`
 	Duration       string     `json:"duration"`
 	OvertimeMinutes int       `json:"overtime_minutes"`
+
+	// Correction
+	CorrectedBy    *uint      `json:"corrected_by,omitempty"`
+	CorrectedAt    *time.Time `json:"corrected_at,omitempty"`
+	CorrectionReason string   `json:"correction_reason,omitempty"`
 }
 
 func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
@@ -84,6 +89,9 @@ func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
 		ImageOut:       a.ImageOut,
 		Duration:       a.Duration,
 		OvertimeMinutes: a.OvertimeMinutes,
+		CorrectedBy:    a.CorrectedBy,
+		CorrectedAt:    a.CorrectedAt,
+		CorrectionReason: a.CorrectionReason,
 	}
 }
 
@@ -131,4 +139,76 @@ type TodaysShiftDTO struct {
 type AttendanceSessionDTO struct {
 	AttendanceDTO
 	ShiftName string `json:"shift_name"`
+}
+
+// AttendanceHistoryRequest is the request for GET /attendance/history.
+type AttendanceHistoryRequest struct {
+	DateFrom *string `form:"date_from"`
+	DateTo   *string `form:"date_to"`
+	Status   string  `form:"status"`
+	Page     int     `form:"page"`
+	PageSize int     `form:"page_size"`
+}
+
+// AttendanceHistoryDTO extends AttendanceDTO with related data.
+type AttendanceHistoryDTO struct {
+	AttendanceDTO
+	UserName    string `json:"user_name"`
+	ShiftName   string `json:"shift_name"`
+	OfficeName  string `json:"office_name"`
+}
+
+// MonthlyStatsResponse is the response for GET /attendance/stats.
+type MonthlyStatsResponse struct {
+	TotalPresent int `json:"total_present"`
+	TotalLate    int `json:"total_late"`
+	TotalAbsent  int `json:"total_absent"`
+	TotalOvertime int `json:"total_overtime"`
+	AvgDuration  string `json:"avg_duration"`
+}
+
+// AttendanceCorrectRequest is the request for PUT /attendance/:id/correct.
+type AttendanceCorrectRequest struct {
+	TimeIn         *time.Time `json:"time_in" validate:"required"`
+	TimeOut        *time.Time `json:"time_out" validate:"required"`
+	CorrectionReason string   `json:"correction_reason" validate:"required,min=3,max=500"`
+}
+
+// AttendanceReportRequest is the request for GET /attendance/reports.
+type AttendanceReportRequest struct {
+	DateFrom   *string `form:"date_from"`
+	DateTo     *string `form:"date_to"`
+	UserID     *uint   `form:"user_id"`
+	Department string  `form:"department"`
+	Status     string  `form:"status"`
+	Page       int     `form:"page"`
+	PageSize   int     `form:"page_size"`
+}
+
+// LateStatsResponse is the response for GET /attendance/late-statistics.
+type LateStatsResponse struct {
+	TotalLateDays    int                `json:"total_late_days"`
+	TotalRecords     int64              `json:"total_records"`
+	AvgLateMinutes   float64            `json:"avg_late_minutes"`
+	Trend            []LateTrendDTO     `json:"trend"`
+	Details          []LateDetailDTO    `json:"details"`
+}
+
+// LateTrendDTO represents a single point in the late trend chart.
+type LateTrendDTO struct {
+	Date       string `json:"date"`
+	LateCount  int    `json:"late_count"`
+	TotalMinutes int  `json:"total_minutes"`
+}
+
+// LateDetailDTO represents a single late attendance record.
+type LateDetailDTO struct {
+	ID           uint      `json:"id"`
+	UserID       uint      `json:"user_id"`
+	UserName     string    `json:"user_name"`
+	Date         time.Time `json:"date"`
+	ShiftName    string    `json:"shift_name"`
+	TimeIn       time.Time `json:"time_in"`
+	LateMinutes  int       `json:"late_minutes"`
+	OfficeName   string    `json:"office_name"`
 }

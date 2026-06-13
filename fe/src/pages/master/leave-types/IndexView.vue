@@ -2,8 +2,8 @@
 import { UiCard, UiButton, UiPagination, UiEmptyState, UiSkeleton } from '@/components/utils'
 import FormModal from './FormModal.vue'
 import { ref, onMounted } from 'vue'
-import { useLeaveTypeStore } from '@/stores/leaveType'
-import type { ILeaveType } from '@/stores/leaveType'
+import { useLeaveTypeStore } from '@/stores/leave-type'
+import type { ILeaveType } from '@/stores/leave-type'
 import { PhPlus, PhPencil, PhTrash, PhCalendarBlank } from '@phosphor-icons/vue'
 
 const leaveTypeStore = useLeaveTypeStore()

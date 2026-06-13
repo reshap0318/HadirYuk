@@ -106,6 +106,85 @@ export interface IOfficeLocation {
   radius_meters: number
 }
 
+export interface IAttendanceHistoryItem {
+  id: number
+  user_id: number
+  user_name: string
+  shift_id: number
+  shift_name: string
+  date: string
+  office_id: number
+  office_name: string
+  status: string
+  time_in?: string
+  time_out?: string
+  duration?: string
+  distance_meters?: number
+  overtime_minutes?: number
+  image_in?: string
+  image_out?: string
+  corrected_by?: number
+  corrected_at?: string
+  correction_reason?: string
+}
+
+export interface IHistoryParams {
+  date_from?: string
+  date_to?: string
+  status?: string
+  page?: number
+  page_size?: number
+  user?: string
+  user_id?: number
+}
+
+export interface IMonthlyStats {
+  total_present: number
+  total_late: number
+  total_absent: number
+  total_overtime: number
+  avg_duration: string
+}
+
+export interface ICorrectPayload {
+  time_in: string
+  time_out: string
+  correction_reason: string
+}
+
+export interface ILateTrend {
+  date: string
+  late_count: number
+  total_minutes: number
+}
+
+export interface ILateDetail {
+  id: number
+  user_id: number
+  user_name: string
+  date: string
+  shift_name: string
+  time_in: string
+  late_minutes: number
+  office_name: string
+}
+
+export interface ILateStats {
+  total_late_days: number
+  total_records: number
+  avg_late_minutes: number
+  trend: ILateTrend[]
+  details: ILateDetail[]
+}
+
+export interface ILateStatsParams {
+  date_from?: string
+  date_to?: string
+  user_id?: number
+  page?: number
+  page_size?: number
+}
+
 export const useAttendanceStore = defineStore('attendance', () => {
   const loading = ref<Record<string, boolean>>({})
 
@@ -523,6 +602,128 @@ export const useAttendanceStore = defineStore('attendance', () => {
     }
   }
 
+  // History state
+  const history = ref<IAttendanceHistoryItem[]>([])
+  const historyTotal = ref(0)
+  const historyPage = ref(1)
+  const historyPageSize = ref(20)
+
+  /**
+   * Fetch attendance history with filters
+   */
+  async function fetchHistory(params: IHistoryParams = {}): Promise<void> {
+    loading.value.History = true
+    try {
+      const { data } = await get<IApiResponse<IAttendanceHistoryItem[]>>('/attendance/history', {
+        params: {
+          date_from: params.date_from,
+          date_to: params.date_to,
+          status: params.status,
+          page: params.page || 1,
+          page_size: params.page_size || 20,
+          user: params.user,
+        },
+      })
+
+      history.value = data.data || []
+      historyTotal.value = data.metadata?.total || 0
+      historyPage.value = data.metadata?.page || 1
+      historyPageSize.value = data.metadata?.page_size || 20
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal memuat riwayat absensi.'
+      swal.error('Gagal', message)
+    } finally {
+      loading.value.History = false
+    }
+  }
+
+  /**
+   * Fetch monthly statistics
+   */
+  async function fetchMonthlyStats(year: number, month: number): Promise<IMonthlyStats | null> {
+    try {
+      const { data } = await get<IApiResponse<IMonthlyStats>>('/attendance/stats', {
+        params: { year, month },
+      })
+      return data.data || null
+    } catch (error: any) {
+      console.error('Failed to fetch monthly stats', error)
+      return null
+    }
+  }
+
+  /**
+   * Correct an attendance record
+   */
+  async function correctAttendance(id: number, payload: ICorrectPayload): Promise<boolean> {
+    loading.value.Form = true
+    try {
+      await post<IApiResponse<void>>(`/attendance/${id}/correct`, payload)
+      swal.success('Berhasil', 'Absensi berhasil dikoreksi.')
+      return true
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal mengoreksi absensi.'
+      swal.error('Gagal', message)
+      return false
+    } finally {
+      loading.value.Form = false
+    }
+  }
+
+  /**
+   * Fetch attendance report
+   */
+  async function fetchReport(params: IHistoryParams = {}): Promise<void> {
+    loading.value.Report = true
+    try {
+      const { data } = await get<IApiResponse<IAttendanceHistoryItem[]>>('/attendance/reports', {
+        params: {
+          date_from: params.date_from,
+          date_to: params.date_to,
+          user_id: params.user_id,
+          status: params.status,
+          page: params.page || 1,
+          page_size: params.page_size || 20,
+        },
+      })
+
+      history.value = data.data || []
+      historyTotal.value = data.metadata?.total || 0
+      historyPage.value = data.metadata?.page || 1
+      historyPageSize.value = data.metadata?.page_size || 20
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal memuat laporan absensi.'
+      swal.error('Gagal', message)
+    } finally {
+      loading.value.Report = false
+    }
+  }
+
+  /**
+   * Fetch late statistics
+   */
+  async function fetchLateStats(params: ILateStatsParams = {}): Promise<ILateStats | null> {
+    loading.value.LateStats = true
+    try {
+      const { data } = await get<IApiResponse<ILateStats>>('/attendance/late-statistics', {
+        params: {
+          date_from: params.date_from,
+          date_to: params.date_to,
+          user_id: params.user_id,
+          page: params.page || 1,
+          page_size: params.page_size || 20,
+        },
+      })
+      return data.data || null
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Gagal memuat statistik keterlambatan.'
+      swal.error('Gagal', message)
+      return null
+    } finally {
+      loading.value.LateStats = false
+    }
+  }
+
   return {
     loading,
     // MS-19, MS-20, MS-21: New multi-session state
@@ -548,6 +749,18 @@ export const useAttendanceStore = defineStore('attendance', () => {
     // QR Code methods
     qrCheckIn,
     qrCheckOut,
+    // History & Report
+    history,
+    historyTotal,
+    historyPage,
+    historyPageSize,
+    fetchHistory,
+    fetchReport,
+    // Stats
+    fetchMonthlyStats,
+    fetchLateStats,
+    // Correction
+    correctAttendance,
     resetState,
   }
 })

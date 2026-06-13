@@ -11,6 +11,7 @@ import (
 	"github.com/reshap0318/hadirYuk/internal/dtos"
 	"github.com/reshap0318/hadirYuk/internal/helpers"
 	"github.com/reshap0318/hadirYuk/internal/models"
+	"github.com/reshap0318/hadirYuk/internal/repositories"
 )
 
 const attendanceBufferMinutes = 15
@@ -839,4 +840,406 @@ func haversineDistance(lat1, lng1, lat2, lng2 float64) float64 {
 // degreesToRadians converts degrees to radians.
 func degreesToRadians(degrees float64) float64 {
 	return degrees * math.Pi / 180
+}
+
+// AttendanceHistory returns paginated attendance history for the current user.
+func (s *Services) AttendanceHistory(ctx context.Context, req dtos.AttendanceHistoryRequest) (*repositories.PagedResult[dtos.AttendanceHistoryDTO], error) {
+	s.Logger.LogStart("AttendanceHistory", "Fetching attendance history")
+
+	userID := helpers.GetCallerID(ctx)
+	if userID == 0 {
+		s.Logger.LogEndWithError("AttendanceHistory", "Invalid token: caller ID not found")
+		return nil, helpers.ErrInvalidToken
+	}
+
+	var dateFrom, dateTo *time.Time
+	if req.DateFrom != nil {
+		parsed, err := time.Parse("2006-01-02", *req.DateFrom)
+		if err == nil {
+			dateFrom = &parsed
+		}
+	}
+	if req.DateTo != nil {
+		parsed, err := time.Parse("2006-01-02", *req.DateTo)
+		if err == nil {
+			dateTo = &parsed
+		}
+	}
+
+	page := req.Page
+	pageSize := req.PageSize
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	result, err := s.repo.Attendance.FindHistory(nil, userID, dateFrom, dateTo, req.Status, page, pageSize, "User", "Shift", "Office")
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceHistory", "Failed to fetch history: %v", err)
+		return nil, err
+	}
+
+	// Convert to DTOs with related data
+	historyDTOs := make([]dtos.AttendanceHistoryDTO, len(result.Data))
+	for i, att := range result.Data {
+		dto := dtos.AttendanceHistoryDTO{
+			AttendanceDTO: dtos.ToAttendanceDTO(&att),
+		}
+		if att.User.ID != 0 {
+			dto.UserName = att.User.Name
+		}
+		if att.Shift.ID != 0 {
+			dto.ShiftName = att.Shift.Name
+		}
+		if att.Office.ID != 0 {
+			dto.OfficeName = att.Office.Name
+		}
+		historyDTOs[i] = dto
+	}
+
+	s.Logger.LogEnd("AttendanceHistory", "Found %d records", result.Total)
+
+	return &repositories.PagedResult[dtos.AttendanceHistoryDTO]{
+		Data:       historyDTOs,
+		Total:      result.Total,
+		Page:       result.Page,
+		PageSize:   result.PageSize,
+		TotalPages: result.TotalPages,
+	}, nil
+}
+
+// AttendanceHistoryAll returns paginated attendance history for all users (HR only).
+func (s *Services) AttendanceHistoryAll(ctx context.Context, req dtos.AttendanceHistoryRequest) (*repositories.PagedResult[dtos.AttendanceHistoryDTO], error) {
+	s.Logger.LogStart("AttendanceHistoryAll", "Fetching all attendance history")
+
+	var dateFrom, dateTo *time.Time
+	if req.DateFrom != nil {
+		parsed, err := time.Parse("2006-01-02", *req.DateFrom)
+		if err == nil {
+			dateFrom = &parsed
+		}
+	}
+	if req.DateTo != nil {
+		parsed, err := time.Parse("2006-01-02", *req.DateTo)
+		if err == nil {
+			dateTo = &parsed
+		}
+	}
+
+	page := req.Page
+	pageSize := req.PageSize
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	result, err := s.repo.Attendance.FindHistoryAll(nil, dateFrom, dateTo, req.Status, page, pageSize, "User", "Shift", "Office")
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceHistoryAll", "Failed to fetch history: %v", err)
+		return nil, err
+	}
+
+	// Convert to DTOs with related data
+	historyDTOs := make([]dtos.AttendanceHistoryDTO, len(result.Data))
+	for i, att := range result.Data {
+		dto := dtos.AttendanceHistoryDTO{
+			AttendanceDTO: dtos.ToAttendanceDTO(&att),
+		}
+		if att.User.ID != 0 {
+			dto.UserName = att.User.Name
+		}
+		if att.Shift.ID != 0 {
+			dto.ShiftName = att.Shift.Name
+		}
+		if att.Office.ID != 0 {
+			dto.OfficeName = att.Office.Name
+		}
+		historyDTOs[i] = dto
+	}
+
+	s.Logger.LogEnd("AttendanceHistoryAll", "Found %d records", result.Total)
+
+	return &repositories.PagedResult[dtos.AttendanceHistoryDTO]{
+		Data:       historyDTOs,
+		Total:      result.Total,
+		Page:       result.Page,
+		PageSize:   result.PageSize,
+		TotalPages: result.TotalPages,
+	}, nil
+}
+
+// AttendanceMonthlyStats returns monthly attendance statistics for the current user.
+func (s *Services) AttendanceMonthlyStats(ctx context.Context, year, month int) (*dtos.MonthlyStatsResponse, error) {
+	s.Logger.LogStart("AttendanceMonthlyStats", "Fetching monthly stats for %d-%d", year, month)
+
+	userID := helpers.GetCallerID(ctx)
+	if userID == 0 {
+		s.Logger.LogEndWithError("AttendanceMonthlyStats", "Invalid token: caller ID not found")
+		return nil, helpers.ErrInvalidToken
+	}
+
+	present, late, absent, overtime, err := s.repo.Attendance.FindMonthlyStats(nil, userID, year, month)
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceMonthlyStats", "Failed to fetch stats: %v", err)
+		return nil, err
+	}
+
+	// Calculate average duration (simplified)
+	avgDuration := "0h 0m"
+	if present+late > 0 {
+		avgDuration = fmt.Sprintf("~%dh", (present+late)*8/(present+late))
+	}
+
+	response := &dtos.MonthlyStatsResponse{
+		TotalPresent:  present,
+		TotalLate:     late,
+		TotalAbsent:   absent,
+		TotalOvertime: overtime,
+		AvgDuration:   avgDuration,
+	}
+
+	s.Logger.LogEnd("AttendanceMonthlyStats", "Stats: present=%d, late=%d, absent=%d, overtime=%d", present, late, absent, overtime)
+	return response, nil
+}
+
+// AttendanceCorrect corrects an attendance record (HR only).
+func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.AttendanceCorrectRequest) (*dtos.AttendanceDTO, error) {
+	s.Logger.LogStart("AttendanceCorrect", "Correcting attendance record %d", id)
+
+	callerID := helpers.GetCallerID(ctx)
+	if callerID == 0 {
+		s.Logger.LogEndWithError("AttendanceCorrect", "Invalid token: caller ID not found")
+		return nil, helpers.ErrInvalidToken
+	}
+
+	now := time.Now()
+	var result *models.Attendance
+
+	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
+		var err error
+		result, err = s.repo.Attendance.UpdateMap(tx, &models.Attendance{ID: id}, map[string]interface{}{
+			"time_in":           req.TimeIn,
+			"time_out":          req.TimeOut,
+			"corrected_by":      callerID,
+			"corrected_at":      now,
+			"correction_reason": req.CorrectionReason,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		_ = s.NotificationCreate(ctx, &NotificationCreateParams{
+			Type:    "warning",
+			Title:   "Absensi Dikoreksi",
+			Message: fmt.Sprintf("Record absensi #%d telah dikoreksi oleh HR", id),
+			Data: map[string]interface{}{
+				"id":           id,
+				"user_id":      result.UserID,
+				"corrected_by": callerID,
+			},
+		})
+
+		return result, nil
+	})
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceCorrect", "Failed to correct attendance: %v", err)
+		return nil, err
+	}
+
+	result = res.(*models.Attendance)
+	dto := dtos.ToAttendanceDTO(result)
+	s.Logger.LogEnd("AttendanceCorrect", "Attendance %d corrected by user %d", id, callerID)
+	return &dto, nil
+}
+
+// AttendanceReport returns attendance report with filters (HR only).
+func (s *Services) AttendanceReport(ctx context.Context, req dtos.AttendanceReportRequest) (*repositories.PagedResult[dtos.AttendanceHistoryDTO], error) {
+	s.Logger.LogStart("AttendanceReport", "Fetching attendance report")
+
+	var dateFrom, dateTo *time.Time
+	if req.DateFrom != nil {
+		parsed, err := time.Parse("2006-01-02", *req.DateFrom)
+		if err == nil {
+			dateFrom = &parsed
+		}
+	}
+	if req.DateTo != nil {
+		parsed, err := time.Parse("2006-01-02", *req.DateTo)
+		if err == nil {
+			dateTo = &parsed
+		}
+	}
+
+	page := req.Page
+	pageSize := req.PageSize
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	// Use FindHistoryAll with optional user_id filter
+	var result *repositories.PagedResult[models.Attendance]
+	var err error
+
+	if req.UserID != nil {
+		result, err = s.repo.Attendance.FindHistory(nil, *req.UserID, dateFrom, dateTo, req.Status, page, pageSize, "User", "Shift", "Office")
+	} else {
+		result, err = s.repo.Attendance.FindHistoryAll(nil, dateFrom, dateTo, req.Status, page, pageSize, "User", "Shift", "Office")
+	}
+
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceReport", "Failed to fetch report: %v", err)
+		return nil, err
+	}
+
+	// Convert to DTOs with related data
+	reportDTOs := make([]dtos.AttendanceHistoryDTO, len(result.Data))
+	for i, att := range result.Data {
+		dto := dtos.AttendanceHistoryDTO{
+			AttendanceDTO: dtos.ToAttendanceDTO(&att),
+		}
+		if att.User.ID != 0 {
+			dto.UserName = att.User.Name
+		}
+		if att.Shift.ID != 0 {
+			dto.ShiftName = att.Shift.Name
+		}
+		if att.Office.ID != 0 {
+			dto.OfficeName = att.Office.Name
+		}
+		reportDTOs[i] = dto
+	}
+
+	s.Logger.LogEnd("AttendanceReport", "Found %d records", result.Total)
+
+	return &repositories.PagedResult[dtos.AttendanceHistoryDTO]{
+		Data:       reportDTOs,
+		Total:      result.Total,
+		Page:       result.Page,
+		PageSize:   result.PageSize,
+		TotalPages: result.TotalPages,
+	}, nil
+}
+
+// AttendanceLateStats returns late attendance statistics (HR only).
+func (s *Services) AttendanceLateStats(ctx context.Context, dateFrom, dateTo *string, userID *uint, page, pageSize int) (*dtos.LateStatsResponse, error) {
+	s.Logger.LogStart("AttendanceLateStats", "Fetching late statistics")
+
+	var df, dt *time.Time
+	if dateFrom != nil {
+		parsed, err := time.Parse("2006-01-02", *dateFrom)
+		if err == nil {
+			df = &parsed
+		}
+	}
+	if dateTo != nil {
+		parsed, err := time.Parse("2006-01-02", *dateTo)
+		if err == nil {
+			dt = &parsed
+		}
+	}
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	result, err := s.repo.Attendance.FindLateStats(nil, df, dt, userID, page, pageSize, "User", "Shift", "Office")
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceLateStats", "Failed to fetch late stats: %v", err)
+		return nil, err
+	}
+
+	// Calculate statistics
+	totalLateDays := len(result.Data)
+	totalLateMinutes := 0
+	trendMap := make(map[string]*dtos.LateTrendDTO)
+	details := make([]dtos.LateDetailDTO, len(result.Data))
+
+	for i, att := range result.Data {
+		// Calculate late minutes (difference between time_in and shift start)
+		lateMinutes := 0
+		if att.TimeIn != nil && att.Shift.StartTime != "" {
+			shiftStart, _ := time.Parse("15:04", att.Shift.StartTime)
+			shiftStartTime := time.Date(att.TimeIn.Year(), att.TimeIn.Month(), att.TimeIn.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, att.TimeIn.Location())
+			diff := att.TimeIn.Sub(shiftStartTime)
+			if diff > 0 {
+				lateMinutes = int(diff.Minutes())
+			}
+		}
+		totalLateMinutes += lateMinutes
+
+		// Build trend
+		dateStr := att.Date.Format("2006-01-02")
+		if trend, exists := trendMap[dateStr]; exists {
+			trend.LateCount++
+			trend.TotalMinutes += lateMinutes
+		} else {
+			trendMap[dateStr] = &dtos.LateTrendDTO{
+				Date:         dateStr,
+				LateCount:    1,
+				TotalMinutes: lateMinutes,
+			}
+		}
+
+		// Build detail
+		userName := ""
+		if att.User.ID != 0 {
+			userName = att.User.Name
+		}
+		shiftName := ""
+		if att.Shift.ID != 0 {
+			shiftName = att.Shift.Name
+		}
+		officeName := ""
+		if att.Office.ID != 0 {
+			officeName = att.Office.Name
+		}
+
+		timeIn := time.Time{}
+		if att.TimeIn != nil {
+			timeIn = *att.TimeIn
+		}
+
+		details[i] = dtos.LateDetailDTO{
+			ID:          att.ID,
+			UserID:      att.UserID,
+			UserName:    userName,
+			Date:        att.Date,
+			ShiftName:   shiftName,
+			TimeIn:      timeIn,
+			LateMinutes: lateMinutes,
+			OfficeName:  officeName,
+		}
+	}
+
+	// Convert trend map to sorted slice
+	trend := make([]dtos.LateTrendDTO, 0, len(trendMap))
+	for _, t := range trendMap {
+		trend = append(trend, *t)
+	}
+
+	avgLateMinutes := float64(0)
+	if totalLateDays > 0 {
+		avgLateMinutes = float64(totalLateMinutes) / float64(totalLateDays)
+	}
+
+	response := &dtos.LateStatsResponse{
+		TotalLateDays:  totalLateDays,
+		TotalRecords:   result.Total,
+		AvgLateMinutes: avgLateMinutes,
+		Trend:          trend,
+		Details:        details,
+	}
+
+	s.Logger.LogEnd("AttendanceLateStats", "Found %d late records, avg %.1f minutes", totalLateDays, avgLateMinutes)
+	return response, nil
 }

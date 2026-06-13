@@ -289,9 +289,6 @@ function openFacePhotoModal() {
                   </p>
                 </div>
               </div>
-              <p v-if="!profileStore.profile.face_photo" class="mt-2 text-xs text-gray-400">
-                Hubungi admin untuk mendaftarkan foto wajah.
-              </p>
             </div>
           </div>
 

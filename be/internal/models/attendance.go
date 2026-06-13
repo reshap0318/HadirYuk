@@ -29,6 +29,11 @@ type Attendance struct {
 	Duration       string         `gorm:"type:varchar(20)" json:"duration"`
 	OvertimeMinutes int           `gorm:"not null;default:0" json:"overtime_minutes"`
 
+	// Correction
+	CorrectedBy    *uint          `gorm:"index" json:"corrected_by,omitempty"`
+	CorrectedAt    *time.Time     `json:"corrected_at,omitempty"`
+	CorrectionReason string       `gorm:"type:text" json:"correction_reason,omitempty"`
+
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`

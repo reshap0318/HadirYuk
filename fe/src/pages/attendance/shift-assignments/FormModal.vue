@@ -2,7 +2,7 @@
 import { UiModal, FormSelect, FormInput, UiButton } from '@/components/utils'
 import { computed, ref, onMounted } from 'vue'
 import useVuelidate from '@vuelidate/core'
-import { useShiftAssignmentStore } from '@/stores/shiftAssignment'
+import { useShiftAssignmentStore } from '@/stores/shift-assignment'
 import { useUserStore } from '@/stores/user'
 import { useShiftStore } from '@/stores/shift'
 import { useFormError } from '@/composables/useFormError'

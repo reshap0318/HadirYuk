@@ -14,6 +14,9 @@ import {
   PhCalendar,
   PhSignIn,
   PhQrCode,
+  PhClipboardText,
+  PhChartBar,
+  PhFiles,
 } from '@phosphor-icons/vue'
 import type { IMenuItem } from '@/components/layouts/SidebarMenu.vue'
 
@@ -57,6 +60,19 @@ const allMenuItems: IMenuItem[] = [
     label: 'Penugasan Shift',
     to: '/attendance/shift-assignments',
     permissions: ['shift-assign.index'],
+  },
+  { icon: PhClipboardText, label: 'Riwayat Absensi', to: '/attendance/history' },
+  {
+    icon: PhFiles,
+    label: 'Laporan Absensi',
+    to: '/attendance/report',
+    permissions: ['report.view'],
+  },
+  {
+    icon: PhChartBar,
+    label: 'Statistik Telat',
+    to: '/attendance/late-statistics',
+    permissions: ['late-statistic.view'],
   },
 ]
 

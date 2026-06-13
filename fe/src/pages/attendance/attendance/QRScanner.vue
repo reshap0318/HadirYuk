@@ -2,8 +2,7 @@
   <div class="relative">
     <div
       v-if="!scanning && !lastResult && !error"
-      class="w-full rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center"
-      style="min-height: 300px"
+      class="w-full rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center min-h-[200px] md:min-h-[350px]"
     >
       <div class="text-center text-gray-500">
         <svg
@@ -28,7 +27,7 @@
       id="qr-reader"
       ref="scannerContainer"
       class="w-full rounded-lg bg-gray-100"
-      style="height: 300px"
+      style="height: 350px"
     ></div>
 
     <div
@@ -55,24 +54,24 @@
     <div class="mt-3 flex gap-2">
       <button
         v-if="!scanning && !lastResult && !error"
-        @click="startScanner"
         class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        @click="startScanner"
       >
         Mulai Scan
       </button>
 
       <button
         v-if="scanning"
-        @click="stopScanner"
         class="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+        @click="stopScanner"
       >
         Stop Scan
       </button>
 
       <button
         v-if="lastResult || error"
-        @click="resetScanner"
         class="flex-1 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+        @click="resetScanner"
       >
         Scan Ulang
       </button>
@@ -100,30 +99,40 @@ const error = ref<string | null>(null)
 let scanner: Html5Qrcode | null = null
 
 async function startScanner() {
-  if (props.disabled) return
+  console.log('[QRScanner] startScanner called, disabled:', props.disabled)
+
+  if (props.disabled) {
+    console.warn('[QRScanner] Scanner is disabled')
+    error.value = 'Scanner sedang dinonaktifkan. Selesaikan absensi saat ini terlebih dahulu.'
+    return
+  }
 
   error.value = null
   lastResult.value = null
   scanning.value = true
+
   await nextTick()
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise((resolve) => setTimeout(resolve, 200))
 
   if (!scannerContainer.value) {
+    console.error('[QRScanner] Container not found')
     error.value = 'Container scanner tidak tersedia'
     scanning.value = false
     return
   }
 
-  scanner = new Html5Qrcode('qr-reader', { verbose: false })
+  try {
+    scanner = new Html5Qrcode('qr-reader', { verbose: false })
 
-  const config = {
-    fps: 10,
-    qrbox: { width: 250, height: 250 },
-    aspectRatio: 1.0,
-  }
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      aspectRatio: 1.0,
+    }
 
-  scanner
-    .start(
+    console.log('[QRScanner] Starting camera...')
+
+    await scanner.start(
       { facingMode: 'user' },
       config,
       (decodedText) => {
@@ -133,11 +142,14 @@ async function startScanner() {
         // Ignore scan errors
       },
     )
-    .catch((err) => {
-      error.value = 'Gagal mengakses kamera. Pastikan izin kamera diberikan.'
-      scanning.value = false
-      console.error('Failed to start scanner:', err)
-    })
+
+    console.log('[QRScanner] Camera started successfully')
+  } catch (err) {
+    console.error('[QRScanner] Failed to start scanner:', err)
+    error.value = 'Gagal mengakses kamera. Pastikan izin kamera diberikan.'
+    scanning.value = false
+    scanner = null
+  }
 }
 
 function stopScanner() {
@@ -146,7 +158,6 @@ function stopScanner() {
       .stop()
       .then(() => {
         scanning.value = false
-        scanner?.clear()
         scanner = null
       })
       .catch((err) => {
@@ -159,7 +170,7 @@ function resetScanner() {
   lastResult.value = null
   error.value = null
   if (scanner) {
-    scanner.clear()
+    scanner.stop().catch(() => {})
     scanner = null
   }
   scanning.value = false
@@ -174,17 +185,18 @@ function onScanSuccess(decodedText: string) {
 function forceStop() {
   if (scanner) {
     scanner.stop().catch(() => {})
-    scanner?.clear()
     scanner = null
   }
   scanning.value = false
+  lastResult.value = null
+  error.value = null
 }
 
 defineExpose({ forceStop })
 
 onBeforeUnmount(() => {
   if (scanner) {
-    scanner.clear()
+    scanner.stop().catch(() => {})
     scanner = null
   }
 })

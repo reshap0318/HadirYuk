@@ -2,7 +2,7 @@
 import { UiModal, FormInput, UiButton } from '@/components/utils'
 import { computed, ref } from 'vue'
 import useVuelidate from '@vuelidate/core'
-import { useLeaveTypeStore } from '@/stores/leaveType'
+import { useLeaveTypeStore } from '@/stores/leave-type'
 import { useFormError } from '@/composables/useFormError'
 
 const leaveTypeStore = useLeaveTypeStore()

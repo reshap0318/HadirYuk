@@ -17,5 +17,15 @@ func RegisterAttendanceRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, a
 		attendance.POST("/checkin/qr", middleware.RequirePermission(acc, "attendance.checkin"), handlers.AttendanceQRCheckIn)
 		attendance.POST("/checkout/qr", middleware.RequirePermission(acc, "attendance.checkout"), handlers.AttendanceQRCheckOut)
 		attendance.POST("/nearest-office", handlers.GetNearestOffice)
+		attendance.GET("/history", handlers.AttendanceHistory)
+		attendance.GET("/stats", handlers.AttendanceMonthlyStats)
+		attendance.PUT("/:id/correct", middleware.RequirePermission(acc, "attendance.correct"), handlers.AttendanceCorrect)
+		attendance.GET("/late-statistics", middleware.RequirePermission(acc, "late-statistic.view"), handlers.AttendanceLateStats)
+	}
+
+	// Report routes
+	reports := r.Group("/attendance/reports")
+	{
+		reports.GET("", middleware.RequirePermission(acc, "report.view"), handlers.AttendanceReport)
 	}
 }

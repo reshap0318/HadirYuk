@@ -699,7 +699,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance History
 - **Priority:** P1
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.5 Functional Requirements — Attendance History
   - §3.15 User Interaction — Attendance History
@@ -711,7 +711,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance History
 - **Priority:** P1
 - **Estimated Effort:** 1h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.5 Functional Requirements — Attendance History
 - **TDD Ref:**
@@ -722,7 +722,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance History
 - **Priority:** P1
 - **Estimated Effort:** 1h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.5 Functional Requirements — Attendance History
 - **TDD Ref:**
@@ -733,7 +733,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance History
 - **Priority:** P1
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.5 Functional Requirements — Attendance History
   - §3.15 User Interaction — Attendance History
@@ -745,7 +745,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance History
 - **Priority:** P1
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.5 Functional Requirements — Attendance History
 - **TDD Ref:**
@@ -878,7 +878,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance Correction
 - **Priority:** P2
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.6 Functional Requirements — Attendance Correction
   - §3.11 User Interaction — Attendance Correction Form
@@ -890,7 +890,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance Correction
 - **Priority:** P2
 - **Estimated Effort:** 2h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.6 Functional Requirements — Attendance Correction
   - §3.11 User Interaction — Attendance Correction Form
@@ -926,7 +926,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance Report
 - **Priority:** P2
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.10.1 Functional Requirements — Attendance Report
   - §3.15 User Interaction — Attendance History
@@ -960,7 +960,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance Report
 - **Priority:** P2
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.10 Reporting — Functional Requirements
   - §3.15 User Interaction — Attendance History
@@ -1008,7 +1008,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Attendance View-All
 - **Priority:** P2
 - **Estimated Effort:** 1h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.2.5 Functional Requirements — Attendance History
 - **TDD Ref:**
@@ -1034,7 +1034,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Late Statistics
 - **Priority:** P3
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.5.1 Functional Requirements — View Late Statistics
 - **TDD Ref:**
@@ -1045,7 +1045,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Late Statistics
 - **Priority:** P3
 - **Estimated Effort:** 3h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.5.1 Functional Requirements — View Late Statistics
 - **TDD Ref:**
@@ -1249,8 +1249,8 @@ last_modified: 2026-06-12
 | --------------------------------- | ----------- | --------- | --------- | ---------- |
 | Phase 1 (Foundation)              | 20          | 20        | 0         | ~48h       |
 | Phase 2 (Core Attendance)         | 31          | 28        | 3         | ~83h       |
-| Phase 3 (Self-Service)            | 13          | 0         | 13        | ~28h       |
-| Phase 4 (HR Operations)           | 15          | 0         | 15        | ~38h       |
-| Phase 5 (Analytics)               | 8           | 0         | 8         | ~20h       |
+| Phase 3 (Self-Service)            | 13          | 4         | 9         | ~28h       |
+| Phase 4 (HR Operations)           | 15          | 5         | 10        | ~38h       |
+| Phase 5 (Analytics)               | 8           | 2         | 6         | ~20h       |
 | Phase 6 (Face Recognition — Opt.) | 6           | 0         | 6         | ~20h       |
-| **Total**                         | **93**      | **48**    | **45**    | **~237h**  |
+| **Total**                         | **93**      | **59**    | **34**    | **~237h**  |

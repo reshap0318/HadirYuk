@@ -242,25 +242,25 @@ watch(mode, (newMode) => {
     <!-- Mode Tabs -->
     <div class="mb-4 flex gap-2">
       <button
-        @click="mode = 'geotagging'"
         :class="[
           'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
           mode === 'geotagging'
             ? 'bg-blue-600 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
         ]"
+        @click="mode = 'geotagging'"
       >
         <PhMapPin class="w-4 h-4" />
         Geotagging
       </button>
       <button
-        @click="mode = 'qrcode'"
         :class="[
           'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
           mode === 'qrcode'
             ? 'bg-blue-600 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
         ]"
+        @click="mode = 'qrcode'"
       >
         <PhQrCode class="w-4 h-4" />
         QR Code

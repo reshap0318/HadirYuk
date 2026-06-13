@@ -2,8 +2,8 @@
 import { UiCard, UiButton, UiPagination, UiEmptyState, UiSkeleton } from '@/components/utils'
 import FormModal from './FormModal.vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useShiftAssignmentStore } from '@/stores/shiftAssignment'
-import type { IShiftAssignment } from '@/stores/shiftAssignment'
+import { useShiftAssignmentStore } from '@/stores/shift-assignment'
+import type { IShiftAssignment } from '@/stores/shift-assignment'
 import {
   PhPlus,
   PhPencil,
