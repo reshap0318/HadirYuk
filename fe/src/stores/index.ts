@@ -54,3 +54,15 @@ export type {
 
 export { useQrcodeStore } from './qrcode'
 export type { IQRCode, IQRCodeGeneratePayload } from './qrcode'
+
+export { useDashboardStore } from './dashboard'
+export type {
+  IEmployeeDashboard,
+  IHRDashboard,
+  IUpcomingShift,
+  ILeaveBalance,
+  IDepartmentStat,
+  IRecentActivity,
+  IScheduleEmployee,
+  IScheduleShift,
+} from './dashboard'

@@ -222,6 +222,26 @@ func (r *AttendanceRepository) FindMonthlyStats(tx *gorm.DB, userID uint, year, 
 	return stats.Present, stats.Late, stats.Absent, stats.Overtime, err
 }
 
+// FindByDateAll finds all attendance records for a specific date.
+func (r *AttendanceRepository) FindByDateAll(tx *gorm.DB, date time.Time, preloads ...string) ([]models.Attendance, error) {
+	db := r.getDB(tx)
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	query := db.Model(&models.Attendance{}).
+		Where("date >= ? AND date < ?", startOfDay, endOfDay)
+
+	for _, preload := range preloads {
+		query = query.Preload(preload)
+	}
+
+	var attendances []models.Attendance
+	if err := query.Find(&attendances).Error; err != nil {
+		return nil, err
+	}
+	return attendances, nil
+}
+
 // FindLateStats finds late attendance records with filters.
 func (r *AttendanceRepository) FindLateStats(tx *gorm.DB, dateFrom, dateTo *time.Time, userID *uint, page, pageSize int, preloads ...string) (*PagedResult[models.Attendance], error) {
 	if page <= 0 {

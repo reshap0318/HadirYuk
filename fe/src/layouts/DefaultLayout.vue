@@ -17,6 +17,8 @@ import {
   PhClipboardText,
   PhChartBar,
   PhFiles,
+  PhGauge,
+  PhCalendarCheck,
 } from '@phosphor-icons/vue'
 import type { IMenuItem } from '@/components/layouts/SidebarMenu.vue'
 
@@ -27,6 +29,7 @@ const appName = import.meta.env.VITE_APP_NAME || 'Admin'
 
 const allMenuItems: IMenuItem[] = [
   { icon: PhHouse, label: 'Dashboard', to: '/' },
+  { icon: PhGauge, label: 'Dashboard HR', to: '/dashboard/hr', permissions: ['dashboard.view-hr'] },
   { isTitle: true, label: 'Management' },
   { icon: PhUsers, label: 'Users', to: '/users', permissions: ['user.index'] },
   {
@@ -59,6 +62,12 @@ const allMenuItems: IMenuItem[] = [
     icon: PhCalendar,
     label: 'Penugasan Shift',
     to: '/attendance/shift-assignments',
+    permissions: ['shift-assign.index'],
+  },
+  {
+    icon: PhCalendarCheck,
+    label: 'Jadwal Shift',
+    to: '/attendance/schedule',
     permissions: ['shift-assign.index'],
   },
   { icon: PhClipboardText, label: 'Riwayat Absensi', to: '/attendance/history' },

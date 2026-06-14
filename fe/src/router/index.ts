@@ -109,6 +109,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/attendance/late-statistics/IndexView.vue'),
         meta: { permissions: ['late-statistic.view'] },
       },
+      {
+        path: 'dashboard/hr',
+        name: 'HRDashboard',
+        component: () => import('@/pages/dashboard/hr/IndexView.vue'),
+        meta: { permissions: ['dashboard.view-hr'] },
+      },
+      {
+        path: 'attendance/schedule',
+        name: 'Schedule',
+        component: () => import('@/pages/attendance/schedule/IndexView.vue'),
+        meta: { permissions: ['shift-assign.index'] },
+      },
     ],
   },
   // Catch-all route for 404 - must be last

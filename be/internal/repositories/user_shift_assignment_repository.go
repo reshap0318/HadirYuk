@@ -147,6 +147,50 @@ func (r *UserShiftAssignmentRepository) FindOverlappingAssignments(tx *gorm.DB, 
 	return assignments, nil
 }
 
+// FindAllActiveForUserDateRange finds all active shift assignments for a user within a date range.
+func (r *UserShiftAssignmentRepository) FindAllActiveForUserDateRange(tx *gorm.DB, userID uint, startDate, endDate time.Time, preloads ...string) ([]models.UserShiftAssignment, error) {
+	db := r.getDB(tx)
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
+
+	query := db.Model(&models.UserShiftAssignment{}).
+		Where("user_id = ? AND is_active = ?", userID, true).
+		Where("start_date <= ?", endStr).
+		Where("end_date IS NULL OR end_date >= ?", startStr)
+
+	for _, preload := range preloads {
+		query = query.Preload(preload)
+	}
+
+	var assignments []models.UserShiftAssignment
+	if err := query.Find(&assignments).Error; err != nil {
+		return nil, err
+	}
+	return assignments, nil
+}
+
+// FindAllInDateRange finds all active assignments for all users within a date range.
+func (r *UserShiftAssignmentRepository) FindAllInDateRange(tx *gorm.DB, startDate, endDate time.Time, preloads ...string) ([]models.UserShiftAssignment, error) {
+	db := r.getDB(tx)
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
+
+	query := db.Model(&models.UserShiftAssignment{}).
+		Where("is_active = ?", true).
+		Where("start_date <= ?", endStr).
+		Where("end_date IS NULL OR end_date >= ?", startStr)
+
+	for _, preload := range preloads {
+		query = query.Preload(preload)
+	}
+
+	var assignments []models.UserShiftAssignment
+	if err := query.Find(&assignments).Error; err != nil {
+		return nil, err
+	}
+	return assignments, nil
+}
+
 // FindAllWithSearch finds all assignments with search on user name, email, and shift name.
 func (r *UserShiftAssignmentRepository) FindAllWithSearch(tx *gorm.DB, opts *QueryOptions) (*PagedResult[models.UserShiftAssignment], error) {
 	db := r.getDB(tx)

@@ -238,7 +238,7 @@ last_modified: 2026-06-12
 - **Feature/Module:** Profile
 - **Priority:** P1
 - **Estimated Effort:** 1h
-- **Status:** [ ]
+- **Status:** [x]
 - **FSD Ref:**
   - §2.14.1 Functional Requirements — Change Password (Profile)
 - **TDD Ref:**
