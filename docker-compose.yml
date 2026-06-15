@@ -1,0 +1,39 @@
+# ═══════════════════════════════════════════════════════════════
+#  HadirYuk — Base Compose
+#  Semua env variable dari file .env (root)
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  backend:
+    build:
+      context: ./be
+      dockerfile: ../etc/Dockerfile.be
+    image: hadiryuk-be:latest
+    container_name: hadiryuk-be
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - hadiryuk-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: etc/Dockerfile.fe
+    image: hadiryuk-fe:latest
+    container_name: hadiryuk-fe
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/be/api}
+      - VITE_APP_NAME=${VITE_APP_NAME:-HadirYuk}
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://backend:8080}
+    networks:
+      - hadiryuk-net
+
+networks:
+  hadiryuk-net:
+    driver: bridge
+    name: hadiryuk-net

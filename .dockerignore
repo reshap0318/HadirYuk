@@ -1,0 +1,16 @@
+# ── Frontend build ignores ───────────────────────────────────────
+fe/node_modules
+fe/dist
+fe/.git
+fe/.env
+fe/.env.example
+fe/.gitignore
+
+# ── Backend (not needed for frontend build) ──────────────────────
+be/
+plans/
+
+# ── Etc ──────────────────────────────────────────────────────────
+.git
+*.md
+docker-compose*

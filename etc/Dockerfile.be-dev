@@ -1,0 +1,15 @@
+# ── Development Backend ──────────────────────────────────────────
+# Go dev image with air for hot-reload (optional)
+# ──────────────────────────────────────────────────────────────────
+
+FROM golang:1.25-alpine
+
+RUN apk add --no-cache git gcc musl-dev tzdata
+
+WORKDIR /app
+
+RUN go install github.com/air-verse/air@latest
+
+EXPOSE 8080
+
+CMD ["go", "run", "./cmd/api"]

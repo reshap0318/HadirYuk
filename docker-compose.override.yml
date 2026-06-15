@@ -1,0 +1,49 @@
+# ═══════════════════════════════════════════════════════════════
+#  HadirYuk — Development Overrides
+#  Auto-merged: docker compose up
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  backend:
+    build:
+      dockerfile: ../etc/Dockerfile.be-dev
+    volumes:
+      - ./be:/app
+    command: go run ./cmd/api
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+    networks:
+      - hadiryuk-net
+      - mysql-network
+      - redis-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: etc/Dockerfile.fe-dev
+    ports:
+      - "9001:5173"
+    volumes:
+      - ./fe:/app
+      - /app/node_modules
+    command: npx vite --host 0.0.0.0 --port 5173
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+networks:
+  mysql-network:
+    external: true
+  redis-network:
+    external: true
