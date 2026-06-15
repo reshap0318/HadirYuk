@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v1.8.0 - 2026-06-15
+
+### Remove Leave Management Feature
+
+- **01_PRD.md:** Removed user stories US-005 (Ajukan cuti), US-010 (Kelola cuti), US-016 (Sisa cuti); removed Leave Management from Must Have and Sisa Cuti View from Should Have; removed "Ajukan Cuti" and "Kelola Cuti" from user flow
+- **02_FSD.md:** Removed §2.4 Leave Management, §2.10.4 Leave Report, §3.8 Leave Request Form, §3.16 Leave Balance, §5.3 Leave Request Flow, §6.3 Leave Validation; removed leave references from Hierarchy, Dashboard, Report, Attendance History, and Audit Log; removed leave use cases (UC6, UC7, UC16) from use case diagram; renumbered subsequent sections
+- **03_Role_Matrix.md:** Removed `leave.view-all` and `leave.manage-types` permissions; removed Leave section from matrix; removed Leave Records data ownership section; updated role descriptions
+- **04_TDD.md:** Removed LEAVE_TYPES, LEAVE_REQUESTS, LEAVE_BALANCES from ERD; removed §4.4 Leave Endpoints; removed leave report endpoints; removed leave indices; removed Leave Balance Initialization Strategy; renumbered subsequent sections
+- **05_ITL.md:** Removed tasks T-013, T-044, T-045, T-057-T-062, T-080-T-082, T-084; removed leave test cases; updated Phase 3 description; updated summary counts
+
 ## v1.7.0 - 2026-06-12
 
 ### Multi-Session Attendance Implementation Aligned with Plan

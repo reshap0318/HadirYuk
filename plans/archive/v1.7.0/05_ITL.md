@@ -1,8 +1,8 @@
 ---
 title: 05_ITL.md
-version: 1.8.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-15
+last_modified: 2026-06-12
 ---
 
 # Implementation Task List (ITL)
@@ -19,7 +19,7 @@ last_modified: 2026-06-15
 | ----------- | -------------------------------- | ------------------------------------------------------------------------------ |
 | **Phase 1** | Foundation (DONE)                | Auth, RBAC, Data Master, Profil, Notifikasi, Upload, Peta                      |
 | **Phase 2** | Core Attendance (P0)             | Shift assignment, profile photo, check-in/out geotagging + photo evidence & QR |
-| **Phase 3** | Employee Self-Service (P1)       | Riwayat absensi, dasbor karyawan                                         |
+| **Phase 3** | Employee Self-Service (P1)       | Riwayat absensi, dasbor karyawan, cuti                                         |
 | **Phase 4** | HR Operations (P2)               | Dasbor HR, koreksi absensi, jadwal shift, laporan                              |
 | **Phase 5** | Analytics & Polish (P3-P4)       | Statistik keterlambatan, dasbor admin, audit log                               |
 | **Phase 6** | Face Recognition (Optional / P4) | Face embedding generation, face matching during check-in/out                   |
@@ -179,6 +179,20 @@ last_modified: 2026-06-15
   - GET /api/locations/:id
   - PUT /api/locations/:id
   - DELETE /api/locations/:id
+
+### T-013: CRUD Leave Type Endpoints
+
+- **Feature/Module:** Data Master
+- **Priority:** P1
+- **Estimated Effort:** 2h
+- **Status:** [x]
+- **FSD Ref:**
+  - §2.4 Leave Management — Functional Requirements
+- **TDD Ref:**
+  - GET /api/leave-types
+  - POST /api/leave-types
+  - PUT /api/leave-types/:id
+  - DELETE /api/leave-types/:id
 
 ### T-014: CRUD User with Auto-Profile
 
@@ -584,6 +598,30 @@ last_modified: 2026-06-15
 - **TDD Ref:**
   - ERD — USER_SHIFT_ASSIGNMENTS table
 
+### T-044: Backend — LeaveBalance GORM Model + Migration
+
+- **Feature/Module:** Attendance Model
+- **Priority:** P0
+- **Estimated Effort:** 1h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4.2 Functional Requirements — View Leave Balance
+- **TDD Ref:**
+  - ERD — LEAVE_BALANCES table
+
+### T-045: Backend — LeaveRequest GORM Model + Migration
+
+- **Feature/Module:** Attendance Model
+- **Priority:** P0
+- **Estimated Effort:** 1h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4.1 Functional Requirements — Submit Leave Request
+- **TDD Ref:**
+  - ERD — LEAVE_REQUESTS table
+
+---
+
 ### T-046: Backend — Multi-Session Attendance (Auto-Detect Shift + Window Logic)
 
 - **Feature/Module:** Attendance Check-in/Check-out
@@ -736,11 +774,82 @@ last_modified: 2026-06-15
 - **TDD Ref:**
   - GET /api/dashboard/employee
 
+### T-057: Backend — Submit Leave Request + Balance Deduction
+
+- **Feature/Module:** Leave Request
+- **Priority:** P1
+- **Estimated Effort:** 3h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4.1 Functional Requirements — Submit Leave Request
+  - §3.8 User Interaction — Leave Request Form
+  - §5.3 Feature Logic Flow — Leave Request Flow
+- **TDD Ref:**
+  - POST /api/leave (request payload uses `leave_type`, not `leave_type_id`)
+
+### T-058: Frontend — Leave Request Form + Validation
+
+- **Feature/Module:** Leave Request
+- **Priority:** P1
+- **Estimated Effort:** 2h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4.1 Functional Requirements — Submit Leave Request
+  - §3.8 User Interaction — Leave Request Form
+- **TDD Ref:**
+  - POST /api/leave
+
+### T-059: Backend — Leave Balance Endpoint
+
+- **Feature/Module:** Leave Balance
+- **Priority:** P1
+- **Estimated Effort:** 2h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4.2 Functional Requirements — View Leave Balance
+  - §3.16 User Interaction — Leave Balance
+- **TDD Ref:**
+  - GET /api/leave/balance
+
+### T-060: Frontend — Leave Balance Page (Progress Bar, History)
+
+- **Feature/Module:** Leave Balance
+- **Priority:** P1
+- **Estimated Effort:** 2h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4.2 Functional Requirements — View Leave Balance
+  - §3.16 User Interaction — Leave Balance
+- **TDD Ref:**
+  - GET /api/leave/balance
+
+### T-061: Backend — Auto-Init Leave Balance on Employee Creation
+
+- **Feature/Module:** Leave Balance
+- **Priority:** P1
+- **Estimated Effort:** 1h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4.2 Functional Requirements — View Leave Balance
+- **TDD Ref:**
+  - Leave Balance Initialization Strategy (TDD §3)
+
+### T-062: Backend — Yearly Reset Cron Job (1 Januari)
+
+- **Feature/Module:** Leave Balance
+- **Priority:** P1
+- **Estimated Effort:** 2h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4.2 Functional Requirements — View Leave Balance
+- **TDD Ref:**
+  - Leave Balance Initialization Strategy (TDD §3)
+
 ---
 
 ## Phase 4: HR Operations (P2)
 
-### T-070: Backend — HR Dashboard Endpoint (Stats, Chart, Not-Attended)
+### T-070: Backend — HR Dashboard Endpoint (Stats, Chart, Not-Attended, Leaves)
 
 - **Feature/Module:** HR Dashboard
 - **Priority:** P2
@@ -860,6 +969,40 @@ last_modified: 2026-06-15
   - GET /api/reports/attendance/export/excel
   - GET /api/reports/attendance/export/pdf
 
+### T-080: Backend — Leave Report Endpoint with Filters
+
+- **Feature/Module:** Leave Report
+- **Priority:** P2
+- **Estimated Effort:** 2h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.10.4 Functional Requirements — Leave Report
+- **TDD Ref:**
+  - GET /api/reports/leave
+
+### T-081: Backend — Leave Report Export Excel/PDF
+
+- **Feature/Module:** Leave Report
+- **Priority:** P2
+- **Estimated Effort:** 2h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.10.4 Functional Requirements — Leave Report
+- **TDD Ref:**
+  - GET /api/reports/leave/export/excel
+  - GET /api/reports/leave/export/pdf
+
+### T-082: Frontend — Leave Report Page
+
+- **Feature/Module:** Leave Report
+- **Priority:** P2
+- **Estimated Effort:** 2h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.10.4 Functional Requirements — Leave Report
+- **TDD Ref:**
+  - GET /api/reports/leave
+
 ### T-083: Backend — Attendance History with user_id=all Filter
 
 - **Feature/Module:** Attendance View-All
@@ -870,6 +1013,17 @@ last_modified: 2026-06-15
   - §2.2.5 Functional Requirements — Attendance History
 - **TDD Ref:**
   - GET /api/attendance/history
+
+### T-084: Backend — Leave History with user_id=all Filter
+
+- **Feature/Module:** Leave View-All
+- **Priority:** P2
+- **Estimated Effort:** 1h
+- **Status:** [ ]
+- **FSD Ref:**
+  - §2.4 Leave Management — Functional Requirements
+- **TDD Ref:**
+  - GET /api/leave
 
 ---
 
@@ -1076,6 +1230,9 @@ last_modified: 2026-06-15
 | T-039   | Check-out QR valid            | Record updated dengan duration + overtime      | [x]    |
 | T-040   | QR scanner reuse check-out    | Tab toggle Geotagging/QR di IndexView          | [x]    |
 | T-037   | Check-in QR expired           | Error "QR Code sudah expired"                  | [ ]    |
+| T-057   | Submit cuti valid             | Leave request tersimpan, balance berkurang     | [ ]    |
+| T-057   | Submit cuti saldo tidak cukup | Error "Sisa cuti tidak mencukupi"              | [ ]    |
+| T-057   | Submit cuti overlap           | Error "Tanggal cuti overlap"                   | [ ]    |
 | T-072   | Koreksi absensi               | Record updated, audit log tercatat             | [ ]    |
 | T-077   | Export Excel                  | File .xlsx terdownload dengan data benar       | [ ]    |
 | T-078   | Export PDF                    | File .pdf terdownload dengan data benar        | [ ]    |
@@ -1090,10 +1247,10 @@ last_modified: 2026-06-15
 
 | Phase                             | Total Tasks | Completed | Remaining | Est. Hours |
 | --------------------------------- | ----------- | --------- | --------- | ---------- |
-| Phase 1 (Foundation)              | 19          | 19        | 0         | ~46h       |
-| Phase 2 (Core Attendance)         | 29          | 28        | 1         | ~81h       |
-| Phase 3 (Self-Service)            | 7           | 4         | 3         | ~16h       |
-| Phase 4 (HR Operations)           | 11          | 5         | 6         | ~28h       |
+| Phase 1 (Foundation)              | 20          | 20        | 0         | ~48h       |
+| Phase 2 (Core Attendance)         | 31          | 28        | 3         | ~83h       |
+| Phase 3 (Self-Service)            | 13          | 4         | 9         | ~28h       |
+| Phase 4 (HR Operations)           | 15          | 5         | 10        | ~38h       |
 | Phase 5 (Analytics)               | 8           | 2         | 6         | ~20h       |
 | Phase 6 (Face Recognition — Opt.) | 6           | 0         | 6         | ~20h       |
-| **Total**                         | **81**      | **58**    | **22**    | **~217h**  |
+| **Total**                         | **93**      | **59**    | **34**    | **~237h**  |

@@ -1,8 +1,8 @@
 ---
 title: 02_FSD.md
-version: 1.8.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-15
+last_modified: 2026-06-12
 ---
 
 # Functional Specification Document (FSD)
@@ -31,6 +31,11 @@ HadirYuk
 │   ├── View Shift List
 │   ├── Assign Shift to Employee
 │   └── Shift Schedule View
+├── Leave Management
+│   ├── Submit Leave Request
+│   ├── View Leave History
+│   ├── View Leave Balance
+│   └── Manage Leave Types (Admin)
 ├── User Management
 │   ├── Create Employee
 │   ├── Edit Employee
@@ -56,6 +61,7 @@ HadirYuk
 │   └── Set Geofence Radius
 ├── Reporting
 │   ├── Attendance Report
+│   ├── Leave Report
 │   ├── Late Statistics
 │   ├── Export to Excel
 │   └── Export to PDF
@@ -263,10 +269,34 @@ HadirYuk
   - Warna sesuai color code shift
 - **Post-condition:** Jadwal shift ditampilkan
 
+### §2.4 Leave Management
 
-### §2.4 Late Statistics
+#### §2.4.1 Submit Leave Request
 
-#### §2.4.1 View Late Statistics
+- **Pre-condition:** Karyawan login, sisa cuti > 0
+- **Business Logic:**
+  - Input: leave type, start date, end date, reason
+  - Validasi: end date >= start date
+  - Validasi: duration <= sisa cuti
+  - Validasi: tidak overlap dengan leave yang sudah ada
+  - Hitung duration otomatis (exclude weekend)
+  - Simpan leave request dengan status "submitted"
+  - Tanpa approval workflow, langsung tercatat
+- **Post-condition:** Leave request tersimpan, sisa cuti berkurang
+
+#### §2.4.2 View Leave Balance
+
+- **Pre-condition:** User login
+- **Business Logic:**
+  - Tampilkan total cuti tahunan
+  - Tampilkan cuti yang sudah digunakan
+  - Tampilkan sisa cuti
+  - Breakdown per leave type
+- **Post-condition:** Sisa cuti ditampilkan
+
+### §2.5 Late Statistics
+
+#### §2.5.1 View Late Statistics
 
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
@@ -276,9 +306,9 @@ HadirYuk
   - Tampilkan grafik trend keterlambatan
 - **Post-condition:** Statistik keterlambatan ditampilkan
 
-### §2.5 User Management
+### §2.6 User Management
 
-#### §2.5.1 Create Employee
+#### §2.6.1 Create Employee
 
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
@@ -290,7 +320,7 @@ HadirYuk
   - `join_date` otomatis diset ke `created_at` (tidak perlu input manual)
 - **Post-condition:** Employee baru tersimpan
 
-#### §2.5.2 Upload Profile Photo
+#### §2.6.2 Upload Profile Photo
 
 - **Pre-condition:** User login
 - **Business Logic:**
@@ -301,9 +331,9 @@ HadirYuk
   - Bisa upload multiple foto untuk akurasi face recognition lebih baik (opsional)
 - **Post-condition:** Foto profil tersimpan, face embedding tergenerate (jika face recognition aktif)
 
-### §2.6 UAM (Role & Permissions)
+### §2.7 UAM (Role & Permissions)
 
-#### §2.6.1 Create Role
+#### §2.7.1 Create Role
 
 - **Pre-condition:** Super Admin login
 - **Business Logic:**
@@ -312,7 +342,7 @@ HadirYuk
   - Simpan role ke tabel `roles`
 - **Post-condition:** Role baru tersimpan di database
 
-#### §2.6.2 Assign Permissions to Role
+#### §2.7.2 Assign Permissions to Role
 
 - **Pre-condition:** Super Admin login, role ada
 - **Business Logic:**
@@ -322,7 +352,7 @@ HadirYuk
   - Format permission: `{module}.{action}` (contoh: `user.index`, `user.create`, `attendance.view-all`)
 - **Post-condition:** Permission terassign ke role
 
-#### §2.6.3 Assign Role to User
+#### §2.7.3 Assign Role to User
 
 - **Pre-condition:** Super Admin login, user dan role ada
 - **Business Logic:**
@@ -331,32 +361,33 @@ HadirYuk
   - Simpan mapping user-role ke tabel `user_has_roles`
 - **Post-condition:** User terassign ke role
 
-### §2.7 Dashboard
+### §2.8 Dashboard
 
-#### §2.7.1 Karyawan Dashboard
+#### §2.8.1 Karyawan Dashboard
 
 - **Pre-condition:** Karyawan login
 - **Business Logic:**
   - Tampilkan status kehadiran hari ini (checked-in, checked-out, absent)
   - Tampilkan jam kerja shift hari ini
   - Tampilkan quick action: Check-in, Check-out
-  - Tampilkan ringkasan bulanan: hadir, telat, absen
+  - Tampilkan ringkasan bulanan: hadir, telat, absen, cuti
   - Tampilkan jadwal shift minggu ini
 - **Post-condition:** Dashboard ditampilkan
 
-#### §2.7.2 HR Dashboard
+#### §2.8.2 HR Dashboard
 
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
-  - Tampilkan statistik hari ini: hadir, telat, belum absen
+  - Tampilkan statistik hari ini: hadir, telat, belum absen, cuti
   - Tampilkan chart kehadiran 7 hari terakhir
   - Tampilkan list karyawan yang belum absen
-    - Quick action: export laporan, kelola shift
+  - Tampilkan leave request terbaru
+  - Quick action: export laporan, kelola shift
 - **Post-condition:** Dashboard ditampilkan
 
-### §2.8 Location Management
+### §2.9 Location Management
 
-#### §2.8.1 Add Office Location
+#### §2.9.1 Add Office Location
 
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
@@ -366,18 +397,18 @@ HadirYuk
   - Simpan lokasi dengan is_active default true
 - **Post-condition:** Lokasi kantor tersimpan
 
-### §2.9 Reporting
+### §2.10 Reporting
 
-#### §2.9.1 Attendance Report
+#### §2.10.1 Attendance Report
 
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
   - Filter: date range, employee, department, status
   - Generate report dengan data: nama, tanggal, check-in, check-out, duration, status, method
-  - Hitung summary: total hadir, telat, absen
+  - Hitung summary: total hadir, telat, absen, cuti
 - **Post-condition:** Report ditampilkan
 
-#### §2.9.2 Export to Excel
+#### §2.10.2 Export to Excel
 
 - **Pre-condition:** HR Admin login, report sudah di-generate
 - **Business Logic:**
@@ -386,7 +417,7 @@ HadirYuk
   - Download file
 - **Post-condition:** File Excel terdownload
 
-#### §2.9.3 Export to PDF
+#### §2.10.3 Export to PDF
 
 - **Pre-condition:** HR Admin login, report sudah di-generate
 - **Business Logic:**
@@ -395,9 +426,18 @@ HadirYuk
   - Download file
 - **Post-condition:** File PDF terdownload
 
-### §2.10 QR Code Management
+#### §2.10.4 Leave Report
 
-#### §2.10.1 Generate QR Code
+- **Pre-condition:** HR Admin login
+- **Business Logic:**
+  - Filter: date range, employee, department, leave type
+  - Generate report dengan data: nama, leave type, start date, end date, duration, status
+  - Hitung summary: total leave days per type, per employee, per department
+- **Post-condition:** Report ditampilkan
+
+### §2.11 QR Code Management
+
+#### §2.11.1 Generate QR Code
 
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
@@ -408,7 +448,7 @@ HadirYuk
   - Return QR code image (base64) untuk ditampilkan
 - **Post-condition:** QR code tersimpan dan siap ditampilkan
 
-#### §2.10.2 View Active QR Codes
+#### §2.11.2 View Active QR Codes
 
 - **Pre-condition:** HR Admin login
 - **Business Logic:**
@@ -417,7 +457,7 @@ HadirYuk
   - Tampilkan: office, expires_at, status
 - **Post-condition:** List QR codes aktif ditampilkan
 
-#### §2.10.3 Revoke QR Code
+#### §2.11.3 Revoke QR Code
 
 - **Pre-condition:** HR Admin login, QR code ada
 - **Business Logic:**
@@ -426,9 +466,9 @@ HadirYuk
   - Invalidasi QR code untuk scanning
 - **Post-condition:** QR code tidak bisa digunakan lagi
 
-### §2.11 Audit Log (Could Have)
+### §2.12 Audit Log (Could Have)
 
-#### §2.11.1 View Audit Log
+#### §2.12.1 View Audit Log
 
 - **Pre-condition:** Super Admin login
 - **Business Logic:**
@@ -438,11 +478,11 @@ HadirYuk
   - Sort by timestamp descending
 - **Post-condition:** Audit log ditampilkan
 
-### §2.12 Face Recognition (Optional / Could Have)
+### §2.13 Face Recognition (Optional / Could Have)
 
 > **Catatan:** Fitur ini bersifat opsional dan TIDAK diperlukan untuk check-in/out berfungsi. Check-in/out sudah berjalan dengan photo evidence tanpa face recognition. Face recognition dapat ditambahkan di kemudian hari sebagai lapisan validasi tambahan.
 
-#### §2.12.1 Upload Face Photo for Recognition
+#### §2.13.1 Upload Face Photo for Recognition
 
 - **Pre-condition:** User login, face recognition feature enabled
 - **Business Logic:**
@@ -454,7 +494,7 @@ HadirYuk
   - Bisa upload multiple foto untuk akurasi lebih baik (recommended: 3-5 foto)
 - **Post-condition:** Face embedding tersimpan, user siap untuk face recognition check-in
 
-#### §2.12.2 Face Recognition during Check-in (Optional Enhancement)
+#### §2.13.2 Face Recognition during Check-in (Optional Enhancement)
 
 - **Pre-condition:** User login, belum check-in hari ini, face recognition enabled, user sudah memiliki face embedding
 - **Business Logic:**
@@ -465,7 +505,7 @@ HadirYuk
   - Face recognition failure TIDAK menghalangi check-in — photo evidence sudah cukup
 - **Post-condition:** Record absensi tersimpan dengan flag face_recognition_status (match/no_match/skipped)
 
-#### §2.12.3 Face Recognition during Check-out (Optional Enhancement)
+#### §2.13.3 Face Recognition during Check-out (Optional Enhancement)
 
 - **Pre-condition:** User sudah check-in hari ini, belum check-out, face recognition enabled
 - **Business Logic:**
@@ -473,9 +513,9 @@ HadirYuk
   - Face recognition failure TIDAK menghalangi check-out
 - **Post-condition:** Attendance record updated dengan check-out data dan face_recognition_status
 
-### §2.13 Profile
+### §2.14 Profile
 
-#### §2.13.1 Change Password
+#### §2.14.1 Change Password
 
 - **Pre-condition:** User sudah login
 - **Business Logic:**
@@ -554,7 +594,18 @@ HadirYuk
 | Flexi Minutes  | Number       | Optional, tolerance in minutes |
 | Color Code     | Color picker | Required                 |
 | Save Button    | Button       | Disabled if form invalid |
-### §3.8 User Management Form
+
+### §3.8 Leave Request Form
+
+| Element Name  | Type        | Validation Rules                     |
+| ------------- | ----------- | ------------------------------------ |
+| Leave Type    | Dropdown    | Required, maps to `leave_type` field |
+| Start Date    | Date picker | Required, >= today                   |
+| End Date      | Date picker | Required, >= start date              |
+| Reason        | Textarea    | Required, max 500 chars              |
+| Submit Button | Button      | Disabled if form invalid             |
+
+### §3.9 User Management Form
 
 | Element Name  | Type        | Validation Rules               |
 | ------------- | ----------- | ------------------------------ |
@@ -566,7 +617,7 @@ HadirYuk
 | Profile Photo | File upload | JPG/PNG, max 2MB, optional     |
 | Save Button   | Button      | Disabled if form invalid       |
 
-### §3.9 Role Management Form
+### §3.10 Role Management Form
 
 | Element Name    | Type           | Validation Rules         |
 | --------------- | -------------- | ------------------------ |
@@ -575,7 +626,7 @@ HadirYuk
 | Permission List | Checkbox group | At least 1 selected      |
 | Save Button     | Button         | Disabled if form invalid |
 
-### §3.10 Attendance Correction Form
+### §3.11 Attendance Correction Form
 
 | Element Name      | Type            | Validation Rules           |
 | ----------------- | --------------- | -------------------------- |
@@ -584,7 +635,7 @@ HadirYuk
 | Correction Reason | Textarea        | Required, max 500 chars    |
 | Submit Button     | Button          | Disabled if form invalid   |
 
-### §3.11 QR Code Management
+### §3.12 QR Code Management
 
 | Element Name     | Type     | Validation Rules         |
 | ---------------- | -------- | ------------------------ |
@@ -595,16 +646,17 @@ HadirYuk
 | Active QR List   | Table    | Shows active codes       |
 | Revoke Button    | Button   | Per QR code row          |
 
-### §3.12 HR Dashboard
+### §3.13 HR Dashboard
 
 | Element Name      | Type       | Validation Rules                               |
 | ----------------- | ---------- | ---------------------------------------------- |
-| Today Stats Cards | Card Grid  | Auto-calculated: present, late, not_yet |
+| Today Stats Cards | Card Grid  | Auto-calculated: present, late, not_yet, leave |
 | Weekly Chart      | Line Chart | Last 7 days attendance data                    |
 | Not Attended List | Table      | Employees who haven't checked in today         |
+| Recent Leave Req  | Table      | Latest 5 leave requests, status badge          |
 | Quick Actions     | Button     | Navigate to Export Report, Manage Shift        |
 
-### §3.13 Admin Dashboard
+### §3.14 Admin Dashboard
 
 | Element Name    | Type      | Validation Rules                              |
 | --------------- | --------- | --------------------------------------------- |
@@ -612,16 +664,25 @@ HadirYuk
 | Recent Activity | Table     | Last 10 audit log entries                     |
 | System Health   | Indicator | DB status, storage usage percentage           |
 
-### §3.14 Attendance History
+### §3.15 Attendance History
 
 | Element Name    | Type         | Validation Rules                     |
 | --------------- | ------------ | ------------------------------------ |
 | Date Range      | Date Picker  | date_from <= date_to                 |
 | Employee Filter | Dropdown     | Multi-select, search by name         |
-| Status Filter   | Checkbox     | present, late, absent         |
+| Status Filter   | Checkbox     | present, late, absent, leave         |
 | Export Buttons  | Button Group | Excel, PDF — disabled if no data     |
 | Data Table      | Table        | Pagination 20/page, sortable columns |
-### §3.15 Shift Schedule View
+
+### §3.16 Leave Balance
+
+| Element Name  | Type      | Validation Rules                   |
+| ------------- | --------- | ---------------------------------- |
+| Leave Type    | Card Grid | Per type: total, used, remaining   |
+| Progress Bar  | Visual    | used/total percentage, color-coded |
+| History Table | Table     | Past leave requests with status    |
+
+### §3.17 Shift Schedule View
 
 | Element Name     | Type       | Validation Rules                |
 | ---------------- | ---------- | ------------------------------- |
@@ -629,7 +690,7 @@ HadirYuk
 | Month Navigation | Button     | Prev/Next month                 |
 | Shift Legend     | Badge List | Shift name + color mapping      |
 
-### §3.16 Location Management
+### §3.18 Location Management
 
 | Element Name  | Type          | Validation Rules                     |
 | ------------- | ------------- | ------------------------------------ |
@@ -637,16 +698,16 @@ HadirYuk
 | Radius Slider | Range Input   | 50-500 meters, visual circle on map  |
 | Location List | Table         | Name, address, radius, active status |
 
-### §3.17 Audit Log View
+### §3.19 Audit Log View
 
 | Element Name | Type        | Validation Rules                     |
 | ------------ | ----------- | ------------------------------------ |
 | Date Filter  | Date Picker | date_from <= date_to                 |
 | User Filter  | Dropdown    | Filter by user who performed action  |
-| Entity Type  | Dropdown    | user, attendance, shift, role |
+| Entity Type  | Dropdown    | user, attendance, shift, leave, role |
 | Detail Modal | Modal       | Shows old_values vs new_values diff  |
 
-### §3.18 Profile Page
+### §3.20 Profile Page
 
 | Element Name          | Type       | Validation Rules                 |
 | --------------------- | ---------- | -------------------------------- |
@@ -672,9 +733,11 @@ graph LR
         UC3["Check-in QR Code"]
         UC4["Check-out"]
         UC5["View Attendance History"]
-        UC6["View Dashboard"]
-        UC7["Update Profile"]
-        UC8["Upload Profile Photo"]
+        UC6["Submit Leave Request"]
+        UC7["View Leave Balance"]
+        UC8["View Dashboard"]
+        UC9["Update Profile"]
+        UC10["Upload Profile Photo"]
         UC22["Forgot Password"]
         UC23["Reset Password"]
         UC28["Face Recognition Check-in (Optional)"]
@@ -686,6 +749,7 @@ graph LR
         UC13["Manage Employees"]
         UC14["View HR Dashboard"]
         UC15["Export Reports"]
+        UC16["Manage Leave Types"]
         UC17["Manage Locations"]
         UC24["Correct Attendance"]
         UC25["View Late Statistics"]
@@ -708,18 +772,21 @@ graph LR
     K --> UC6
     K --> UC7
     K --> UC8
+    K --> UC9
+    K --> UC10
     K --> UC22
     K --> UC23
     K -.-> UC28
 
     HR --> UC1
     HR --> UC5
-    HR --> UC6
+    HR --> UC8
     HR --> UC11
     HR --> UC12
     HR --> UC13
     HR --> UC14
     HR --> UC15
+    HR --> UC16
     HR --> UC17
     HR --> UC22
     HR --> UC23
@@ -778,6 +845,25 @@ flowchart TD
     J --> K["Tampilkan success message"]
     K --> L["Update dashboard"]
 ```
+
+### §5.3 Leave Request Flow
+
+```mermaid
+flowchart TD
+    A["User klik Ajukan Cuti"] --> B["Isi form leave request"]
+    B --> C{"Form valid?"}
+    C -->|"Tidak"| D["Tampilkan error validation"]
+    C -->|"Ya"| E{"Sisa cuti cukup?"}
+    E -->|"Tidak"| F["Tampilkan error: Sisa cuti tidak cukup"]
+    E -->|"Ya"| G{"Overlap dengan cuti lain?"}
+    G -->|"Ya"| H["Tampilkan error: Overlap dengan cuti lain"]
+    G -->|"Tidak"| I["Hitung duration"]
+    I --> J["Kurangi sisa cuti"]
+    J --> K["Simpan leave request"]
+    K --> L["Tampilkan success message"]
+    L --> M["Update leave balance"]
+```
+
 ## 6. Error Handling & Validation
 
 ### §6.1 Authentication Validation
@@ -807,7 +893,15 @@ flowchart TD
 | Check-in di luar window            | "Waktu check-in di luar jendela shift yang diperbolehkan" | Tidak simpan absensi |
 | Tidak ada shift applicable         | "Tidak ada shift yang tersedia untuk check-in saat ini" | Tidak simpan absensi |
 | Tidak ada lokasi kantor aktif      | "Tidak ada lokasi kantor yang aktif"     | Tidak simpan absensi    |
-### §6.3 User & Upload Validation
+
+### §6.3 Leave Validation
+
+| Trigger               | Error Message                                     | System Resolution          |
+| --------------------- | ------------------------------------------------- | -------------------------- |
+| Sisa cuti tidak cukup | "Sisa cuti tidak mencukupi"                       | Disable submit             |
+| Leave overlap         | "Tanggal cuti overlap dengan cuti yang sudah ada" | Highlight tanggal conflict |
+
+### §6.4 User & Upload Validation
 
 | Trigger                           | Error Message                                           | System Resolution                    |
 | --------------------------------- | ------------------------------------------------------- | ------------------------------------ |
@@ -816,7 +910,7 @@ flowchart TD
 | Format foto tidak valid           | "Format file harus JPG/PNG"                             | Reject upload                        |
 | Wajah tidak terdeteksi (face rec) | "Wajah tidak terdeteksi. Pastikan wajah terlihat jelas" | Retry upload (face recognition only) |
 
-### §6.4 General Validation
+### §6.5 General Validation
 
 | Trigger                   | Error Message                            | System Resolution     |
 | ------------------------- | ---------------------------------------- | --------------------- |

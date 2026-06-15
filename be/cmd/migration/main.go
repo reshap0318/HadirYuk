@@ -100,7 +100,6 @@ func runMigration(db *gorm.DB, command string) {
 			&models.Notification{},
 			&models.Shift{},
 			&models.OfficeLocation{},
-			&models.LeaveType{},
 			&models.UserShiftAssignment{},
 			&models.Attendance{},
 			&models.QRCode{},
@@ -119,7 +118,6 @@ func runMigration(db *gorm.DB, command string) {
 			&models.UserShiftAssignment{},
 			&models.Attendance{},
 			&models.QRCode{},
-			&models.LeaveType{},
 			&models.OfficeLocation{},
 			&models.Shift{},
 			&models.UserProfile{},
@@ -153,7 +151,6 @@ func runSeed(db *gorm.DB) {
 	// Seed master data
 	shiftIDs := seeders.SeedShifts(db)
 	seeders.SeedOfficeLocations(db)
-	seeders.SeedLeaveTypes(db)
 
 	// Seed shift assignments for all users
 	seeders.SeedShiftAssignments(db, shiftIDs)

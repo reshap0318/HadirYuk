@@ -49,12 +49,6 @@ const allMenuItems: IMenuItem[] = [
     to: '/master/locations',
     permissions: ['location.index'],
   },
-  {
-    icon: PhCalendarBlank,
-    label: 'Jenis Cuti',
-    to: '/master/leave-types',
-    permissions: ['leave.manage-types'],
-  },
   { icon: PhQrCode, label: 'QR Code', to: '/master/qrcodes', permissions: ['qrcode.view'] },
   { isTitle: true, label: 'Absensi' },
   { icon: PhSignIn, label: 'Absensi', to: '/attendance' },

@@ -24,8 +24,6 @@ func SeedRolePermissions(db *gorm.DB, roleIDs map[string]uint, permIDs map[strin
 			// Shift
 			"shift.index", "shift.create", "shift.update", "shift.delete",
 			"shift-assign.index", "shift-assign.create", "shift-assign.update", "shift-assign.delete",
-			// Leave
-			"leave.submit", "leave.view", "leave.view-all", "leave.manage-types",
 			// User
 			"user.index", "user.create", "user.update",
 			// Location
@@ -47,8 +45,6 @@ func SeedRolePermissions(db *gorm.DB, roleIDs map[string]uint, permIDs map[strin
 			"attendance.checkin", "attendance.checkout", "attendance.view",
 			// Shift
 			"shift.index",
-			// Leave
-			"leave.submit", "leave.view",
 			// Dashboard
 			"dashboard.view",
 		},

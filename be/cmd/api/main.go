@@ -63,7 +63,6 @@ func main() {
 		routes.RegisterShiftRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterShiftAssignmentRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterLocationRoutes(protected, container.Handlers, container.Access)
-		routes.RegisterLeaveTypeRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterFaceRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterAttendanceRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterQRCodeRoutes(protected, container.Handlers, container.Access)

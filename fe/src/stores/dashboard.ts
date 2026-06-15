@@ -18,14 +18,6 @@ export interface IUpcomingShift {
   color_code: string
 }
 
-export interface ILeaveBalance {
-  leave_type_id: number
-  leave_type_name: string
-  total_quota: number
-  used_quota: number
-  remaining_quota: number
-}
-
 export interface IEmployeeDashboard {
   today_status: {
     sessions: IAttendanceSession[]
@@ -33,7 +25,6 @@ export interface IEmployeeDashboard {
     todays_shifts: ITodaysShift[]
   } | null
   monthly_stats: IMonthlyStats | null
-  leave_balance: ILeaveBalance[]
   upcoming_shifts: IUpcomingShift[]
 }
 
@@ -43,7 +34,6 @@ export interface IDepartmentStat {
   present: number
   late: number
   absent: number
-  on_leave: number
 }
 
 export interface IRecentActivity {
@@ -63,7 +53,6 @@ export interface IHRDashboard {
   present: number
   late: number
   absent: number
-  on_leave: number
   not_yet_check_in: number
   total_overtime: number
   department_stats: IDepartmentStat[]

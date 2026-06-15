@@ -220,44 +220,8 @@ function formatDate(dateStr: string): string {
           </UiCard>
         </div>
 
-        <!-- Right column: Leave Balance + Quick Links -->
+        <!-- Right column: Quick Links -->
         <div class="space-y-4">
-          <UiCard>
-            <template #header>
-              <div class="flex items-center justify-between px-5 pt-4 pb-0">
-                <h2 class="text-sm font-semibold text-gray-900">Saldo Cuti</h2>
-                <PhListChecks class="w-4 h-4 text-gray-400" />
-              </div>
-            </template>
-
-            <div class="p-5 pb-6">
-              <div v-if="dash.leave_balance?.length" class="space-y-3">
-                <div v-for="item in dash.leave_balance" :key="item.leave_type_id">
-                  <div class="flex justify-between text-xs mb-1">
-                    <span class="font-medium text-gray-700">{{ item.leave_type_name }}</span>
-                    <span class="text-gray-400">{{ item.used_quota }}/{{ item.total_quota }}</span>
-                  </div>
-                  <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      class="h-full rounded-full transition-all"
-                      :class="item.remaining_quota === 0 ? 'bg-red-500' : item.remaining_quota <= item.total_quota * 0.3 ? 'bg-amber-500' : 'bg-emerald-500'"
-                      :style="{ width: `${(item.used_quota / Math.max(item.total_quota, 1)) * 100}%` }"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div v-else class="text-center py-6 text-gray-400 text-sm">
-                <PhListChecks class="w-6 h-6 mx-auto mb-1.5" />
-                Data cuti belum tersedia
-              </div>
-
-              <button class="mt-3 w-full text-center text-xs text-blue-600 hover:text-blue-700 font-medium" @click="goToHistory">
-                Lihat Riwayat →
-              </button>
-            </div>
-          </UiCard>
-
           <!-- Quick Menu -->
           <div class="grid grid-cols-2 gap-3">
             <button

@@ -41,7 +41,6 @@ func (s *Services) EmployeeDashboard(ctx context.Context) (*dtos.EmployeeDashboa
 	response := &dtos.EmployeeDashboardResponse{
 		TodayStatus:    todayStatus,
 		MonthlyStats:   monthlyStats,
-		LeaveBalance:   []dtos.LeaveBalanceDTO{},
 		UpcomingShifts: upcomingShifts,
 	}
 
@@ -235,16 +234,8 @@ func (s *Services) HRDashboard(ctx context.Context) (*dtos.HRDashboardResponse, 
 		}
 	}
 
-	// Check who's on leave (for now, just placeholder)
-	onLeaveMap := make(map[uint]bool)
-
 	departmentStats := make([]dtos.DepartmentStatDTO, 0, len(departmentMap))
 	for _, stat := range departmentMap {
-		stat.OnLeave = 0
-		for userID := range onLeaveMap {
-			// Count on leave per department - simplified
-			_ = userID
-		}
 		departmentStats = append(departmentStats, *stat)
 	}
 
@@ -256,7 +247,6 @@ func (s *Services) HRDashboard(ctx context.Context) (*dtos.HRDashboardResponse, 
 		Present:         presentCount,
 		Late:            lateCount,
 		Absent:          absentCount,
-		OnLeave:         0,
 		NotYetCheckIn:   notYetCheckIn,
 		TotalOvertime:   totalOvertime,
 		DepartmentStats: departmentStats,

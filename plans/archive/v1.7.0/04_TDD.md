@@ -1,8 +1,8 @@
 ---
 title: 04_TDD.md
-version: 1.8.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-15
+last_modified: 2026-06-12
 ---
 
 # Technical Design Document (TDD)
@@ -58,6 +58,7 @@ graph TB
         K --> N[Shift Handler]
         K --> O[User Handler]
         K --> P[Role Handler]
+        K --> Q[Leave Handler]
         K --> R[Report Handler]
         K --> SA[Dashboard Handler]
         K --> SB[Location Handler]
@@ -186,9 +187,11 @@ Jika `d <= office.radius_meters`, maka user dianggap dalam area kantor.
 ```mermaid
 erDiagram
     USERS ||--o{ ATTENDANCES : has
+    USERS ||--o{ LEAVE_REQUESTS : submits
     USERS ||--o{ USER_HAS_ROLES : assigned
     USERS ||--o{ EMPLOYEE_SHIFTS : assigned
     USERS ||--o{ NOTIFICATIONS : receives
+    USERS ||--o{ LEAVE_BALANCES : has
     USERS ||--o| USER_PROFILES : has
 
     ROLES ||--o{ USER_HAS_ROLES : contains
@@ -200,6 +203,8 @@ erDiagram
     OFFICE_LOCATIONS ||--o{ ATTENDANCES : recorded_at
     OFFICE_LOCATIONS ||--o{ QR_CODES : generates
 
+    LEAVE_TYPES ||--o{ LEAVE_REQUESTS : categorized
+    LEAVE_TYPES ||--o{ LEAVE_BALANCES : tracks
 
     QR_CODES ||--o| ATTENDANCES : scanned_at
 
@@ -318,6 +323,41 @@ erDiagram
         datetime deleted_at
     }
 
+    LEAVE_TYPES {
+        bigint id PK
+        string name UK
+        string description
+        int default_days
+        boolean is_paid
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    LEAVE_REQUESTS {
+        bigint id PK
+        bigint user_id FK
+        bigint leave_type_id FK
+        date start_date
+        date end_date
+        int duration_days
+        string reason
+        string status
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    LEAVE_BALANCES {
+        bigint user_id PK,FK
+        bigint leave_type_id PK,FK
+        int year PK
+        int total_days
+        int used_days
+        datetime created_at
+        datetime updated_at
+    }
+
     QR_CODES {
         bigint id PK
         bigint office_id FK
@@ -360,9 +400,20 @@ erDiagram
 
 | Field | Possible Values |
 |-------|-----------------|
-| `ATTENDANCES.status` | `present`, `late`, `absent` |
+| `ATTENDANCES.status` | `present`, `late`, `absent`, `leave` |
+| `LEAVE_REQUESTS.status` | `submitted`, `active`, `cancelled`, `expired` |
 | `NOTIFICATIONS.type` | `info`, `warning`, `success`, `error` |
+
+> **Note**: Leave requests have no approval workflow (per PRD). Status `submitted` means request is recorded, `active` means currently on leave, `cancelled` means employee cancelled, `expired` means past date without action.
+
 > **Note**: Check-in/check-out method (`geotagging` vs `qr_code`) is NOT stored as a separate field. The presence of `lat_in`/`lng_in` indicates geotagging method. QR code check-in/out is NOT yet implemented.
+
+### Leave Balance Initialization Strategy
+
+- Saat employee baru dibuat: otomatis create `LEAVE_BALANCES` record untuk tahun berjalan
+- Default days diambil dari `LEAVE_TYPES.default_days`
+- Reset tahunan: cron job setiap 1 Januari reset `used_days = 0`, update `total_days` dari `LEAVE_TYPES`
+- Employee resign: `LEAVE_BALANCES` di-retain untuk audit
 
 ## 4. API Contract
 
@@ -424,7 +475,19 @@ erDiagram
 | `/api/shifts/assignments/:user_id` | GET | ✅ | `shift-assign.index` | - | `[{ "id": 1, "user_id": 1, "shift_id": 1, "start_date": "...", "end_date": "...", "is_active": true }]` |
 | `/api/shifts/assignments/:user_id/active` | GET | ✅ | `shift-assign.index` | - | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 
-### §4.4 User Management Endpoints
+### §4.4 Leave Endpoints
+
+| Endpoint | Method | Auth | Permission | Request Payload | Success Response |
+|----------|--------|------|------------|-----------------|------------------|
+| `/api/leave` | POST | ✅ | baseline | `{ "leave_type": 1, "start_date": "...", "end_date": "...", "reason": "string" }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/leave` | GET | ✅ | baseline | `?page=1&page_size=20` | Paginated response |
+| `/api/leave/balance` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "annual": { "total": 12, "used": 5, "remaining": 7 }, ... } }` |
+| `/api/leave-types` | GET | ✅ | baseline | - | Paginated response |
+| `/api/leave-types` | POST | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 201, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/leave-types/:id` | PUT | ✅ | `leave.manage-types` | `{ "name": "string", "default_days": 12, "is_paid": true }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
+| `/api/leave-types/:id` | DELETE | ✅ | `leave.manage-types` | - | `{ "code": 200, "message": "Leave type deleted successfully" }` |
+
+### §4.5 User Management Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -435,7 +498,7 @@ erDiagram
 | `/api/users/:id` | DELETE | ✅ | `user.delete` | - | `{ "code": 200, "message": "User deactivated successfully" }` |
 | `/api/users/:id/face-photo` | POST | ✅ | baseline | `multipart/form-data: { "photo": file }` | `{ "code": 200, "message": "Profile photo uploaded successfully", "data": { "photo_url": "..." } }` |
 
-### §4.5 UAM (Role & Permissions) Endpoints
+### §4.6 UAM (Role & Permissions) Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -449,7 +512,7 @@ erDiagram
 | `/api/permissions/:id` | PUT | ✅ | `permission.update` | `{ "name": "string", "description": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/permissions/:id` | DELETE | ✅ | `permission.delete` | - | `{ "code": 200, "message": "Permission deleted successfully" }` |
 
-### §4.6 Location Endpoints
+### §4.7 Location Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -459,7 +522,7 @@ erDiagram
 | `/api/locations/:id` | PUT | ✅ | `location.update` | `{ "name": "string", "address": "string", "latitude": float, "longitude": float, "radius_meters": 100 }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/locations/:id` | DELETE | ✅ | `location.delete` | - | `{ "code": 200, "message": "Location deleted successfully" }` |
 
-### §4.7 QR Code Management Endpoints
+### §4.8 QR Code Management Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -469,23 +532,26 @@ erDiagram
 
 > **Note:** QR code image is generated on the **frontend** using the `qrcode` npm library from `code_value`. This reduces server CPU load and response size. Backend only stores and returns the `code_value` UUID string.
 
-### §4.8 Dashboard Endpoints
+### §4.9 Dashboard Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
 | `/api/dashboard/employee` | GET | ✅ | baseline | - | `{ "code": 200, "message": "...", "data": { "today_status": "...", "check_in_time": "...", "shift": {...}, "monthly_summary": {...}, "week_schedule": [...] } }` |
-| `/api/dashboard/hr` | GET | ✅ | `dashboard.view-hr` | `?date=YYYY-MM-DD` | `{ "code": 200, "message": "...", "data": { "today_stats": {...}, "weekly_chart": [...], "not_attended": [...] } }` |
+| `/api/dashboard/hr` | GET | ✅ | `dashboard.view-hr` | `?date=YYYY-MM-DD` | `{ "code": 200, "message": "...", "data": { "today_stats": {...}, "weekly_chart": [...], "not_attended": [...], "recent_leaves": [...] } }` |
 | `/api/dashboard/admin` | GET | ✅ | `dashboard.view-admin` | `?date=YYYY-MM-DD` | `{ "code": 200, "message": "...", "data": { "system_stats": {...}, "recent_activity": [...], "system_health": {...} } }` |
 
-### §4.9 Report Endpoints
+### §4.10 Report Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
 | `/api/reports/attendance` | GET | ✅ | `report.view` | `?date_from=...&date_to=...&user=1&department=...&status=...` | `{ "code": 200, "message": "...", "data": [...], "metadata": { "total": 100, ... } }` |
 | `/api/reports/attendance/export/excel` | GET | ✅ | `report.export-excel` | `?date_from=...&date_to=...` | `File download (.xlsx)` |
 | `/api/reports/attendance/export/pdf` | GET | ✅ | `report.export-pdf` | `?date_from=...&date_to=...` | `File download (.pdf)` |
+| `/api/reports/leave` | GET | ✅ | `report.view` | `?date_from=...&date_to=...` | `{ "code": 200, "message": "...", "data": [...], "metadata": { "total": 50, ... } }` |
+| `/api/reports/leave/export/excel` | GET | ✅ | `report.export-excel` | `?date_from=...&date_to=...` | `File download (.xlsx)` |
+| `/api/reports/leave/export/pdf` | GET | ✅ | `report.export-pdf` | `?date_from=...&date_to=...` | `File download (.pdf)` |
 
-### §4.10 Profile Endpoints
+### §4.11 Profile Endpoints
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -493,7 +559,7 @@ erDiagram
 | `/api/me` | PUT | ✅ | baseline | `{ "name": "string", "avatar": "string" }` | `{ "code": 200, "message": "...", "data": { "id": 1, ... } }` |
 | `/api/me/change-password` | POST | ✅ | baseline | `{ "new_password": "string", "confirm_password": "string" }` | `{ "code": 200, "message": "Password changed successfully" }` |
 
-### §4.11 Notification Endpoints (boilerplate existing)
+### §4.12 Notification Endpoints (boilerplate existing)
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -504,7 +570,7 @@ erDiagram
 | `/api/notifications/mark-all-read` | PATCH | ✅ | - | - | `{ "code": 200, "message": "All notifications marked as read" }` |
 | `/api/notifications/:id` | DELETE | ✅ | - | - | `{ "code": 200, "message": "Notification deleted" }` |
 
-### §4.12 System Endpoints (boilerplate existing)
+### §4.13 System Endpoints (boilerplate existing)
 
 | Endpoint | Method | Auth | Permission | Request Payload | Success Response |
 |----------|--------|------|------------|-----------------|------------------|
@@ -512,7 +578,7 @@ erDiagram
 | `/.well-known/jwks.json` | GET | ❌ | - | - | JWKS public key response |
 | `/api/upload` | POST | ✅ | baseline | `multipart/form-data: { "file": file }` | `{ "code": 200, "message": "File uploaded successfully", "data": { "uuid": "uuid-string", "url": "/storage/uploads/..." } }` |
 
-### §4.13 Face Recognition Endpoints (Optional / Could Have)
+### §4.14 Face Recognition Endpoints (Optional / Could Have)
 
 > **Note:** These endpoints are ONLY used when face recognition feature is enabled. Core check-in/out works WITHOUT face recognition.
 
@@ -539,6 +605,8 @@ erDiagram
 | `shift-assign.update` | PUT /api/shifts/assignments/:id |
 | `shift-assign.delete` | DELETE /api/shifts/assignments/:id |
 | `shift-assign.index` | GET /api/shifts/assignments, GET /api/shifts/assignments/:user_id, GET /api/shifts/assignments/:user_id/active |
+| `leave.view-all` | GET /api/leave?user=all |
+| `leave.manage-types` | CRUD /api/leave-types |
 | `user.index` | GET /api/users, GET /api/users/:id |
 | `user.create` | POST /api/users |
 | `user.update` | PUT /api/users/:id (accepts `roles` array inline) |
@@ -693,11 +761,14 @@ Connection Pool:
 | attendances | user_id | BTREE |
 | attendances | shift_id | BTREE |
 | attendances | office_id | BTREE |
+| leave_requests | user_id + status | COMPOSITE |
+| leave_balances | user_id + leave_type_id + year | COMPOSITE UNIQUE |
 | user_shift_assignments | user_id + shift_id | BTREE |
 | qr_codes | code_value | UNIQUE |
 | qr_codes | office_id + is_active + expires_at | COMPOSITE |
 | office_locations | name | BTREE |
 | shifts | name | UNIQUE |
+| leave_types | name | UNIQUE |
 
 ### Environment Variables
 

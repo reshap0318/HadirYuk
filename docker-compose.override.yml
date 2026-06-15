@@ -7,17 +7,14 @@ services:
   backend:
     build:
       dockerfile: ../etc/Dockerfile.be-dev
-    volumes:
-      - ./be:/app
-    command: go run ./cmd/api
     deploy:
       resources:
         limits:
           cpus: "1"
-          memory: 512M
+          memory: 1G
         reservations:
           cpus: "0.5"
-          memory: 256M
+          memory: 512M
     networks:
       - hadiryuk-net
       - mysql-network

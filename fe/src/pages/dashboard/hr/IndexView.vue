@@ -66,10 +66,6 @@ function getInitials(name: string): string {
           <p class="text-xs text-gray-500 mt-0.5">Tidak Hadir</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-          <p class="text-2xl font-bold text-purple-600">{{ hr.on_leave }}</p>
-          <p class="text-xs text-gray-500 mt-0.5">Cuti</p>
-        </div>
-        <div class="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
           <p class="text-2xl font-bold text-gray-900">{{ hr.not_yet_check_in }}</p>
           <p class="text-xs text-gray-500 mt-0.5">Belum Check-in</p>
         </div>
@@ -104,7 +100,6 @@ function getInitials(name: string): string {
                   <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">{{ dept.present }} Hadir</span>
                   <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">{{ dept.late }} Telat</span>
                   <span class="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">{{ dept.absent }} Absen</span>
-                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">{{ dept.on_leave }} Cuti</span>
                 </div>
               </div>
             </div>

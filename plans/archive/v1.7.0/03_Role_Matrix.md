@@ -1,8 +1,8 @@
 ---
 title: 03_Role_Matrix.md
-version: 1.8.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-15
+last_modified: 2026-06-12
 ---
 
 # Role & Permissions Matrix
@@ -12,8 +12,8 @@ last_modified: 2026-06-15
 | Role Name | Description | Access Level |
 |-----------|-------------|--------------|
 | **Super Admin** | Administrator tertinggi sistem yang memiliki akses penuh ke semua fitur termasuk manajemen user, role, dan permission. Role ini biasanya dipegang oleh IT Administrator atau System Owner. | Full Access |
-| **HR Admin** | Administrator yang bertanggung jawab atas manajemen operasional HR seperti pengelolaan karyawan, shift, absensi, dan laporan. Role ini dipegang oleh staf HR atau manager. | HR Operations |
-| **Karyawan** | Pengguna biasa yang menggunakan sistem untuk melakukan absensi, melihat jadwal, dan melihat riwayat kehadiran mereka sendiri. | Self Service |
+| **HR Admin** | Administrator yang bertanggung jawab atas manajemen operasional HR seperti pengelolaan karyawan, shift, absensi, cuti, dan laporan. Role ini dipegang oleh staf HR atau manager. | HR Operations |
+| **Karyawan** | Pengguna biasa yang menggunakan sistem untuk melakukan absensi, melihat jadwal, mengajukan cuti, dan melihat riwayat kehadiran mereka sendiri. | Self Service |
 
 ## 2. Permissions List
 
@@ -32,6 +32,8 @@ last_modified: 2026-06-15
 | `shift-assign.create` | shift-assign | create | Can assign shift to employee |
 | `shift-assign.update` | shift-assign | update | Can update shift assignment |
 | `shift-assign.delete` | shift-assign | delete | Can delete shift assignment |
+| `leave.view-all` | leave | view-all | Can view all leave history |
+| `leave.manage-types` | leave | manage-types | Can manage leave types |
 | `user.index` | user | index | Can view user list |
 | `user.view-all` | user | view-all | Can view all user data including super admin |
 | `user.create` | user | create | Can create new user |
@@ -79,6 +81,9 @@ last_modified: 2026-06-15
 | `shift-assign.create` | ✅ | ✅ | ❌ |
 | `shift-assign.update` | ✅ | ✅ | ❌ |
 | `shift-assign.delete` | ✅ | ✅ | ❌ |
+| **Leave** | | | |
+| `leave.view-all` | ✅ | ✅ | ❌ |
+| `leave.manage-types` | ✅ | ✅ | ❌ |
 | **User Management** | | | |
 | `user.index` | ✅ | ✅ | ❌ |
 | `user.view-all` | ✅ | ✅ | ❌ |
@@ -123,10 +128,10 @@ graph TD
     SA -->|Can Manage| HR[HR Admin]
     SA -->|Can Manage| EMP[Karyawan]
     
-    HR[HR Admin] -->|HR Operations| HR_FEATURES[Shift, Employee, Attendance, Location, Report]
+    HR[HR Admin] -->|HR Operations| HR_FEATURES[Shift, Employee, Attendance, Leave, Location, Report]
     HR -->|Cannot Manage| UAM[Role & Permission Management]
     
-    EMP[Karyawan] -->|Self Service| EMP_FEATURES[Attendance, Profile, Self Dashboard]
+    EMP[Karyawan] -->|Self Service| EMP_FEATURES[Attendance, Leave, Profile, Self Dashboard]
     
     style SA fill:#ff6b6b
     style HR fill:#4ecdc4
@@ -140,6 +145,11 @@ graph TD
 - HR Admin bisa melihat dan export semua riwayat absensi
 - Super Admin bisa melihat semua riwayat absensi
 - Attendance record tidak bisa dihapus, hanya bisa dikoreksi oleh HR Admin
+
+### Leave Records
+- Karyawan hanya bisa melihat dan mengajukan cuti untuk diri sendiri
+- HR Admin bisa melihat semua leave records dan manage leave types
+- Leave record tidak bisa dihapus setelah submitted
 
 ### User Data
 - Karyawan hanya bisa update profile mereka sendiri

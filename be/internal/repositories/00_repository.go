@@ -14,7 +14,6 @@ type Repositories struct {
 	Notification          *NotificationRepository
 	Shift                 *ShiftRepository
 	OfficeLocation        *OfficeLocationRepository
-	LeaveType             *LeaveTypeRepository
 	UserShiftAssignment   *UserShiftAssignmentRepository
 	Attendance            *AttendanceRepository
 	QRCode                *QRCodeRepository
@@ -32,7 +31,6 @@ func NewRepositories(db *gorm.DB) (*Repositories, error) {
 	notificationRepo := NewNotificationRepository(db)
 	shiftRepo := NewShiftRepository(db)
 	officeLocationRepo := NewOfficeLocationRepository(db)
-	leaveTypeRepo := NewLeaveTypeRepository(db)
 	userShiftAssignmentRepo := NewUserShiftAssignmentRepository(db)
 	attendanceRepo := NewAttendanceRepository(db)
 	qrCodeRepo := NewQRCodeRepository(db)
@@ -49,7 +47,6 @@ func NewRepositories(db *gorm.DB) (*Repositories, error) {
 		Notification:          notificationRepo,
 		Shift:                 shiftRepo,
 		OfficeLocation:        officeLocationRepo,
-		LeaveType:             leaveTypeRepo,
 		UserShiftAssignment:   userShiftAssignmentRepo,
 		Attendance:            attendanceRepo,
 		QRCode:                qrCodeRepo,

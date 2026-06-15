@@ -1,8 +1,8 @@
 ---
 title: 01_PRD.md
-version: 1.8.0
+version: 1.7.0
 created: 2026-05-29
-last_modified: 2026-06-15
+last_modified: 2026-06-12
 ---
 
 # Product Requirements Document (PRD)
@@ -23,7 +23,7 @@ Banyak perusahaan masih menggunakan sistem absensi manual atau semi-digital yang
 - Mempermudah proses check-in/out karyawan dengan multiple metode
 - Menyediakan laporan absensi yang akurat dan dapat diexport
 - Memberikan dashboard real-time untuk monitoring kehadiran
-- Mendukung manajemen shift yang terstruktur
+- Mendukung manajemen shift dan pengajuan cuti yang terstruktur
 - Face recognition sebagai fitur opsional untuk meningkatkan validasi identitas di masa depan
 
 ## 2. Target Audience
@@ -50,18 +50,18 @@ Banyak perusahaan masih menggunakan sistem absensi manual atau semi-digital yang
 | US-002 | Karyawan    | Saya bisa check-in menggunakan QR Code                       | Alternatif absensi yang cepat          | Must Have   |
 | US-003 | Karyawan    | Saya bisa check-out dengan metode yang sama                  | Data kehadiran lengkap                 | Must Have   |
 | US-004 | Karyawan    | Saya bisa melihat riwayat absensi saya                       | Monitoring kehadiran pribadi           | Must Have   |
-
+| US-005 | Karyawan    | Saya bisa mengajukan cuti                                    | Proses pengajuan cuti terdigitalisasi  | Must Have   |
 | US-006 | HR Admin    | Saya bisa membuat dan mengelola shift                        | Penjadwalan karyawan terstruktur       | Must Have   |
 | US-007 | HR Admin    | Saya bisa melihat dashboard kehadiran real-time              | Monitoring kehadiran seluruh karyawan  | Must Have   |
 | US-008 | HR Admin    | Saya bisa mengexport laporan absensi                         | Laporan untuk keperluan administrasi   | Must Have   |
 | US-009 | HR Admin    | Saya bisa mengelola data karyawan                            | Data karyawan terpusat                 | Must Have   |
-
+| US-010 | HR Admin    | Saya bisa mengelola pengajuan cuti karyawan                  | Data cuti tercatat dengan baik         | Must Have   |
 | US-011 | Super Admin | Saya bisa membuat dan mengelola role                         | Kontrol akses yang fleksibel           | Must Have   |
 | US-012 | Super Admin | Saya bisa assign permission ke role                          | Keamanan sistem terjamin               | Must Have   |
 | US-013 | Super Admin | Saya bisa mengelola user dan assign role                     | Manajemen user terstruktur             | Must Have   |
 | US-014 | Karyawan    | Saya bisa melihat jadwal shift saya                          | Mengetahui jam kerja yang berlaku      | Should Have |
 | US-015 | HR Admin    | Saya bisa mengassign shift ke karyawan                       | Penjadwalan otomatis                   | Should Have |
-
+| US-016 | Karyawan    | Saya bisa melihat sisa cuti saya                             | Planning cuti lebih baik               | Should Have |
 | US-017 | HR Admin    | Saya bisa mengkonfigurasi lokasi kantor dengan radius        | Validasi geotagging akurat             | Should Have |
 | US-018 | Super Admin | Saya bisa melihat audit log sistem                           | Traceability perubahan                 | Could Have  |
 | US-019 | Karyawan    | Saya bisa update profil dan foto profil                              | Data profil saya akurat dan terkini    | Should Have |
@@ -82,7 +82,7 @@ Banyak perusahaan masih menggunakan sistem absensi manual atau semi-digital yang
 | Shift Management         | CRUD shift, assign shift ke karyawan                               |
 | User Management          | CRUD data karyawan                                                 |
 | UAM (Role & Permissions) | Manajemen role dan permission                                      |
-| UAM (Role & Permissions) | Manajemen role dan permission                                      |
+| Leave Management         | Input cuti tanpa approval                                          |
 | Dashboard                | Dashboard kehadiran real-time                                      |
 | Export Report            | Export laporan ke Excel/PDF                                        |
 | Forgot/Reset Password    | Recovery password jika lupa                                        |
@@ -92,7 +92,7 @@ Banyak perusahaan masih menggunakan sistem absensi manual atau semi-digital yang
 | Fitur                   | Deskripsi                                      |
 | ----------------------- | ---------------------------------------------- |
 | Jadwal Shift View       | Karyawan bisa melihat jadwal shift mereka      |
-| Jadwal Shift View       | Karyawan bisa melihat jadwal shift mereka      |
+| Sisa Cuti View          | Karyawan bisa melihat sisa cuti                |
 | Lokasi Kantor Config    | Konfigurasi multi-lokasi dengan radius berbeda |
 | Statistik Keterlambatan | Laporan keterlambatan karyawan                 |
 | Attendance Correction   | Koreksi data absensi oleh HR Admin             |
@@ -136,12 +136,14 @@ flowchart TD
     H --> J
 
     C --> K[Lihat Riwayat Absensi]
+    C --> L[Ajukan Cuti]
     C --> M[Lihat Jadwal Shift]
 
     D --> N[Kelola Shift]
     D --> O[Kelola Karyawan]
     D --> P[Export Laporan]
     D --> Q[Monitor Dashboard]
+    D --> R[Kelola Cuti]
 
     E --> S[Kelola User]
     E --> T[Kelola Role]

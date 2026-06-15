@@ -68,12 +68,6 @@ const routes: RouteRecordRaw[] = [
         meta: { permissions: ['location.index'] },
       },
       {
-        path: 'master/leave-types',
-        name: 'MasterLeaveTypes',
-        component: () => import('@/pages/master/leave-types/IndexView.vue'),
-        meta: { permissions: ['leave.manage-types'] },
-      },
-      {
         path: 'master/qrcodes',
         name: 'MasterQRCodes',
         component: () => import('@/pages/master/qrcodes/IndexView.vue'),
