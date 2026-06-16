@@ -31,7 +31,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="mx-auto px-4">
+  <div class="mx-auto md:mx-4">
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">Lokasi Kantor</h1>

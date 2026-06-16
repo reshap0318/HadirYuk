@@ -148,13 +148,6 @@ func runSeed(db *gorm.DB) {
 	seeders.SeedRolePermissions(db, roleIDs, permIDs)
 	seeders.SeedUserRoles(db, userEmails, roleIDs)
 
-	// Seed master data
-	shiftIDs := seeders.SeedShifts(db)
-	seeders.SeedOfficeLocations(db)
-
-	// Seed shift assignments for all users
-	seeders.SeedShiftAssignments(db, shiftIDs)
-
 	fmt.Println("\n✅ Seeding completed!")
 }
 

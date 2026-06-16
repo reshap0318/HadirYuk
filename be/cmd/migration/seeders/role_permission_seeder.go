@@ -36,13 +36,6 @@ func SeedRolePermissions(db *gorm.DB, roleIDs map[string]uint, permIDs map[strin
 			// Statistics
 			"late-statistic.view",
 		},
-		"Karyawan": {
-			// Attendance
-			"attendance.checkin", "attendance.checkout",
-			// Shift
-			"shift.index",
-			"shift-assign.index",
-		},
 	}
 
 	count := 0

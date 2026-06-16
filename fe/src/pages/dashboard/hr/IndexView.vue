@@ -42,14 +42,6 @@ const secondaryStats = computed(() => [
   { label: 'Total Lembur', value: hr.value?.total_overtime || 0, suffix: 'm', icon: PhClockCountdown, color: 'text-orange-500', bg: 'bg-orange-100' },
 ])
 
-function donutSegments(present: number, late: number, absent: number) {
-  const total = present + late + absent || 1
-  const presentAngle = (present / total) * 360
-  const lateAngle = (late / total) * 360
-  const absentAngle = (absent / total) * 360
-  return { presentAngle, lateAngle, absentAngle, total }
-}
-
 function relativeTime(dateStr: string): string {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
   if (diff < 60) return 'Baru saja'
@@ -90,7 +82,7 @@ function avatarColor(name: string): string {
 </script>
 
 <template>
-  <div class="mx-8">
+  <div class="mx-auto md:mx-4">
     <div class="mb-6 flex items-end justify-between">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Dashboard HR</h1>

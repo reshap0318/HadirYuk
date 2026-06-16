@@ -65,7 +65,7 @@ function formatTime(dateStr?: string): string {
 </script>
 
 <template>
-  <div class="mx-8">
+  <div class="mx-auto md:mx-4">
     <div class="mb-6 flex items-end justify-between">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>

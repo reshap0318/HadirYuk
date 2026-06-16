@@ -41,15 +41,6 @@ func SeedUsers(db *gorm.DB) map[string]uint {
 			Position:   "HR Manager",
 			JoinDate:   time.Now(),
 		},
-		{
-			Email:      "karyawan@app.com",
-			Password:   "Karyawan#123",
-			Name:       "Karyawan Demo",
-			Phone:      "081234567892",
-			Department: "Engineering",
-			Position:   "Software Engineer",
-			JoinDate:   time.Now(),
-		},
 	}
 
 	resultMap := make(map[string]uint)

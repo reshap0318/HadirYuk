@@ -235,7 +235,7 @@ watch(mode, (newMode) => {
 </script>
 
 <template>
-  <div class="px-4 sm:px-6 lg:px-8">
+  <div class="mx-auto md:mx-4">
     <div class="mb-3">
       <h1 class="text-2xl font-bold text-gray-900">Absensi</h1>
     </div>

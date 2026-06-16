@@ -79,7 +79,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="mx-auto px-4">
+  <div class="mx-auto md:mx-8">
     <!-- Header Section -->
     <div class="mb-6 flex items-center justify-between">
       <div>
