@@ -13,6 +13,8 @@ RUN go mod download
 
 COPY . .
 
+RUN mkdir -p /src/storage
+
 RUN CGO_ENABLED=0 GOOS=linux go build -o /opt/server ./cmd/api
 
 FROM golang:1.25-alpine

@@ -13,6 +13,8 @@ RUN go mod download
 
 COPY . .
 
+RUN mkdir -p /src/storage
+
 # -ldflags="-s -w"     strip debug info → smaller binary
 # -tags timetzdata     embed timezone DB into binary (no need OS tzdata)
 RUN CGO_ENABLED=0 GOOS=linux go build \
