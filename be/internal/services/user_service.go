@@ -196,6 +196,15 @@ func (s *Services) UserUpdate(ctx context.Context, id uint, req dtos.UserUpdateR
 		"email": req.Email,
 	}
 
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			s.Logger.LogEndWithError("UserUpdate", "Failed to hash password: %v", err)
+			return nil, err
+		}
+		updates["password"] = string(hashedPassword)
+	}
+
 	if req.Avatar != "" {
 		avatarPath, err := helpers.MoveFile(req.Avatar, "storage/tmp", "storage/avatars")
 		if err != nil {
@@ -226,9 +235,9 @@ func (s *Services) UserUpdate(ctx context.Context, id uint, req dtos.UserUpdateR
 		}
 
 		if len(profileUpdates) > 0 {
-			if result.Profile == nil {
-				result.Profile = &models.UserProfile{UserID: id}
-				if _, err := s.repo.UserProfile.Create(tx, result.Profile); err != nil {
+			if existing.Profile == nil {
+				profile := &models.UserProfile{UserID: id}
+				if _, err := s.repo.UserProfile.Create(tx, profile); err != nil {
 					s.Logger.LogStep("UserUpdate", "Failed to create profile: %v", err)
 					return nil, err
 				}

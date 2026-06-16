@@ -23,13 +23,15 @@ type UserCreateRequest struct {
 
 // UserUpdateRequest represents the request to update a user.
 type UserUpdateRequest struct {
-	Email      string `json:"email" validate:"required,email"`
-	Name       string `json:"name" validate:"required,min=2,max=100"`
-	Phone      string `json:"phone" validate:"omitempty"`
-	Department string `json:"department" validate:"omitempty"`
-	Position   string `json:"position" validate:"omitempty"`
-	Avatar     string `json:"avatar"`
-	Roles      []uint `json:"roles"`
+	Email                string `json:"email" validate:"required,email"`
+	Name                 string `json:"name" validate:"required,min=2,max=100"`
+	Password             string `json:"password" validate:"omitempty,min=6"`
+	PasswordConfirmation string `json:"password_confirmation" validate:"required_with=Password,eqfield=Password"`
+	Phone                string `json:"phone" validate:"omitempty"`
+	Department           string `json:"department" validate:"omitempty"`
+	Position             string `json:"position" validate:"omitempty"`
+	Avatar               string `json:"avatar"`
+	Roles                []uint `json:"roles"`
 }
 
 // UserStatusUpdateRequest represents the request to update user status.
