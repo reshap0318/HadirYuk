@@ -220,8 +220,8 @@ func (s *Services) ShiftGetUserAssignments(ctx context.Context, userID uint, opt
 	}, nil
 }
 
-// ShiftGetAllAssignments returns paginated shift assignments with search.
-func (s *Services) ShiftGetAllAssignments(ctx context.Context, opts *repositories.QueryOptions) (*repositories.PagedResult[dtos.ShiftAssignmentDTO], error) {
+// ShiftGetAllAssignments returns paginated shift assignments with search and date range filter.
+func (s *Services) ShiftGetAllAssignments(ctx context.Context, opts *repositories.QueryOptions, startDate, endDate *time.Time) (*repositories.PagedResult[dtos.ShiftAssignmentDTO], error) {
 	if opts == nil {
 		opts = &repositories.QueryOptions{}
 	}
@@ -235,7 +235,7 @@ func (s *Services) ShiftGetAllAssignments(ctx context.Context, opts *repositorie
 		opts.Preloads = []string{"User", "Shift"}
 	}
 
-	result, err := s.repo.UserShiftAssignment.FindAllWithSearch(nil, opts)
+	result, err := s.repo.UserShiftAssignment.FindAllWithSearch(nil, opts, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}

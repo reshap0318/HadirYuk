@@ -192,7 +192,7 @@ func (r *UserShiftAssignmentRepository) FindAllInDateRange(tx *gorm.DB, startDat
 }
 
 // FindAllWithSearch finds all assignments with search on user name, email, and shift name.
-func (r *UserShiftAssignmentRepository) FindAllWithSearch(tx *gorm.DB, opts *QueryOptions) (*PagedResult[models.UserShiftAssignment], error) {
+func (r *UserShiftAssignmentRepository) FindAllWithSearch(tx *gorm.DB, opts *QueryOptions, startDate, endDate *time.Time) (*PagedResult[models.UserShiftAssignment], error) {
 	db := r.getDB(tx)
 	var instance *models.UserShiftAssignment
 
@@ -209,6 +209,18 @@ func (r *UserShiftAssignmentRepository) FindAllWithSearch(tx *gorm.DB, opts *Que
 		query = query.Joins("LEFT JOIN users ON users.id = user_shift_assignments.user_id").
 			Joins("LEFT JOIN shifts ON shifts.id = user_shift_assignments.shift_id").
 			Where("users.name LIKE ? OR users.email LIKE ? OR shifts.name LIKE ?", searchPattern, searchPattern, searchPattern)
+	}
+
+	// Date range filter (overlap logic)
+	if startDate != nil && endDate != nil {
+		query = query.Where(
+			"user_shift_assignments.start_date <= ? AND (user_shift_assignments.end_date IS NULL OR user_shift_assignments.end_date >= ?)",
+			endDate.Format("2006-01-02"), startDate.Format("2006-01-02"),
+		)
+	} else if startDate != nil {
+		query = query.Where("user_shift_assignments.end_date IS NULL OR user_shift_assignments.end_date >= ?", startDate.Format("2006-01-02"))
+	} else if endDate != nil {
+		query = query.Where("user_shift_assignments.start_date <= ?", endDate.Format("2006-01-02"))
 	}
 
 	// Sorting

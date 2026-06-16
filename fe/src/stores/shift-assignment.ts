@@ -74,7 +74,7 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
     }
   }
 
-  async function fetchAllWithSearch(page?: number, search?: string) {
+  async function fetchAllWithSearch(page?: number, search?: string, startDate?: string, endDate?: string) {
     crud.loading.value.Index = true
     const currentPage = page ?? crud.indexData.value.pagination.page
     try {
@@ -83,6 +83,8 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
           page: currentPage,
           page_size: crud.indexData.value.pagination.page_size,
           search: search || undefined,
+          start_date: startDate || undefined,
+          end_date: endDate || undefined,
         },
       })
       crud.indexData.value.items = data.data || []

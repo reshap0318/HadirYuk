@@ -20,6 +20,8 @@ const { hasAnyPermission } = usePermission()
 const shiftAssignmentStore = useShiftAssignmentStore()
 const formModalRef = ref<InstanceType<typeof FormModal> | null>(null)
 const searchQuery = ref('')
+const filterStartDate = ref('')
+const filterEndDate = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 const openMenuId = ref<number | null>(null)
 
@@ -50,12 +52,22 @@ function toggleMenu(e: Event, id: number) {
 }
 
 function handleSearchEnter() {
-  shiftAssignmentStore.fetchAllWithSearch(1, searchQuery.value.trim() || undefined)
+  shiftAssignmentStore.fetchAllWithSearch(
+    1,
+    searchQuery.value.trim() || undefined,
+    filterStartDate.value || undefined,
+    filterEndDate.value || undefined,
+  )
 }
 
 function clearSearch() {
   searchQuery.value = ''
-  shiftAssignmentStore.fetchAllWithSearch(1)
+  shiftAssignmentStore.fetchAllWithSearch(
+    1,
+    undefined,
+    filterStartDate.value || undefined,
+    filterEndDate.value || undefined,
+  )
 }
 
 function openCreate() {
@@ -73,7 +85,27 @@ async function handleDelete(id: number) {
 }
 
 function handlePageChange(page: number) {
-  shiftAssignmentStore.fetchAllWithSearch(page, searchQuery.value.trim() || undefined)
+  shiftAssignmentStore.fetchAllWithSearch(
+    page,
+    searchQuery.value.trim() || undefined,
+    filterStartDate.value || undefined,
+    filterEndDate.value || undefined,
+  )
+}
+
+function handleDateFilter() {
+  shiftAssignmentStore.fetchAllWithSearch(
+    1,
+    searchQuery.value.trim() || undefined,
+    filterStartDate.value || undefined,
+    filterEndDate.value || undefined,
+  )
+}
+
+function clearDateFilter() {
+  filterStartDate.value = ''
+  filterEndDate.value = ''
+  shiftAssignmentStore.fetchAllWithSearch(1, searchQuery.value.trim() || undefined)
 }
 
 function formatDate(dateStr: string): string {
@@ -120,35 +152,64 @@ onMounted(() => {
       </UiButton>
     </div>
 
-    <!-- Search Bar -->
+    <!-- Search + Date Filter -->
     <div
-      v-if="!shiftAssignmentStore.loading.Index && shiftAssignmentStore.indexData.items.length > 0"
+      v-if="!shiftAssignmentStore.loading.Index && (shiftAssignmentStore.indexData.items.length > 0 || searchQuery || filterStartDate || filterEndDate)"
       class="mb-6"
     >
-      <div class="relative">
-        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-          <PhMagnifyingGlass class="h-5 w-5 text-gray-400" />
+      <div class="flex flex-col sm:flex-row gap-3">
+        <!-- Search Bar -->
+        <div class="relative flex-1">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+            <PhMagnifyingGlass class="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari karyawan, email, atau shift..."
+            class="block w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-24 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            @keyup.enter="handleSearchEnter"
+          />
+          <div v-if="searchQuery" class="absolute inset-y-0 right-0 flex items-center pr-2">
+            <button
+              type="button"
+              class="flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+              @click="clearSearch"
+            >
+              <PhX class="h-3.5 w-3.5" />
+              <span>Bersihkan</span>
+            </button>
+          </div>
+          <div v-else class="absolute inset-y-0 right-0 flex items-center pr-4">
+            <span class="rounded-md bg-gray-50 px-2 py-0.5 text-xs text-gray-400">Enter</span>
+          </div>
         </div>
-        <input
-          ref="searchInputRef"
-          v-model="searchQuery"
-          type="text"
-          placeholder="Cari karyawan, email, atau shift..."
-          class="block w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-24 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-          @keyup.enter="handleSearchEnter"
-        />
-        <div v-if="searchQuery" class="absolute inset-y-0 right-0 flex items-center pr-2">
+
+        <!-- Date Filter -->
+        <div class="flex items-center gap-2 shrink-0">
+          <input
+            v-model="filterStartDate"
+            type="date"
+            class="flex-1 sm:flex-none rounded-lg border border-gray-200 bg-white px-3 py-3 text-sm text-gray-700 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            @change="handleDateFilter"
+          />
+          <span class="text-sm text-gray-400">s/d</span>
+          <input
+            v-model="filterEndDate"
+            type="date"
+            class="flex-1 sm:flex-none rounded-lg border border-gray-200 bg-white px-3 py-3 text-sm text-gray-700 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            @change="handleDateFilter"
+          />
           <button
+            v-if="filterStartDate || filterEndDate"
             type="button"
-            class="flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-            @click="clearSearch"
+            class="flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
+            @click="clearDateFilter"
           >
             <PhX class="h-3.5 w-3.5" />
-            <span>Bersihkan</span>
+            <span>Reset</span>
           </button>
-        </div>
-        <div v-else class="absolute inset-y-0 right-0 flex items-center pr-4">
-          <span class="rounded-md bg-gray-50 px-2 py-0.5 text-xs text-gray-400">Enter</span>
         </div>
       </div>
     </div>
@@ -169,7 +230,7 @@ onMounted(() => {
 
     <!-- Empty State -->
     <UiEmptyState
-      v-else-if="shiftAssignmentStore.indexData.items.length === 0 && !searchQuery"
+      v-else-if="shiftAssignmentStore.indexData.items.length === 0 && !searchQuery && !filterStartDate && !filterEndDate"
       :icon="PhCalendar"
       title="Belum ada Penugasan Shift"
       description="Silakan buat penugasan shift baru untuk mulai mengatur jadwal karyawan."
@@ -184,10 +245,10 @@ onMounted(() => {
 
     <!-- No Search Results -->
     <UiEmptyState
-      v-else-if="shiftAssignmentStore.indexData.items.length === 0 && searchQuery"
+      v-else-if="shiftAssignmentStore.indexData.items.length === 0"
       :icon="PhMagnifyingGlass"
       title="Tidak Ditemukan"
-      :description="`Tidak ada hasil untuk '${searchQuery}'`"
+      description="Tidak ada hasil yang cocok dengan filter yang diterapkan."
     />
 
     <!-- Data Grid -->

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -52,7 +53,19 @@ func (h *Handlers) ShiftGetUserAssignments(c *gin.Context) {
 			SearchFields: []string{"users.name", "users.email", "shifts.name"},
 		}
 
-		result, err := h.svcs.ShiftGetAllAssignments(c.Request.Context(), opts)
+		var startDate, endDate *time.Time
+		if startStr := c.Query("start_date"); startStr != "" {
+			if parsed, err := time.Parse("2006-01-02", startStr); err == nil {
+				startDate = &parsed
+			}
+		}
+		if endStr := c.Query("end_date"); endStr != "" {
+			if parsed, err := time.Parse("2006-01-02", endStr); err == nil {
+				endDate = &parsed
+			}
+		}
+
+		result, err := h.svcs.ShiftGetAllAssignments(c.Request.Context(), opts, startDate, endDate)
 		if err != nil {
 			helpers.InternalServerError(c, "Failed to fetch assignments")
 			return
