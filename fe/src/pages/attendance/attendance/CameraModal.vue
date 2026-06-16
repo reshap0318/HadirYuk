@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { UiModal, UiButton } from '@/components/utils'
 import FacePhotoCapture from '@/components/utils/FacePhotoCapture.vue'
 import swal from '@/plugins/swal'
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   buttonText: string
   processingAction: boolean
@@ -18,6 +18,23 @@ const emit = defineEmits<{
 const photoPreview = ref<string | null>(null)
 const capturedFile = ref<File | null>(null)
 const facePhotoCaptureRef = ref<InstanceType<typeof FacePhotoCapture> | null>(null)
+
+function resetState() {
+  if (photoPreview.value) {
+    URL.revokeObjectURL(photoPreview.value)
+  }
+  photoPreview.value = null
+  capturedFile.value = null
+}
+
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      resetState()
+    }
+  },
+)
 
 function handlePhotoCaptured(file: File) {
   capturedFile.value = file
@@ -35,9 +52,11 @@ function handleSubmit() {
 
 function closeModal() {
   emit('update:show', false)
-  photoPreview.value = null
-  capturedFile.value = null
-  facePhotoCaptureRef.value?.reset()
+  if (photoPreview.value) {
+    URL.revokeObjectURL(photoPreview.value)
+    photoPreview.value = null
+    capturedFile.value = null
+  }
 }
 </script>
 

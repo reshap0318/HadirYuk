@@ -187,6 +187,7 @@ async function handleCameraSubmit(file: File) {
     )
   } finally {
     processingAction.value = false
+    showCameraModal.value = false
   }
 }
 

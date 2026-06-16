@@ -37,14 +37,5 @@ const emit = defineEmits<{
     <p v-if="buttonShiftInfo && !isAllDone" class="text-xs text-center text-gray-500">
       {{ buttonShiftInfo }}
     </p>
-
-    <!-- Outside radius warning -->
-    <p
-      v-if="!isInsideRadius && userLocation && !isAllDone"
-      class="flex items-center justify-center gap-1 text-xs text-red-600"
-    >
-      <PhXCircle class="w-3.5 h-3.5" />
-      Anda di luar radius kantor
-    </p>
   </div>
 </template>

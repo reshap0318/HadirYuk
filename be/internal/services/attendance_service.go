@@ -1016,6 +1016,39 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 		return nil, helpers.ErrInvalidToken
 	}
 
+	// Fetch existing record with shift
+	existing, err := s.repo.Attendance.FindByID(nil, id, "Shift")
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceCorrect", "Attendance record not found: %v", err)
+		return nil, helpers.ErrNotFound
+	}
+
+	// Recalculate status based on new time_in vs shift start + buffer
+	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
+	shiftStart, _ := time.Parse("15:04", existing.Shift.StartTime)
+	shiftStartTime := time.Date(req.TimeIn.Year(), req.TimeIn.Month(), req.TimeIn.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, req.TimeIn.Location())
+	flexiThreshold := shiftStartTime.Add(buffer)
+
+	status := "present"
+	if req.TimeIn.After(flexiThreshold) {
+		status = "late"
+	}
+
+	// Recalculate duration
+	duration := ""
+	overtimeMinutes := 0
+	if req.TimeIn != nil && req.TimeOut != nil {
+		duration = calculateDuration(*req.TimeIn, *req.TimeOut)
+
+		// Recalculate overtime
+		shiftEnd, _ := time.Parse("15:04", existing.Shift.EndTime)
+		shiftEndTime := time.Date(req.TimeOut.Year(), req.TimeOut.Month(), req.TimeOut.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, req.TimeOut.Location())
+		latestNormalCheckout := shiftEndTime.Add(buffer)
+		if req.TimeOut.After(latestNormalCheckout) {
+			overtimeMinutes = int(req.TimeOut.Sub(latestNormalCheckout).Minutes())
+		}
+	}
+
 	now := time.Now()
 	var result *models.Attendance
 
@@ -1024,6 +1057,9 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 		result, err = s.repo.Attendance.UpdateMap(tx, &models.Attendance{ID: id}, map[string]interface{}{
 			"time_in":           req.TimeIn,
 			"time_out":          req.TimeOut,
+			"status":            status,
+			"duration":          duration,
+			"overtime_minutes":  overtimeMinutes,
 			"corrected_by":      callerID,
 			"corrected_at":      now,
 			"correction_reason": req.CorrectionReason,
@@ -1052,7 +1088,7 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 
 	result = res.(*models.Attendance)
 	dto := dtos.ToAttendanceDTO(result)
-	s.Logger.LogEnd("AttendanceCorrect", "Attendance %d corrected by user %d", id, callerID)
+	s.Logger.LogEnd("AttendanceCorrect", "Attendance %d corrected by user %d, status=%s, duration=%s", id, callerID, status, duration)
 	return &dto, nil
 }
 

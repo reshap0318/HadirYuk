@@ -84,7 +84,7 @@ defineExpose({ initMap, updateUserMarker, showOfficeRadius, invalidateSize })
   <UiCard :classes="{ body: 'p-2' }">
     <div
       ref="mapContainer"
-      class="rounded-lg border border-gray-200 overflow-hidden z-0 h-64 sm:h-80 md:h-96 lg:h-147"
+      class="rounded-lg border border-gray-200 overflow-hidden z-0 h-64 sm:h-80 md:h-96 lg:h-142"
     />
     <div
       class="mt-2 flex flex-col lg:flex-row items-center justify-between gap-2 px-2 text-xs text-gray-500"

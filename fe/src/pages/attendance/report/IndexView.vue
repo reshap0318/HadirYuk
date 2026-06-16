@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import {
-  UiCard,
-  UiButton,
-  UiPagination,
-  UiEmptyState,
-  UiBadge,
-  UiTable,
-} from '@/components/utils'
+import { UiCard, UiButton, UiPagination, UiEmptyState, UiBadge, UiTable } from '@/components/utils'
 import { ref, onMounted, computed } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance'
+import type { IAttendanceHistoryItem } from '@/stores/attendance'
 import type { TTableColumn } from '@/components/utils/types'
-import { PhDownload, PhCalendar } from '@phosphor-icons/vue'
+import { PhDownload, PhCalendar, PhPencil } from '@phosphor-icons/vue'
 import swal from '@/plugins/swal'
+import FormModal from '@/pages/attendance/correction/FormModal.vue'
 
 const attendanceStore = useAttendanceStore()
+
+const correctionModal = ref<InstanceType<typeof FormModal> | null>(null)
 
 const dateFrom = ref('')
 const dateTo = ref('')
@@ -40,6 +37,7 @@ const columns: TTableColumn[] = [
   { title: 'Check-out', data: 'time_out' },
   { title: 'Durasi', data: 'duration' },
   { title: 'Status', data: 'status' },
+  { title: 'Aksi', data: 'action', class: 'w-10' },
 ]
 
 function formatDate(dateString: string): string {
@@ -94,6 +92,10 @@ function exportExcel() {
 
 function exportPDF() {
   swal.info('Info', 'Fitur export PDF belum tersedia.')
+}
+
+function onCorrectionSuccess() {
+  applyFilters()
 }
 
 onMounted(() => {
@@ -204,10 +206,34 @@ onMounted(() => {
         <span class="text-sm">{{ value || '-' }}</span>
       </template>
 
-      <template #status="{ value }">
-        <UiBadge :color="getStatusBadge(value as string).color">
-          {{ getStatusBadge(value as string).label }}
-        </UiBadge>
+      <template #status="{ value, item }">
+        <div class="flex items-center gap-1.5">
+          <UiBadge :color="getStatusBadge(value as string).color">
+            {{ getStatusBadge(value as string).label }}
+          </UiBadge>
+          <span
+            v-if="item.correction_reason"
+            class="text-yellow-600 cursor-help"
+            :title="'Dikoreksi: ' + item.correction_reason"
+          >
+            <PhPencil class="w-3.5 h-3.5" />
+          </span>
+        </div>
+      </template>
+
+      <template #action="{ item }">
+        <UiButton
+          v-if="item.time_out"
+          v-permission="['attendance.correct']"
+          size="sm"
+          outline
+          title="Koreksi Absensi"
+          @click="correctionModal?.show(item as unknown as IAttendanceHistoryItem)"
+        >
+          <template #icon>
+            <PhPencil class="w-3.5 h-3.5" />
+          </template>
+        </UiButton>
       </template>
 
       <template #empty>
@@ -225,5 +251,8 @@ onMounted(() => {
     <div v-if="totalPages > 1" class="mt-6 flex justify-center">
       <UiPagination :page="currentPage" :total-pages="totalPages" @update:page="handlePageChange" />
     </div>
+
+    <!-- Correction Modal -->
+    <FormModal ref="correctionModal" @success="onCorrectionSuccess" />
   </div>
 </template>

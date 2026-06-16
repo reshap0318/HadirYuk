@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { UiCard, UiButton, UiPagination, UiEmptyState, UiSkeleton } from '@/components/utils'
 import FormModal from './FormModal.vue'
+import { usePermission } from '@/composables'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useShiftAssignmentStore } from '@/stores/shift-assignment'
 import type { IShiftAssignment } from '@/stores/shift-assignment'
@@ -15,6 +16,7 @@ import {
   PhDotsThreeVertical,
 } from '@phosphor-icons/vue'
 
+const { hasAnyPermission } = usePermission()
 const shiftAssignmentStore = useShiftAssignmentStore()
 const formModalRef = ref<InstanceType<typeof FormModal> | null>(null)
 const searchQuery = ref('')
@@ -110,7 +112,7 @@ onMounted(() => {
           Kelola penugasan shift untuk karyawan.
         </p>
       </div>
-      <UiButton size="sm" @click="openCreate">
+      <UiButton size="sm" @click="openCreate" v-permission="['shift-assign.create']">
         <template #icon>
           <PhPlus class="w-4 h-4" />
         </template>
@@ -172,7 +174,7 @@ onMounted(() => {
       title="Belum ada Penugasan Shift"
       description="Silakan buat penugasan shift baru untuk mulai mengatur jadwal karyawan."
     >
-      <UiButton size="lg" @click="openCreate">
+      <UiButton size="lg" @click="openCreate" v-permission="['shift-assign.create']">
         <template #icon>
           <PhPlus class="w-5 h-5" />
         </template>
@@ -233,7 +235,7 @@ onMounted(() => {
                 </p>
               </div>
               <!-- Three-dot Menu -->
-              <div class="relative shrink-0">
+              <div class="relative shrink-0" v-if="hasAnyPermission(['shift-assign.update', 'shift-assign.delete'])">
                 <button
                   class="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                   @click="toggleMenu($event, assignment.id)"
@@ -247,6 +249,7 @@ onMounted(() => {
                   class="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-10"
                 >
                   <button
+                    v-permission="['shift-assign.update']"
                     class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                     @click="openEdit(assignment)"
                   >
@@ -254,6 +257,7 @@ onMounted(() => {
                     Edit
                   </button>
                   <button
+                    v-permission="['shift-assign.delete']"
                     class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     :disabled="shiftAssignmentStore.loading.Delete"
                     @click="handleDelete(assignment.id)"
@@ -355,5 +359,5 @@ onMounted(() => {
     </template>
   </div>
 
-  <FormModal ref="formModalRef" />
+  <FormModal ref="formModalRef" v-if="hasAnyPermission(['shift-assign.create', 'shift-assign.update'])" />
 </template>

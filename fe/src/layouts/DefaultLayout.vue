@@ -10,7 +10,6 @@ import {
   PhUsers,
   PhClock,
   PhMapPin,
-  PhCalendarBlank,
   PhCalendar,
   PhSignIn,
   PhQrCode,
@@ -94,13 +93,14 @@ function filterMenuItems(items: IMenuItem[]): IMenuItem[] {
   for (let i = 0; i < processed.length; i++) {
     const item = processed[i]
     if (item.isTitle) {
-      const nextAccessible = processed
-        .slice(i + 1)
-        .find((n) => !n.isTitle && (n.to || n.children?.length))
-      if (nextAccessible) {
+      // Only scan items within this section (until next isTitle or end)
+      const sectionEnd = processed.findIndex((n, idx) => idx > i && n.isTitle)
+      const section = sectionEnd === -1 ? processed.slice(i + 1) : processed.slice(i + 1, sectionEnd)
+      const hasAccessible = section.some((n) => (n.to || n.children?.length) && canAccess(n.permissions))
+      if (hasAccessible) {
         result.push(item)
       }
-    } else if (item.to || item.children?.length) {
+    } else if ((item.to || item.children?.length) && canAccess(item.permissions)) {
       result.push(item)
     }
   }

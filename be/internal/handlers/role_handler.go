@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"slices"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/reshap0318/hadirYuk/internal/dtos"
 	"github.com/reshap0318/hadirYuk/internal/helpers"
+	"github.com/reshap0318/hadirYuk/internal/models"
 	"github.com/reshap0318/hadirYuk/internal/repositories"
 )
 
@@ -33,13 +35,19 @@ func (h *Handlers) RoleCreate(c *gin.Context) {
 
 // RoleGetAll handles GET /api/roles with optional pagination
 func (h *Handlers) RoleGetAll(c *gin.Context) {
+	ctx := c.Request.Context()
+	hasIndexAll := h.svcs.Access.HasPermission(ctx, "role.index-all")
 	pageStr := c.Query("page")
 
 	if pageStr == "" {
-		roles, err := h.svcs.RoleGetAllUnpaginated(c.Request.Context())
+		roles, err := h.svcs.RoleGetAllUnpaginated(ctx)
 		if err != nil {
 			helpers.InternalServerError(c, "Failed to fetch roles")
 			return
+		}
+
+		if !hasIndexAll {
+			roles = filterSuperAdmin(roles)
 		}
 
 		helpers.OK(c, "Roles fetched successfully", roles)
@@ -54,10 +62,15 @@ func (h *Handlers) RoleGetAll(c *gin.Context) {
 		PageSize: pageSize,
 	}
 
-	result, err := h.svcs.RoleGetAllPaginated(c.Request.Context(), opts)
+	result, err := h.svcs.RoleGetAllPaginated(ctx, opts)
 	if err != nil {
 		helpers.InternalServerError(c, "Failed to fetch roles")
 		return
+	}
+
+	if !hasIndexAll {
+		result.Data = filterSuperAdminModels(result.Data)
+		result.Total = int64(len(result.Data))
 	}
 
 	helpers.OKWithMetadata(c, "Roles fetched successfully", result)
@@ -71,8 +84,15 @@ func (h *Handlers) RoleGetByID(c *gin.Context) {
 		return
 	}
 
-	dto, err := h.svcs.RoleGetByID(c.Request.Context(), uint(id))
+	ctx := c.Request.Context()
+
+	dto, err := h.svcs.RoleGetByID(ctx, uint(id))
 	if helpers.HandleError(c, err, "Failed to fetch role") {
+		return
+	}
+
+	if !h.svcs.Access.HasPermission(ctx, "role.index-all") && dto.Name == "Super Admin" {
+		helpers.Forbidden(c, "Access denied")
 		return
 	}
 
@@ -130,10 +150,35 @@ func (h *Handlers) RoleGetPermissions(c *gin.Context) {
 		return
 	}
 
-	perms, err := h.svcs.RoleGetPermissions(c.Request.Context(), uint(id))
+	ctx := c.Request.Context()
+
+	role, err := h.svcs.RoleGetByID(ctx, uint(id))
+	if err != nil {
+		helpers.InternalServerError(c, "Failed to fetch role")
+		return
+	}
+
+	if !h.svcs.Access.HasPermission(ctx, "role.index-all") && role.Name == "Super Admin" {
+		helpers.Forbidden(c, "Access denied")
+		return
+	}
+
+	perms, err := h.svcs.RoleGetPermissions(ctx, uint(id))
 	if helpers.HandleError(c, err, "Failed to fetch role permissions") {
 		return
 	}
 
 	helpers.OK(c, "Role permissions fetched successfully", perms)
+}
+
+func filterSuperAdmin(roles []dtos.RoleDTO) []dtos.RoleDTO {
+	return slices.DeleteFunc(roles, func(r dtos.RoleDTO) bool {
+		return r.Name == "Super Admin"
+	})
+}
+
+func filterSuperAdminModels(roles []models.Role) []models.Role {
+	return slices.DeleteFunc(roles, func(r models.Role) bool {
+		return r.Name == "Super Admin"
+	})
 }

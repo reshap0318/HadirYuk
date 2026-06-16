@@ -15,21 +15,20 @@ func SeedRolePermissions(db *gorm.DB, roleIDs map[string]uint, permIDs map[strin
 	rolePerms := map[string][]string{
 		"Super Admin": {},
 		"HR Admin": {
-			// Auth & Profile
-			"auth.login", "auth.logout", "auth.forgot-password", "auth.reset-password", "auth.change-password",
-			"profile.view", "profile.update", "profile.upload-face",
 			// Attendance
-			"attendance.checkin", "attendance.checkout", "attendance.view", "attendance.view-all",
+			"attendance.checkin", "attendance.checkout", "attendance.view-all",
 			"attendance.export", "attendance.correct",
 			// Shift
 			"shift.index", "shift.create", "shift.update", "shift.delete",
 			"shift-assign.index", "shift-assign.create", "shift-assign.update", "shift-assign.delete",
 			// User
-			"user.index", "user.create", "user.update",
+			"user.index", "user.view-all", "user.create", "user.update",
+			// Role
+			"role.index",
 			// Location
 			"location.index", "location.create", "location.update", "location.delete",
 			// Dashboard
-			"dashboard.view", "dashboard.view-hr",
+			"dashboard.view-hr",
 			// Report
 			"report.view", "report.export-excel", "report.export-pdf",
 			// QR Code
@@ -38,15 +37,11 @@ func SeedRolePermissions(db *gorm.DB, roleIDs map[string]uint, permIDs map[strin
 			"late-statistic.view",
 		},
 		"Karyawan": {
-			// Auth & Profile
-			"auth.login", "auth.logout", "auth.forgot-password", "auth.reset-password", "auth.change-password",
-			"profile.view", "profile.update", "profile.upload-face",
 			// Attendance
-			"attendance.checkin", "attendance.checkout", "attendance.view",
+			"attendance.checkin", "attendance.checkout",
 			// Shift
 			"shift.index",
-			// Dashboard
-			"dashboard.view",
+			"shift-assign.index",
 		},
 	}
 

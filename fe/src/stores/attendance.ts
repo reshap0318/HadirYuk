@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { get, post, type IApiResponse } from '@/plugins/axios'
+import { get, post, put, type IApiResponse } from '@/plugins/axios'
 import swal from '@/plugins/swal'
 import { uploadFile } from '@/helpers/upload'
 
@@ -658,7 +658,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
   async function correctAttendance(id: number, payload: ICorrectPayload): Promise<boolean> {
     loading.value.Form = true
     try {
-      await post<IApiResponse<void>>(`/attendance/${id}/correct`, payload)
+      await put<IApiResponse<void>>(`/attendance/${id}/correct`, payload)
       swal.success('Berhasil', 'Absensi berhasil dikoreksi.')
       return true
     } catch (error: any) {

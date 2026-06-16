@@ -16,23 +16,12 @@ func SeedPermissions(db *gorm.DB) map[string]uint {
 		Name        string
 		Description string
 	}{
-		// Auth
-		{"auth.login", "Can login to system"},
-		{"auth.logout", "Can logout from system"},
-		{"auth.forgot-password", "Can request password reset"},
-		{"auth.reset-password", "Can reset password with token"},
-		{"auth.change-password", "Can change own password"},
-		// Profile
-		{"profile.view", "Can view own profile"},
-		{"profile.update", "Can update own profile"},
-		{"profile.upload-face", "Can upload face photo"},
 		// Attendance
-		{"attendance.checkin", "Can check-in attendance"},
-		{"attendance.checkout", "Can check-out attendance"},
-		{"attendance.view", "Can view own attendance history"},
-		{"attendance.view-all", "Can view all attendance history"},
-		{"attendance.export", "Can export attendance report"},
-		{"attendance.correct", "Can correct attendance record"},
+		{"attendance.checkin", "Can check-in (geotagging)"},
+		{"attendance.checkout", "Can check-out (geotagging)"},
+		{"attendance.view-all", "Can view all attendance history (NOT YET IMPLEMENTED)"},
+		{"attendance.export", "Can export attendance report (NOT YET IMPLEMENTED)"},
+		{"attendance.correct", "Can correct attendance record (NOT YET IMPLEMENTED)"},
 		// Shift
 		{"shift.index", "Can view shift list"},
 		{"shift.create", "Can create new shift"},
@@ -44,17 +33,16 @@ func SeedPermissions(db *gorm.DB) map[string]uint {
 		{"shift-assign.delete", "Can delete shift assignment"},
 		// User
 		{"user.index", "Can view user list"},
+		{"user.view-all", "Can view all user data including super admin"},
 		{"user.create", "Can create new user"},
 		{"user.update", "Can update user"},
 		{"user.delete", "Can delete/deactivate user"},
-		{"user.assign-role", "Can assign role to user"},
-		{"user.view-all", "Can view all user data including super admin"},
 		// Role
 		{"role.index", "Can view role list"},
+		{"role.index-all", "Can view all roles including Super Admin"},
 		{"role.create", "Can create new role"},
 		{"role.update", "Can update role"},
 		{"role.delete", "Can delete role"},
-		{"role.assign-permission", "Can assign permission to role"},
 		// Permission
 		{"permission.index", "Can view permission list"},
 		{"permission.create", "Can create new permission"},
@@ -66,7 +54,6 @@ func SeedPermissions(db *gorm.DB) map[string]uint {
 		{"location.update", "Can update location"},
 		{"location.delete", "Can delete location"},
 		// Dashboard
-		{"dashboard.view", "Can view own dashboard"},
 		{"dashboard.view-hr", "Can view HR dashboard"},
 		{"dashboard.view-admin", "Can view admin dashboard"},
 		// Report

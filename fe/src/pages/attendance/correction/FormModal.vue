@@ -7,6 +7,9 @@ import useVuelidate from '@vuelidate/core'
 import { required, minLength } from '@vuelidate/validators'
 
 const attendanceStore = useAttendanceStore()
+const emit = defineEmits<{
+  success: []
+}>()
 const modalVisible = ref(false)
 const selectedItem = ref<IAttendanceHistoryItem | null>(null)
 
@@ -24,16 +27,29 @@ const rules = computed(() => ({
 
 const v$ = useVuelidate(rules, form)
 
+function toLocalDatetime(dateString: string): string {
+  const d = new Date(dateString)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function toRFC3339(datetimeLocal: string): string {
+  const d = new Date(datetimeLocal)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  const offset = -d.getTimezoneOffset()
+  const sign = offset >= 0 ? '+' : '-'
+  const offH = pad(Math.floor(Math.abs(offset) / 60))
+  const offM = pad(Math.abs(offset) % 60)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00${sign}${offH}:${offM}`
+}
+
 function show(item: IAttendanceHistoryItem) {
   selectedItem.value = item
-  // Pre-fill with existing times
   if (item.time_in) {
-    const d = new Date(item.time_in)
-    form.value.time_in = d.toISOString().slice(0, 16)
+    form.value.time_in = toLocalDatetime(item.time_in)
   }
   if (item.time_out) {
-    const d = new Date(item.time_out)
-    form.value.time_out = d.toISOString().slice(0, 16)
+    form.value.time_out = toLocalDatetime(item.time_out)
   }
   form.value.correction_reason = ''
   v$.value.$reset()
@@ -47,15 +63,14 @@ async function handleSubmit() {
   if (!selectedItem.value) return
 
   const success = await attendanceStore.correctAttendance(selectedItem.value.id, {
-    time_in: form.value.time_in,
-    time_out: form.value.time_out,
+    time_in: toRFC3339(form.value.time_in),
+    time_out: toRFC3339(form.value.time_out),
     correction_reason: form.value.correction_reason,
   })
 
   if (success) {
     modalVisible.value = false
-    // Refresh history if on history page
-    attendanceStore.fetchHistory()
+    emit('success')
   }
 }
 

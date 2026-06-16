@@ -51,7 +51,7 @@ onMounted(() => {
           Kelola daftar shift kerja karyawan.
         </p>
       </div>
-      <UiButton size="sm" @click="openCreate">
+      <UiButton size="sm" @click="openCreate" v-permission="['shift.create']">
         <template #icon>
           <PhPlus class="w-4 h-4" />
         </template>
@@ -79,7 +79,7 @@ onMounted(() => {
       title="Belum ada Shift"
       description="Silakan buat shift kerja baru untuk mulai mengatur jadwal karyawan."
     >
-      <UiButton size="lg" @click="openCreate">
+      <UiButton size="lg" @click="openCreate" v-permission="['shift.create']">
         <template #icon>
           <PhPlus class="w-5 h-5" />
         </template>
@@ -119,6 +119,7 @@ onMounted(() => {
               class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shrink-0"
             >
               <button
+                v-permission="['shift.update']"
                 class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                 title="Edit"
                 @click="openEdit(shift)"
@@ -126,6 +127,7 @@ onMounted(() => {
                 <PhPencil class="w-5 h-5" />
               </button>
               <button
+                v-permission="['shift.delete']"
                 class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                 title="Hapus"
                 :disabled="shiftStore.loading.Delete"
