@@ -29,7 +29,7 @@ services:
 
   frontend:
     ports:
-      - "9001:80"
+      - "9010:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:80"]
       interval: 30s
