@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,12 +21,17 @@ type PostgreSQLConfig struct {
 
 // NewPostgreSQL creates a new PostgreSQL database connection.
 func NewPostgreSQL(cfg PostgreSQLConfig) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=UTC",
+	tz := os.Getenv("TZ")
+	if tz == "" {
+		tz = "Asia/Jakarta"
+	}
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=%s",
 		cfg.Host,
 		cfg.Port,
 		cfg.User,
 		cfg.Password,
 		cfg.DBName,
+		tz,
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
