@@ -133,6 +133,33 @@ defineExpose({ show })
         </div>
       </div>
 
+      <!-- Evidence -->
+      <div v-if="detail.image_in || detail.image_out" class="mt-4 pt-4 border-t border-gray-100">
+        <h4 class="text-sm font-semibold text-gray-900 mb-3">Bukti Absensi</h4>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div v-if="detail.image_in" class="space-y-2">
+            <span class="text-xs font-medium text-gray-500">Check-in</span>
+            <div class="aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              <img
+                :src="detail.image_in"
+                alt="Bukti Check-in"
+                class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          </div>
+          <div v-if="detail.image_out" class="space-y-2">
+            <span class="text-xs font-medium text-gray-500">Check-out</span>
+            <div class="aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              <img
+                :src="detail.image_out"
+                alt="Bukti Check-out"
+                class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Correction Info -->
       <div
         v-if="detail.correction_reason"
