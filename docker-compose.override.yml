@@ -1,12 +1,17 @@
 # ═══════════════════════════════════════════════════════════════
 #  HadirYuk — Development Overrides
 #  Auto-merged: docker compose up
+#  mkdir -p be/storage
+#  sudo chown -R 1000:1000 be/storage
 # ═══════════════════════════════════════════════════════════════
 
 services:
   backend:
     build:
       dockerfile: ../etc/Dockerfile.be-dev
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./be/storage:/app/storage
     deploy:
       resources:
         limits:
