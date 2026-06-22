@@ -3,6 +3,7 @@ package dtos
 import (
 	"time"
 
+	"github.com/reshap0318/hadirYuk/internal/helpers"
 	"github.com/reshap0318/hadirYuk/internal/models"
 )
 
@@ -81,12 +82,12 @@ func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
 		TimeIn:         a.TimeIn,
 		LatIn:          a.LatIn,
 		LngIn:          a.LngIn,
-		ImageIn:        a.ImageIn,
+		ImageIn:        helpers.GetFileURL(a.ImageIn),
 		DistanceMeters: a.DistanceMeters,
 		TimeOut:        a.TimeOut,
 		LatOut:         a.LatOut,
 		LngOut:         a.LngOut,
-		ImageOut:       a.ImageOut,
+		ImageOut:       helpers.GetFileURL(a.ImageOut),
 		Duration:       a.Duration,
 		OvertimeMinutes: a.OvertimeMinutes,
 		CorrectedBy:    a.CorrectedBy,

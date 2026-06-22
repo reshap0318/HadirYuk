@@ -4,13 +4,15 @@ import { ref, onMounted, computed } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance'
 import type { IAttendanceHistoryItem } from '@/stores/attendance'
 import type { TTableColumn } from '@/components/utils/types'
-import { PhDownload, PhCalendar, PhPencil } from '@phosphor-icons/vue'
+import { PhDownload, PhCalendar, PhPencil, PhEye } from '@phosphor-icons/vue'
 import swal from '@/plugins/swal'
 import FormModal from '@/pages/attendance/correction/FormModal.vue'
+import DetailModal from '@/pages/attendance/history/DetailModal.vue'
 
 const attendanceStore = useAttendanceStore()
 
 const correctionModal = ref<InstanceType<typeof FormModal> | null>(null)
+const detailModalRef = ref<InstanceType<typeof DetailModal> | null>(null)
 
 const dateFrom = ref('')
 const dateTo = ref('')
@@ -222,18 +224,30 @@ onMounted(() => {
       </template>
 
       <template #action="{ item }">
-        <UiButton
-          v-if="item.time_out"
-          v-permission="['attendance.correct']"
-          size="sm"
-          outline
-          title="Koreksi Absensi"
-          @click="correctionModal?.show(item as unknown as IAttendanceHistoryItem)"
-        >
-          <template #icon>
-            <PhPencil class="w-3.5 h-3.5" />
-          </template>
-        </UiButton>
+        <div class="flex items-center gap-2">
+          <UiButton
+            size="sm"
+            outline
+            title="Lihat Detail"
+            @click="detailModalRef?.show(item as unknown as IAttendanceHistoryItem)"
+          >
+            <template #icon>
+              <PhEye class="w-3.5 h-3.5" />
+            </template>
+          </UiButton>
+          <UiButton
+            v-if="item.time_out"
+            v-permission="['attendance.correct']"
+            size="sm"
+            outline
+            title="Koreksi Absensi"
+            @click="correctionModal?.show(item as unknown as IAttendanceHistoryItem)"
+          >
+            <template #icon>
+              <PhPencil class="w-3.5 h-3.5" />
+            </template>
+          </UiButton>
+        </div>
       </template>
 
       <template #empty>
@@ -254,5 +268,8 @@ onMounted(() => {
 
     <!-- Correction Modal -->
     <FormModal ref="correctionModal" @success="onCorrectionSuccess" />
+
+    <!-- Detail Modal -->
+    <DetailModal ref="detailModalRef" />
   </div>
 </template>
