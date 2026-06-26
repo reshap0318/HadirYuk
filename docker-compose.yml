@@ -6,8 +6,8 @@
 services:
   backend:
     build:
-      context: ./be
-      dockerfile: ../etc/Dockerfile.be
+      context: .
+      dockerfile: etc/Dockerfile.be
     image: hadiryuk-be:latest
     container_name: hadiryuk-be
     restart: unless-stopped

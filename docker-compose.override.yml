@@ -8,7 +8,8 @@
 services:
   backend:
     build:
-      dockerfile: ../etc/Dockerfile.be-dev
+      context: .
+      dockerfile: etc/Dockerfile.be-dev
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - ./be:/app

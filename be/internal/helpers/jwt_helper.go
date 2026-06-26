@@ -30,6 +30,15 @@ func GenerateKeyID(publicKey *rsa.PublicKey) string {
 	return hex.EncodeToString(hash[:])[:8]
 }
 
+// LoadPassphrase reads the JWT passphrase from the file at the given path.
+func LoadPassphrase(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("failed to read passphrase file %q: %w", path, err)
+	}
+	return string(data), nil
+}
+
 // LoadPrivateKey loads and decrypts private key from PEM file
 func LoadPrivateKey(path string, passphrase string) (*rsa.PrivateKey, error) {
 	// Read private key file
