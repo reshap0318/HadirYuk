@@ -147,7 +147,6 @@ func runSeed(db *gorm.DB) {
 	userEmails := seeders.SeedUsers(db)
 	seeders.SeedRolePermissions(db, roleIDs, permIDs)
 	seeders.SeedUserRoles(db, userEmails, roleIDs)
-
 	fmt.Println("\n✅ Seeding completed!")
 }
 

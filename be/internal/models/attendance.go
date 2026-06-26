@@ -22,12 +22,13 @@ type Attendance struct {
 	DistanceMeters *float64       `json:"distance_meters"`
 
 	// Check-out
-	TimeOut        *time.Time     `json:"time_out"`
-	LatOut         *float64       `json:"lat_out"`
-	LngOut         *float64       `json:"lng_out"`
-	ImageOut       string         `gorm:"type:varchar(255)" json:"image_out"`
-	Duration       string         `gorm:"type:varchar(20)" json:"duration"`
-	OvertimeMinutes int           `gorm:"not null;default:0" json:"overtime_minutes"`
+	TimeOut         *time.Time     `json:"time_out"`
+	LatOut          *float64       `json:"lat_out"`
+	LngOut          *float64       `json:"lng_out"`
+	ImageOut        string         `gorm:"type:varchar(255)" json:"image_out"`
+	Duration        string         `gorm:"type:varchar(20)" json:"duration"`
+	DurationMinutes int            `gorm:"not null;default:0" json:"duration_minutes"`
+	OvertimeMinutes int            `gorm:"not null;default:0" json:"overtime_minutes"`
 
 	// Correction
 	CorrectedBy    *uint          `gorm:"index" json:"corrected_by,omitempty"`

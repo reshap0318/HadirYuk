@@ -196,16 +196,17 @@ func (r *AttendanceRepository) FindHistoryAll(tx *gorm.DB, dateFrom, dateTo *tim
 }
 
 // FindMonthlyStats calculates monthly attendance statistics for a user.
-func (r *AttendanceRepository) FindMonthlyStats(tx *gorm.DB, userID uint, year, month int) (present, late, absent, totalOvertime int, err error) {
+func (r *AttendanceRepository) FindMonthlyStats(tx *gorm.DB, userID uint, year, month int) (present, late, absent, totalOvertime int, avgDurationMins float64, err error) {
 	db := r.getDB(tx)
 	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	endDate := startDate.AddDate(0, 1, 0)
 
 	type Stats struct {
-		Present  int `gorm:"column:present"`
-		Late     int `gorm:"column:late"`
-		Absent   int `gorm:"column:absent"`
-		Overtime int `gorm:"column:overtime"`
+		Present            int     `gorm:"column:present"`
+		Late               int     `gorm:"column:late"`
+		Absent             int     `gorm:"column:absent"`
+		Overtime           int     `gorm:"column:overtime"`
+		AvgDurationMinutes float64 `gorm:"column:avg_duration_minutes"`
 	}
 
 	var stats Stats
@@ -214,12 +215,13 @@ func (r *AttendanceRepository) FindMonthlyStats(tx *gorm.DB, userID uint, year, 
 			COALESCE(SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END), 0) as present,
 			COALESCE(SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END), 0) as late,
 			COALESCE(SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END), 0) as absent,
-			COALESCE(SUM(overtime_minutes), 0) as overtime
+			COALESCE(SUM(overtime_minutes), 0) as overtime,
+			COALESCE(AVG(CASE WHEN status IN ('present', 'late') AND duration_minutes > 0 THEN duration_minutes ELSE NULL END), 0) as avg_duration_minutes
 		FROM attendances
 		WHERE user_id = ? AND date >= ? AND date < ? AND deleted_at IS NULL
 	`, userID, startDate, endDate).Scan(&stats).Error
 
-	return stats.Present, stats.Late, stats.Absent, stats.Overtime, err
+	return stats.Present, stats.Late, stats.Absent, stats.Overtime, stats.AvgDurationMinutes, err
 }
 
 // FindByDateAll finds all attendance records for a specific date.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sort"
 	"time"
 
 	"gorm.io/gorm"
@@ -28,9 +29,10 @@ func (s *Services) GetTodayStatus(ctx context.Context) (*dtos.AttendanceTodayRes
 
 	now := time.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	yesterday := today.AddDate(0, 0, -1)
 
 	response := &dtos.AttendanceTodayResponse{
-		Sessions:    []dtos.AttendanceSessionDTO{},
+		Sessions:     []dtos.AttendanceSessionDTO{},
 		TodaysShifts: []dtos.TodaysShiftDTO{},
 	}
 
@@ -55,6 +57,20 @@ func (s *Services) GetTodayStatus(ctx context.Context) (*dtos.AttendanceTodayRes
 			AttendanceDTO: dto,
 			ShiftName:     att.Shift.Name,
 		})
+	}
+
+	// Also include cross-midnight sessions from yesterday (shift end < shift start)
+	yesterdayAttendances, _ := s.repo.Attendance.FindByUserAndDate(nil, userID, yesterday, "Shift")
+	for _, att := range yesterdayAttendances {
+		endT, errE := time.Parse("15:04", att.Shift.EndTime)
+		startT, errS := time.Parse("15:04", att.Shift.StartTime)
+		if errE == nil && errS == nil && endT.Before(startT) {
+			dto := dtos.ToAttendanceDTO(&att)
+			response.Sessions = append(response.Sessions, dtos.AttendanceSessionDTO{
+				AttendanceDTO: dto,
+				ShiftName:     att.Shift.Name,
+			})
+		}
 	}
 
 	// Get all shifts assigned today
@@ -138,16 +154,16 @@ func (s *Services) GetTodayStatus(ctx context.Context) (*dtos.AttendanceTodayRes
 	}
 
 	// Check if there's an applicable shift for check-in
-	applicableShift := s.findApplicableShift(userID, now)
-	if applicableShift != nil {
+	match := s.findApplicableShift(userID, now)
+	if match != nil {
 		response.CurrentAction = dtos.CurrentActionDTO{
 			Action: "checkin",
 			Shift: &dtos.ShiftDTO{
-				ID:        applicableShift.ShiftID,
-				Name:      applicableShift.Shift.Name,
-				StartTime: applicableShift.Shift.StartTime,
-				EndTime:   applicableShift.Shift.EndTime,
-				ColorCode: applicableShift.Shift.ColorCode,
+				ID:        match.Assignment.ShiftID,
+				Name:      match.Assignment.Shift.Name,
+				StartTime: match.Assignment.Shift.StartTime,
+				EndTime:   match.Assignment.Shift.EndTime,
+				ColorCode: match.Assignment.Shift.ColorCode,
 			},
 		}
 	} else {
@@ -159,10 +175,11 @@ func (s *Services) GetTodayStatus(ctx context.Context) (*dtos.AttendanceTodayRes
 				break
 			}
 		}
-		if allDone && len(response.TodaysShifts) > 0 {
+		if allDone || len(response.TodaysShifts) == 0 {
 			response.CurrentAction = dtos.CurrentActionDTO{Action: "done"}
 		} else {
-			response.CurrentAction = dtos.CurrentActionDTO{Action: "done"}
+			// Shifts exist but none are applicable right now (too early or between windows)
+			response.CurrentAction = dtos.CurrentActionDTO{Action: "waiting"}
 		}
 	}
 
@@ -251,7 +268,6 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 	s.Logger.LogStep("AttendanceCheckIn", "Photo validated: %s, size: %.2fMB, ext: %s", req.Image, fileMeta.SizeMB, fileMeta.Extension)
 
 	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
 	// MS-05: Validate NO active session exists (check ALL dates, not just today)
 	activeSession, err := s.repo.Attendance.FindActiveSessionByUserID(nil, userID, "Shift")
@@ -267,17 +283,19 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 		}
 	}
 
-	// MS-06: Auto-detect shift via FindApplicableShift
-	applicableShift := s.findApplicableShift(userID, now)
-	if applicableShift == nil {
+	// MS-06: Auto-detect shift via findApplicableShift (supports cross-midnight shifts)
+	shiftResult := s.findApplicableShift(userID, now)
+	if shiftResult == nil {
 		s.Logger.LogEndWithError("AttendanceCheckIn", "No applicable shift found for current time")
 		return nil, &helpers.CustomError{Message: "Tidak ada shift yang tersedia untuk check-in saat ini"}
 	}
+	applicableShift := shiftResult.Assignment
+	shiftDate := shiftResult.ShiftDate
 
-	s.Logger.LogStep("AttendanceCheckIn", "Applicable shift detected: %s (%s-%s)", applicableShift.Shift.Name, applicableShift.Shift.StartTime, applicableShift.Shift.EndTime)
+	s.Logger.LogStep("AttendanceCheckIn", "Applicable shift detected: %s (%s-%s), shiftDate: %s", applicableShift.Shift.Name, applicableShift.Shift.StartTime, applicableShift.Shift.EndTime, shiftDate.Format("2006-01-02"))
 
-	// MS-08: Duplicate check per shift — check (user_id, date, shift_id)
-	existing, err := s.repo.Attendance.FindByUserDateShift(nil, userID, today, applicableShift.ShiftID)
+	// MS-08: Duplicate check using shiftDate (cross-midnight shifts belong to the day they started)
+	existing, err := s.repo.Attendance.FindByUserDateShift(nil, userID, shiftDate, applicableShift.ShiftID)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		s.Logger.LogEndWithError("AttendanceCheckIn", "Failed to check existing attendance: %v", err)
 		return nil, err
@@ -302,24 +320,22 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 	}
 
 	// MS-07: Determine status based on window logic
+	// shiftStartTime uses shiftDate so cross-midnight shifts (e.g., 22:00 on Day1) are handled correctly.
 	shiftStart, _ := time.Parse("15:04", applicableShift.Shift.StartTime)
-	shiftEnd, _ := time.Parse("15:04", applicableShift.Shift.EndTime)
-	shiftStartTime := time.Date(now.Year(), now.Month(), now.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
-	shiftEndTime := time.Date(now.Year(), now.Month(), now.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
+	shiftStartTime := time.Date(shiftDate.Year(), shiftDate.Month(), shiftDate.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
+	shiftEndTime := shiftResult.WindowEnd
 
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	flexiStart := shiftStartTime.Add(-buffer)
 	flexiThreshold := shiftStartTime.Add(buffer)
 
-	checkInTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), 0, now.Location())
-
-	if checkInTime.Before(flexiStart) || checkInTime.After(shiftEndTime) {
-		s.Logger.LogEndWithError("AttendanceCheckIn", "Check-in outside shift window: %s not in %s-%s", checkInTime.Format("15:04"), flexiStart.Format("15:04"), shiftEndTime.Format("15:04"))
+	if now.Before(flexiStart) || now.After(shiftEndTime) {
+		s.Logger.LogEndWithError("AttendanceCheckIn", "Check-in outside shift window: %s not in %s-%s", now.Format("15:04"), flexiStart.Format("15:04"), shiftEndTime.Format("15:04"))
 		return nil, &helpers.CustomError{Message: "Waktu check-in di luar jendela shift yang diperbolehkan"}
 	}
 
 	status := "present"
-	if checkInTime.After(flexiThreshold) {
+	if now.After(flexiThreshold) {
 		status = "late"
 	}
 
@@ -330,11 +346,11 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 		return nil, &helpers.CustomError{Message: "Gagal menyimpan foto bukti"}
 	}
 
-	// Create attendance record
+	// Create attendance record (Date = shiftDate, not today, for cross-midnight shifts)
 	attendance := &models.Attendance{
 		UserID:         userID,
 		ShiftID:        applicableShift.ShiftID,
-		Date:           today,
+		Date:           shiftDate,
 		TimeIn:         &now,
 		LatIn:          &req.Lat,
 		LngIn:          &req.Lng,
@@ -370,6 +386,9 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 	})
 	if err != nil {
 		s.Logger.LogEndWithError("AttendanceCheckIn", "Failed to create attendance: %v", err)
+		if _, rollbackErr := helpers.MoveFile(req.Image, "storage/attendance-evidence", "storage/tmp"); rollbackErr != nil {
+			s.Logger.LogEndWithError("AttendanceCheckIn", "Failed to rollback photo move: %v", rollbackErr)
+		}
 		return nil, err
 	}
 
@@ -399,7 +418,6 @@ func (s *Services) AttendanceQRCheckIn(ctx context.Context, req dtos.AttendanceQ
 	s.Logger.LogStep("AttendanceQRCheckIn", "QR code validated: office_id=%d", qrCode.OfficeID)
 
 	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
 	// Validate NO active session exists (check ALL dates)
 	activeSession, err := s.repo.Attendance.FindActiveSessionByUserID(nil, userID, "Shift")
@@ -415,17 +433,19 @@ func (s *Services) AttendanceQRCheckIn(ctx context.Context, req dtos.AttendanceQ
 		}
 	}
 
-	// Auto-detect shift
-	applicableShift := s.findApplicableShift(userID, now)
-	if applicableShift == nil {
+	// Auto-detect shift (supports cross-midnight shifts)
+	shiftResult := s.findApplicableShift(userID, now)
+	if shiftResult == nil {
 		s.Logger.LogEndWithError("AttendanceQRCheckIn", "No applicable shift found")
 		return nil, &helpers.CustomError{Message: "Tidak ada shift yang tersedia untuk check-in saat ini"}
 	}
+	applicableShift := shiftResult.Assignment
+	shiftDate := shiftResult.ShiftDate
 
-	s.Logger.LogStep("AttendanceQRCheckIn", "Applicable shift: %s", applicableShift.Shift.Name)
+	s.Logger.LogStep("AttendanceQRCheckIn", "Applicable shift: %s, shiftDate: %s", applicableShift.Shift.Name, shiftDate.Format("2006-01-02"))
 
-	// Duplicate check per shift
-	existing, err := s.repo.Attendance.FindByUserDateShift(nil, userID, today, applicableShift.ShiftID)
+	// Duplicate check using shiftDate
+	existing, err := s.repo.Attendance.FindByUserDateShift(nil, userID, shiftDate, applicableShift.ShiftID)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		s.Logger.LogEndWithError("AttendanceQRCheckIn", "Failed to check existing attendance: %v", err)
 		return nil, err
@@ -437,31 +457,28 @@ func (s *Services) AttendanceQRCheckIn(ctx context.Context, req dtos.AttendanceQ
 
 	// Window validation
 	shiftStart, _ := time.Parse("15:04", applicableShift.Shift.StartTime)
-	shiftEnd, _ := time.Parse("15:04", applicableShift.Shift.EndTime)
-	shiftStartTime := time.Date(now.Year(), now.Month(), now.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
-	shiftEndTime := time.Date(now.Year(), now.Month(), now.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
+	shiftStartTime := time.Date(shiftDate.Year(), shiftDate.Month(), shiftDate.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
+	shiftEndTime := shiftResult.WindowEnd
 
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	flexiStart := shiftStartTime.Add(-buffer)
 	flexiThreshold := shiftStartTime.Add(buffer)
 
-	checkInTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), 0, now.Location())
-
-	if checkInTime.Before(flexiStart) || checkInTime.After(shiftEndTime) {
+	if now.Before(flexiStart) || now.After(shiftEndTime) {
 		s.Logger.LogEndWithError("AttendanceQRCheckIn", "Check-in outside window")
 		return nil, &helpers.CustomError{Message: "Waktu check-in di luar jendela shift yang diperbolehkan"}
 	}
 
 	status := "present"
-	if checkInTime.After(flexiThreshold) {
+	if now.After(flexiThreshold) {
 		status = "late"
 	}
 
-	// Create attendance record (no photo, no GPS)
+	// Create attendance record (Date = shiftDate for cross-midnight support)
 	attendance := &models.Attendance{
 		UserID:   userID,
 		ShiftID:  applicableShift.ShiftID,
-		Date:     today,
+		Date:     shiftDate,
 		TimeIn:   &now,
 		OfficeID: qrCode.OfficeID,
 		Status:   status,
@@ -557,10 +574,12 @@ func (s *Services) AttendanceQRCheckOut(ctx context.Context, req dtos.Attendance
 
 	// Calculate duration
 	duration := calculateDuration(*activeSession.TimeIn, now)
+	durationMinutes := int(now.Sub(*activeSession.TimeIn).Minutes())
 
 	// Update attendance record
 	activeSession.TimeOut = &now
 	activeSession.Duration = duration
+	activeSession.DurationMinutes = durationMinutes
 	activeSession.OvertimeMinutes = overtimeMinutes
 
 	var result *models.Attendance
@@ -693,6 +712,7 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 
 	// Calculate duration
 	duration := calculateDuration(*activeSession.TimeIn, now)
+	durationMinutes := int(now.Sub(*activeSession.TimeIn).Minutes())
 
 	// Update attendance record
 	activeSession.TimeOut = &now
@@ -700,6 +720,7 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 	activeSession.LngOut = &req.Lng
 	activeSession.ImageOut = fotoPath
 	activeSession.Duration = duration
+	activeSession.DurationMinutes = durationMinutes
 	activeSession.OvertimeMinutes = overtimeMinutes
 
 	var result *models.Attendance
@@ -733,6 +754,9 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 	})
 	if err != nil {
 		s.Logger.LogEndWithError("AttendanceCheckOut", "Failed to update attendance: %v", err)
+		if _, rollbackErr := helpers.MoveFile(req.Image, "storage/attendance-evidence", "storage/tmp"); rollbackErr != nil {
+			s.Logger.LogEndWithError("AttendanceCheckOut", "Failed to rollback photo move: %v", rollbackErr)
+		}
 		return nil, err
 	}
 
@@ -742,42 +766,93 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 	return &dto, nil
 }
 
+// shiftMatch holds the result of findApplicableShift.
+type shiftMatch struct {
+	Assignment *models.UserShiftAssignment
+	ShiftDate  time.Time // calendar date the shift belongs to (may be yesterday for cross-midnight)
+	WindowEnd  time.Time
+}
+
 // findApplicableShift finds the shift whose window matches the current time.
 // Returns the shift assignment whose [start-buffer, end] window contains `now`.
 // If multiple shifts overlap, returns the one with the earliest end time.
-func (s *Services) findApplicableShift(userID uint, now time.Time) *models.UserShiftAssignment {
+// Supports cross-midnight shifts (e.g., 22:00–06:00).
+func (s *Services) findApplicableShift(userID uint, now time.Time) *shiftMatch {
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	yesterday := today.AddDate(0, 0, -1)
 
+	// Fetch assignments for today and yesterday — yesterday is needed for
+	// cross-midnight shifts where check-in happens after midnight.
 	assignments, err := s.repo.UserShiftAssignment.FindAllActiveForUserDate(nil, userID, today, "Shift")
-	if err != nil || len(assignments) == 0 {
+	if err != nil {
+		return nil
+	}
+	if yAssignments, err := s.repo.UserShiftAssignment.FindAllActiveForUserDate(nil, userID, yesterday, "Shift"); err == nil {
+		assignments = append(assignments, yAssignments...)
+	}
+
+	// Deduplicate by ID (ongoing assignments appear in both today and yesterday queries)
+	seen := make(map[uint]bool)
+	var deduped []models.UserShiftAssignment
+	for _, a := range assignments {
+		if !seen[a.ID] {
+			seen[a.ID] = true
+			deduped = append(deduped, a)
+		}
+	}
+	if len(deduped) == 0 {
 		return nil
 	}
 
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
-	var bestMatch *models.UserShiftAssignment
-	var bestEnd time.Time
+	var best *shiftMatch
 
-	for i := range assignments {
-		assignment := &assignments[i]
+	for i := range deduped {
+		assignment := &deduped[i]
 		shiftStart, parseErr := time.Parse("15:04", assignment.Shift.StartTime)
 		shiftEnd, parseEndErr := time.Parse("15:04", assignment.Shift.EndTime)
 		if parseErr != nil || parseEndErr != nil {
 			continue
 		}
 
-		windowStart := time.Date(now.Year(), now.Month(), now.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location()).Add(-buffer)
-		windowEnd := time.Date(now.Year(), now.Month(), now.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
+		var windowStart, windowEnd, shiftDate time.Time
+
+		if shiftEnd.Before(shiftStart) {
+			// Cross-midnight shift (e.g., 22:00–06:00)
+			nowMins := now.Hour()*60 + now.Minute()
+			endMins := shiftEnd.Hour()*60 + shiftEnd.Minute()
+
+			if nowMins < endMins {
+				// After-midnight portion — shift belongs to yesterday
+				shiftDate = yesterday
+				windowStart = time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location()).Add(-buffer)
+				windowEnd = time.Date(now.Year(), now.Month(), now.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
+			} else {
+				// Before-midnight portion — shift starts today, ends tomorrow
+				tomorrow := today.AddDate(0, 0, 1)
+				shiftDate = today
+				windowStart = time.Date(now.Year(), now.Month(), now.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location()).Add(-buffer)
+				windowEnd = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
+			}
+		} else {
+			// Normal shift
+			shiftDate = today
+			windowStart = time.Date(now.Year(), now.Month(), now.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location()).Add(-buffer)
+			windowEnd = time.Date(now.Year(), now.Month(), now.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
+		}
 
 		if now.After(windowStart) && !now.After(windowEnd) {
-			// This shift's window matches — pick the one with earliest end time
-			if bestMatch == nil || windowEnd.Before(bestEnd) {
-				bestMatch = assignment
-				bestEnd = windowEnd
+			if best == nil || windowEnd.Before(best.WindowEnd) {
+				best = &shiftMatch{
+					Assignment: assignment,
+					ShiftDate:  shiftDate,
+					WindowEnd:  windowEnd,
+				}
 			}
 		}
 	}
 
-	return bestMatch
+	return best
 }
 
 // findNearestOffice finds the nearest active office to the given coordinates.
@@ -982,16 +1057,17 @@ func (s *Services) AttendanceMonthlyStats(ctx context.Context, year, month int) 
 		return nil, helpers.ErrInvalidToken
 	}
 
-	present, late, absent, overtime, err := s.repo.Attendance.FindMonthlyStats(nil, userID, year, month)
+	present, late, absent, overtime, avgDurationMins, err := s.repo.Attendance.FindMonthlyStats(nil, userID, year, month)
 	if err != nil {
 		s.Logger.LogEndWithError("AttendanceMonthlyStats", "Failed to fetch stats: %v", err)
 		return nil, err
 	}
 
-	// Calculate average duration (simplified)
 	avgDuration := "0h 0m"
-	if present+late > 0 {
-		avgDuration = fmt.Sprintf("~%dh", (present+late)*8/(present+late))
+	if avgDurationMins > 0 {
+		h := int(avgDurationMins) / 60
+		m := int(avgDurationMins) % 60
+		avgDuration = fmt.Sprintf("%dh %dm", h, m)
 	}
 
 	response := &dtos.MonthlyStatsResponse{
@@ -1023,6 +1099,10 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 		return nil, helpers.ErrNotFound
 	}
 
+	if req.TimeIn == nil || req.TimeOut == nil {
+		return nil, &helpers.CustomError{Message: "time_in dan time_out wajib diisi"}
+	}
+
 	// Recalculate status based on new time_in vs shift start + buffer
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	shiftStart, _ := time.Parse("15:04", existing.Shift.StartTime)
@@ -1035,18 +1115,16 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 	}
 
 	// Recalculate duration
-	duration := ""
-	overtimeMinutes := 0
-	if req.TimeIn != nil && req.TimeOut != nil {
-		duration = calculateDuration(*req.TimeIn, *req.TimeOut)
+	duration := calculateDuration(*req.TimeIn, *req.TimeOut)
+	durationMinutes := int(req.TimeOut.Sub(*req.TimeIn).Minutes())
 
-		// Recalculate overtime
-		shiftEnd, _ := time.Parse("15:04", existing.Shift.EndTime)
-		shiftEndTime := time.Date(req.TimeOut.Year(), req.TimeOut.Month(), req.TimeOut.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, req.TimeOut.Location())
-		latestNormalCheckout := shiftEndTime.Add(buffer)
-		if req.TimeOut.After(latestNormalCheckout) {
-			overtimeMinutes = int(req.TimeOut.Sub(latestNormalCheckout).Minutes())
-		}
+	// Recalculate overtime
+	overtimeMinutes := 0
+	shiftEnd, _ := time.Parse("15:04", existing.Shift.EndTime)
+	shiftEndTime := time.Date(req.TimeOut.Year(), req.TimeOut.Month(), req.TimeOut.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, req.TimeOut.Location())
+	latestNormalCheckout := shiftEndTime.Add(buffer)
+	if req.TimeOut.After(latestNormalCheckout) {
+		overtimeMinutes = int(req.TimeOut.Sub(latestNormalCheckout).Minutes())
 	}
 
 	now := time.Now()
@@ -1059,6 +1137,7 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 			"time_out":          req.TimeOut,
 			"status":            status,
 			"duration":          duration,
+			"duration_minutes":  durationMinutes,
 			"overtime_minutes":  overtimeMinutes,
 			"corrected_by":      callerID,
 			"corrected_at":      now,
@@ -1262,6 +1341,9 @@ func (s *Services) AttendanceLateStats(ctx context.Context, dateFrom, dateTo *st
 	for _, t := range trendMap {
 		trend = append(trend, *t)
 	}
+	sort.Slice(trend, func(i, j int) bool {
+		return trend[i].Date < trend[j].Date
+	})
 
 	avgLateMinutes := float64(0)
 	if totalLateDays > 0 {

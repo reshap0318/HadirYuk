@@ -36,6 +36,13 @@ func SeedRolePermissions(db *gorm.DB, roleIDs map[string]uint, permIDs map[strin
 			// Statistics
 			"late-statistic.view",
 		},
+		"Karyawan": {
+			// Attendance: hanya check-in dan check-out
+			// (history & stats tidak butuh permission khusus — sudah open untuk user terautentikasi)
+			"attendance.checkin", "attendance.checkout",
+			// Shift: lihat daftar shift dan riwayat shift assignment sendiri
+			"shift.index", "shift-assign.index",
+		},
 	}
 
 	count := 0

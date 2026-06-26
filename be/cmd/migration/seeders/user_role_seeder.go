@@ -13,8 +13,8 @@ func SeedUserRoles(db *gorm.DB, userEmails map[string]uint, roleIDs map[string]u
 	fmt.Println("Seeding user roles...")
 
 	userRoles := map[string]string{
-		"suAdmin@app.com":  "Super Admin",
-		"hradmin@app.com":  "HR Admin",
+		"suAdmin@app.com": "Super Admin",
+		"hradmin@app.com": "HR Admin",
 	}
 
 	count := 0

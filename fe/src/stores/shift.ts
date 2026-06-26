@@ -46,11 +46,11 @@ export const useShiftStore = defineStore('shift', () => {
     start_time: { required },
     end_time: {
       required,
-      timeGreaterThan: helpers.withMessage(
-        'Waktu berakhir harus lebih besar dari waktu mulai.',
+      timeNotEqual: helpers.withMessage(
+        'Waktu selesai tidak boleh sama dengan waktu mulai.',
         (value: string) => {
           if (!value || !crud.form.start_time) return true
-          return value > crud.form.start_time
+          return value !== crud.form.start_time
         },
       ),
     },

@@ -18,6 +18,7 @@ func SeedRoles(db *gorm.DB) map[string]uint {
 	}{
 		{"Super Admin", "Administrator tertinggi sistem dengan akses penuh ke semua fitur"},
 		{"HR Admin", "Administrator operasional HR: karyawan, shift, absensi, laporan"},
+		{"Karyawan", "Karyawan: hanya bisa lihat shift, riwayat shift, dan melakukan check-in/check-out"},
 	}
 
 	resultMap := make(map[string]uint)
