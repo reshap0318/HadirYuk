@@ -25,12 +25,11 @@ import (
 // @Failure 500 {object} map[string]string
 // @Router /api/auth/upload [post]
 func (h *Handlers) FileUpload(c *gin.Context) {
-	file, header, err := c.Request.FormFile("file")
+	_, header, err := c.Request.FormFile("file")
 	if err != nil {
 		helpers.BadRequest(c, "File is required")
 		return
 	}
-	defer file.Close()
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
 	if ext == "" {
@@ -39,21 +38,19 @@ func (h *Handlers) FileUpload(c *gin.Context) {
 	}
 
 	fileUUID := uuid.New().String()
-	fileName := fmt.Sprintf("%s%s", fileUUID, ext)
 	uploadDir := "storage/tmp"
 
+	// Pass only the UUID as CustomName — SaveUploadedFileWithOpts appends the original extension.
 	filePath, err := helpers.SaveUploadedFileWithOpts(c, "file", uploadDir, &helpers.SaveFileOptions{
-		CustomName: fileName,
+		CustomName: fileUUID,
 	})
 	if err != nil {
 		helpers.InternalServerError(c, fmt.Sprintf("Failed to upload file: %v", err))
 		return
 	}
 
-	fileURL := helpers.GetFileURL(filePath)
-
 	helpers.OK(c, "File uploaded successfully", dtos.UploadFileResponse{
 		UUID: fileUUID,
-		URL:  fileURL,
+		URL:  helpers.GetFileURL(filePath),
 	})
 }

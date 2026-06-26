@@ -29,6 +29,15 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-s -w" \
     -o /opt/genkey ./cmd/genkey
 
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w" \
+    -o /opt/cleartmp ./cmd/cleartmp
+
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w" \
+    -tags timetzdata \
+    -o /opt/markabsent ./cmd/markabsent
+
 # ── Runtime ───────────────────────────────────────────────────────
 FROM alpine:3.21
 
@@ -36,12 +45,19 @@ RUN apk add --no-cache \
     ca-certificates \
     tzdata
 
-COPY --from=builder /opt/server /server
-COPY --from=builder /opt/genkey /genkey
-COPY --from=builder /src/storage /app/storage
-COPY etc/entrypoint-prod.sh /entrypoint.sh
+# Set system timezone so busybox crond uses local time correctly
+RUN cp /usr/share/zoneinfo/Asia/Jakarta /etc/localtime && \
+    echo "Asia/Jakarta" > /etc/timezone
 
-RUN chmod +x /entrypoint.sh
+COPY --from=builder /opt/server     /server
+COPY --from=builder /opt/genkey     /genkey
+COPY --from=builder /opt/cleartmp   /cleartmp
+COPY --from=builder /opt/markabsent /markabsent
+COPY --from=builder /src/storage    /app/storage
+COPY etc/entrypoint-prod.sh         /entrypoint.sh
+COPY etc/crontab                    /etc/crontabs/root
+
+RUN chmod +x /entrypoint.sh && mkdir -p /var/log
 
 WORKDIR /app
 EXPOSE 8080

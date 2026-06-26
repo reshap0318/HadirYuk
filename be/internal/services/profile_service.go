@@ -71,9 +71,8 @@ func (s *Services) ProfileUpdate(ctx context.Context, userID uint, req dtos.Prof
 		}
 
 		if len(profileUpdates) > 0 {
-			if result.Profile == nil {
-				result.Profile = &models.UserProfile{UserID: userID}
-				if _, err := s.repo.UserProfile.Create(tx, result.Profile); err != nil {
+			if existing.Profile == nil {
+				if _, err := s.repo.UserProfile.Create(tx, &models.UserProfile{UserID: userID}); err != nil {
 					s.Logger.LogStep("ProfileUpdate", "Failed to create profile: %v", err)
 					return nil, err
 				}

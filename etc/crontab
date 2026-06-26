@@ -1,0 +1,11 @@
+# HadirYuk Cron Jobs
+# System timezone: Asia/Jakarta (set in Dockerfile)
+#
+# Field order: minute hour day month weekday command
+#
+# Mark absent — runs daily at 01:00 WIB, processes yesterday's date.
+# Run at 01:00 so all cross-midnight shifts (e.g. 23:00–07:30) have ended.
+0 1 * * * cd /app && /markabsent >> /var/log/markabsent.log 2>&1
+
+# Clean up stale tmp uploads — runs daily at 02:00 WIB, removes files older than 24h.
+0 2 * * * cd /app && /cleartmp >> /var/log/cleartmp.log 2>&1

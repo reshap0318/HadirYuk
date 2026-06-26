@@ -9,4 +9,8 @@ if [ ! -f "$PRIVATE_KEY" ] || [ ! -f "$PUBLIC_KEY" ]; then
     go run ./cmd/genkey -f
 fi
 
+# Start busybox crond in background
+crond -l 8
+echo "crond started"
+
 exec air -c .air.toml

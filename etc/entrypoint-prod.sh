@@ -9,4 +9,8 @@ if [ ! -f "$PRIVATE_KEY" ] || [ ! -f "$PUBLIC_KEY" ]; then
     /genkey -f
 fi
 
+# Start busybox crond in background (-f = foreground would block, -l 8 = log level notice)
+crond -l 8
+echo "crond started"
+
 exec /server
