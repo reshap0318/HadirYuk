@@ -127,4 +127,33 @@ const handleMouseLeave = () => {
 .sidebar-item-active {
   box-shadow: inset 3px 0 0 #3b82f6;
 }
+
+/* Thin scrollbar, only visible on hover */
+nav {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s;
+}
+
+nav:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+nav::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+nav:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
 </style>
