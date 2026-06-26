@@ -16,6 +16,9 @@ RUN cp /usr/share/zoneinfo/Asia/Jakarta /etc/localtime && \
 # Install air
 RUN go install github.com/air-verse/air@latest
 
+ENV GOCACHE=/tmp/go-build
+ENV GOPATH=/tmp/gopath
+
 WORKDIR /app
 
 COPY be/go.mod be/go.sum ./
@@ -27,10 +30,12 @@ COPY be/ .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -tags timetzdata -o /markabsent ./cmd/markabsent && \
     CGO_ENABLED=0 go build -ldflags="-s -w" -o /cleartmp ./cmd/cleartmp
 
+RUN rm -rf /tmp/go-build /tmp/gopath
+
 COPY etc/entrypoint-dev.sh /entrypoint.sh
 COPY etc/crontab           /etc/crontabs/root
 
-RUN chmod +x /entrypoint.sh && mkdir -p /var/log
+RUN chmod +x /entrypoint.sh && mkdir -p /var/log && mkdir -p /app/tmp && chmod 1777 /app/tmp
 
 EXPOSE 8080
 
