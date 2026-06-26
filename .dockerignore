@@ -1,16 +1,20 @@
-# ── Frontend build ignores ───────────────────────────────────────
+# ── Frontend ─────────────────────────────────────────────────────
 fe/node_modules
 fe/dist
+fe/dev-dist
 fe/.git
 fe/.env
 fe/.env.example
 fe/.gitignore
 
-# ── Backend (not needed for frontend build) ──────────────────────
-be/
-plans/
+# ── Backend ───────────────────────────────────────────────────────
+be/tmp
+be/storage
+be/.env
+be/.env.example
 
-# ── Etc ──────────────────────────────────────────────────────────
+# ── Misc ──────────────────────────────────────────────────────────
+plans/
 .git
 *.md
 docker-compose*
