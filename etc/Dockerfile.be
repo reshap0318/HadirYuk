@@ -16,8 +16,6 @@ RUN go mod download
 
 COPY be/ .
 
-RUN mkdir -p /src/storage/keys
-
 # -ldflags="-s -w"     strip debug info → smaller binary
 # -tags timetzdata     embed timezone DB into binary (no need OS tzdata)
 RUN CGO_ENABLED=0 GOOS=linux go build \
@@ -53,7 +51,6 @@ COPY --from=builder /opt/server     /server
 COPY --from=builder /opt/genkey     /genkey
 COPY --from=builder /opt/cleartmp   /cleartmp
 COPY --from=builder /opt/markabsent /markabsent
-COPY --from=builder /src/storage    /app/storage
 COPY etc/entrypoint-prod.sh         /entrypoint.sh
 COPY etc/crontab                    /etc/crontabs/root
 

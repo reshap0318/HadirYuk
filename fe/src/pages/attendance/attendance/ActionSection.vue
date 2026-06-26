@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { UiButton } from '@/components/utils'
-import { PhCamera, PhXCircle } from '@phosphor-icons/vue'
+import { PhCamera } from '@phosphor-icons/vue'
 
 defineProps<{
   buttonText: string

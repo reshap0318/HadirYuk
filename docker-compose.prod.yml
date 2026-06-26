@@ -7,6 +7,10 @@ services:
   backend:
     volumes:
       - hadiryuk-storage:/app/storage
+    networks:
+      - hadiryuk-net
+      - mysql-network
+      - redis-network
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
       interval: 30s
@@ -30,6 +34,8 @@ services:
   frontend:
     ports:
       - "9010:80"
+    networks:
+      - hadiryuk-net
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:80"]
       interval: 30s
@@ -53,3 +59,9 @@ services:
 volumes:
   hadiryuk-storage:
     driver: local
+
+networks:
+  mysql-network:
+    external: true
+  redis-network:
+    external: true
