@@ -11,7 +11,8 @@ services:
       dockerfile: ../etc/Dockerfile.be-dev
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
-      - ./be/storage:/app/storage
+      - ./be:/app
+      - /app/tmp
     deploy:
       resources:
         limits:

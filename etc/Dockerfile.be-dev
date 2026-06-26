@@ -1,31 +1,19 @@
 # ── Development Backend ──────────────────────────────────────────
-# Go dev image with air for hot-reload (optional)
+# Go dev image with air for hot-reload
 # ──────────────────────────────────────────────────────────────────
 
-FROM golang:1.25-alpine AS builder
+FROM golang:1.25-alpine
 
-RUN apk add --no-cache git gcc musl-dev
+RUN apk add --no-cache git gcc musl-dev tzdata
 
-WORKDIR /src
+# Install air
+RUN go install github.com/air-verse/air@latest
+
+WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
-
-RUN mkdir -p /src/storage
-
-RUN CGO_ENABLED=0 GOOS=linux go build -o /opt/server ./cmd/api
-
-FROM golang:1.25-alpine
-
-RUN apk add --no-cache tzdata
-
-WORKDIR /app
-
-COPY --from=builder /opt/server /usr/local/bin/server
-COPY --from=builder /src/storage /app/storage
-
 EXPOSE 8080
 
-CMD ["server"]
+CMD ["air", "-c", ".air.toml"]
