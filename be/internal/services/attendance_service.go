@@ -563,23 +563,27 @@ func (s *Services) AttendanceQRCheckOut(ctx context.Context, req dtos.Attendance
 
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	earliestCheckout := shiftEndTime.Add(-buffer)
-	latestNormalCheckout := shiftEndTime.Add(buffer)
 
 	if now.Before(earliestCheckout) {
 		s.Logger.LogEndWithError("AttendanceQRCheckOut", "Check-out before window")
 		return nil, &helpers.CustomError{Message: fmt.Sprintf("Belum waktunya check-out. Check-out dapat dilakukan setelah %s", earliestCheckout.Format("15:04"))}
 	}
 
-	// Calculate overtime
+	// Overtime dihitung langsung dari shiftEnd (buffer hanya untuk checkin)
 	overtimeMinutes := 0
-	if now.After(latestNormalCheckout) {
-		overtimeMinutes = int(now.Sub(latestNormalCheckout).Minutes())
+	if now.After(shiftEndTime) {
+		overtimeMinutes = int(now.Sub(shiftEndTime).Minutes())
 		s.Logger.LogStep("AttendanceQRCheckOut", "Overtime detected: %d minutes", overtimeMinutes)
 	}
 
-	// Calculate duration
-	duration := calculateDuration(*activeSession.TimeIn, now)
-	durationMinutes := int(now.Sub(*activeSession.TimeIn).Minutes())
+	// Duration dihitung dari max(checkIn, shiftStart) — early check-in tidak dihitung
+	shiftStartTime := time.Date(activeSession.Date.Year(), activeSession.Date.Month(), activeSession.Date.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
+	durationStart := *activeSession.TimeIn
+	if durationStart.Before(shiftStartTime) {
+		durationStart = shiftStartTime
+	}
+	duration := calculateDuration(durationStart, now)
+	durationMinutes := int(now.Sub(durationStart).Minutes())
 
 	// Update attendance record
 	activeSession.TimeOut = &now
@@ -686,18 +690,17 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	earliestCheckout := shiftEndTime.Add(-buffer)
-	latestNormalCheckout := shiftEndTime.Add(buffer)
 
 	if now.Before(earliestCheckout) {
 		s.Logger.LogEndWithError("AttendanceCheckOut", "Check-out before window: %s < %s", now.Format("15:04"), earliestCheckout.Format("15:04"))
 		return nil, &helpers.CustomError{Message: fmt.Sprintf("Belum waktunya check-out. Check-out dapat dilakukan setelah %s", earliestCheckout.Format("15:04"))}
 	}
 
-	// MS-11: Calculate overtime_minutes if check-out > shiftEnd + buffer
+	// Overtime dihitung langsung dari shiftEnd (buffer hanya untuk checkin)
 	overtimeMinutes := 0
-	if now.After(latestNormalCheckout) {
-		overtimeMinutes = int(now.Sub(latestNormalCheckout).Minutes())
-		s.Logger.LogStep("AttendanceCheckOut", "Overtime detected: %d minutes (checkout %s > %s)", overtimeMinutes, now.Format("15:04"), latestNormalCheckout.Format("15:04"))
+	if now.After(shiftEndTime) {
+		overtimeMinutes = int(now.Sub(shiftEndTime).Minutes())
+		s.Logger.LogStep("AttendanceCheckOut", "Overtime detected: %d minutes (checkout %s > shiftEnd %s)", overtimeMinutes, now.Format("15:04"), shiftEndTime.Format("15:04"))
 	}
 
 	// Find nearest active office location
@@ -721,9 +724,14 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 		return nil, &helpers.CustomError{Message: "Gagal menyimpan foto bukti"}
 	}
 
-	// Calculate duration
-	duration := calculateDuration(*activeSession.TimeIn, now)
-	durationMinutes := int(now.Sub(*activeSession.TimeIn).Minutes())
+	// Duration dihitung dari max(checkIn, shiftStart) — early check-in tidak dihitung
+	shiftStartTime := time.Date(activeSession.Date.Year(), activeSession.Date.Month(), activeSession.Date.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
+	durationStart := *activeSession.TimeIn
+	if durationStart.Before(shiftStartTime) {
+		durationStart = shiftStartTime
+	}
+	duration := calculateDuration(durationStart, now)
+	durationMinutes := int(now.Sub(durationStart).Minutes())
 
 	// Update attendance record
 	activeSession.TimeOut = &now
@@ -1125,17 +1133,22 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 		status = "late"
 	}
 
-	// Recalculate duration
-	duration := calculateDuration(*req.TimeIn, *req.TimeOut)
-	durationMinutes := int(req.TimeOut.Sub(*req.TimeIn).Minutes())
+	// Duration dari max(timeIn, shiftStart) — early check-in tidak dihitung
+	// Gunakan existing.Date sebagai base shiftStart (benar untuk shift cross-midnight)
+	shiftStartForDuration := time.Date(existing.Date.Year(), existing.Date.Month(), existing.Date.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, req.TimeIn.Location())
+	durationStart := *req.TimeIn
+	if durationStart.Before(shiftStartForDuration) {
+		durationStart = shiftStartForDuration
+	}
+	duration := calculateDuration(durationStart, *req.TimeOut)
+	durationMinutes := int(req.TimeOut.Sub(durationStart).Minutes())
 
-	// Recalculate overtime
+	// Overtime dihitung langsung dari shiftEnd (buffer hanya untuk checkin)
 	overtimeMinutes := 0
 	shiftEnd, _ := time.Parse("15:04", existing.Shift.EndTime)
 	shiftEndTime := time.Date(req.TimeOut.Year(), req.TimeOut.Month(), req.TimeOut.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, req.TimeOut.Location())
-	latestNormalCheckout := shiftEndTime.Add(buffer)
-	if req.TimeOut.After(latestNormalCheckout) {
-		overtimeMinutes = int(req.TimeOut.Sub(latestNormalCheckout).Minutes())
+	if req.TimeOut.After(shiftEndTime) {
+		overtimeMinutes = int(req.TimeOut.Sub(shiftEndTime).Minutes())
 	}
 
 	now := time.Now()
