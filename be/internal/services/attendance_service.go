@@ -1123,9 +1123,10 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 	}
 
 	// Recalculate status based on new time_in vs shift start + buffer
+	// Gunakan existing.Date sebagai base (benar untuk cross-midnight check-in setelah tengah malam)
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	shiftStart, _ := time.Parse("15:04", existing.Shift.StartTime)
-	shiftStartTime := time.Date(req.TimeIn.Year(), req.TimeIn.Month(), req.TimeIn.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, req.TimeIn.Location())
+	shiftStartTime := time.Date(existing.Date.Year(), existing.Date.Month(), existing.Date.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, req.TimeIn.Location())
 	flexiThreshold := shiftStartTime.Add(buffer)
 
 	status := "present"
