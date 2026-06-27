@@ -554,7 +554,12 @@ func (s *Services) AttendanceQRCheckOut(ctx context.Context, req dtos.Attendance
 
 	// Window validation
 	shiftEnd, _ := time.Parse("15:04", activeSession.Shift.EndTime)
-	shiftEndTime := time.Date(activeSession.Date.Year(), activeSession.Date.Month(), activeSession.Date.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, activeSession.Date.Location())
+	shiftStart, _ := time.Parse("15:04", activeSession.Shift.StartTime)
+	shiftEndDay := activeSession.Date
+	if shiftEnd.Hour()*60+shiftEnd.Minute() < shiftStart.Hour()*60+shiftStart.Minute() {
+		shiftEndDay = activeSession.Date.AddDate(0, 0, 1)
+	}
+	shiftEndTime := time.Date(shiftEndDay.Year(), shiftEndDay.Month(), shiftEndDay.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
 
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	earliestCheckout := shiftEndTime.Add(-buffer)
@@ -671,7 +676,13 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 
 	// MS-10 & MS-11: Validate window and calculate overtime
 	shiftEnd, _ := time.Parse("15:04", activeSession.Shift.EndTime)
-	shiftEndTime := time.Date(activeSession.Date.Year(), activeSession.Date.Month(), activeSession.Date.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, activeSession.Date.Location())
+	shiftStart, _ := time.Parse("15:04", activeSession.Shift.StartTime)
+	shiftEndDay := activeSession.Date
+	if shiftEnd.Hour()*60+shiftEnd.Minute() < shiftStart.Hour()*60+shiftStart.Minute() {
+		// Cross-midnight shift: end time is on the day after Date
+		shiftEndDay = activeSession.Date.AddDate(0, 0, 1)
+	}
+	shiftEndTime := time.Date(shiftEndDay.Year(), shiftEndDay.Month(), shiftEndDay.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
 
 	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	earliestCheckout := shiftEndTime.Add(-buffer)
@@ -1284,7 +1295,9 @@ func (s *Services) AttendanceLateStats(ctx context.Context, dateFrom, dateTo *st
 		lateMinutes := 0
 		if att.TimeIn != nil && att.Shift.StartTime != "" {
 			shiftStart, _ := time.Parse("15:04", att.Shift.StartTime)
-			shiftStartTime := time.Date(att.TimeIn.Year(), att.TimeIn.Month(), att.TimeIn.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, att.TimeIn.Location())
+			// Use att.Date (shiftDate) as the base — correct for cross-midnight check-ins after midnight
+			// where att.TimeIn.Date() would be the next day but shiftStart belongs to att.Date.
+			shiftStartTime := time.Date(att.Date.Year(), att.Date.Month(), att.Date.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, att.TimeIn.Location())
 			diff := att.TimeIn.Sub(shiftStartTime)
 			if diff > 0 {
 				lateMinutes = int(diff.Minutes())

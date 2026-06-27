@@ -68,6 +68,7 @@ const buttonText = computed(() => {
   const action = attendanceStore.currentAction?.action
   if (action === 'checkout') return 'Check Out'
   if (action === 'done') return 'Selesai'
+  if (action === 'waiting') return 'Menunggu Shift...'
   return 'Check In'
 })
 
@@ -76,12 +77,13 @@ const buttonColorClass = computed(() => {
   if (action === 'checkout')
     return 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-200'
   if (action === 'done') return 'bg-purple-600 text-white cursor-default'
+  if (action === 'waiting') return 'bg-gray-400 text-white cursor-default'
   return 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200'
 })
 
 const isButtonDisabled = computed(() => {
   const action = attendanceStore.currentAction?.action
-  if (action === 'done') return true
+  if (action === 'done' || action === 'waiting') return true
   if (!action) return true
   if (
     mode.value === 'geotagging' &&
@@ -385,7 +387,8 @@ watch(mode, (newMode) => {
             processingAction ||
             isAllDone ||
             !attendanceStore.currentAction?.action ||
-            attendanceStore.currentAction?.action === 'done'
+            attendanceStore.currentAction?.action === 'done' ||
+            attendanceStore.currentAction?.action === 'waiting'
           "
           :processing-action="processingAction"
           :button-shift-info="buttonShiftInfo"

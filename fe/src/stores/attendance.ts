@@ -61,7 +61,7 @@ export interface ITodaysShift {
  * Current action state returned from /attendance/today
  */
 export interface ICurrentAction {
-  action: 'checkin' | 'checkout' | 'done'
+  action: 'checkin' | 'checkout' | 'done' | 'waiting'
   shift: {
     id: number
     name: string
