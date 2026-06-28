@@ -1,1 +1,3 @@
 .env
+.playwright/*
+.playwright-cli/*

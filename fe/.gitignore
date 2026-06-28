@@ -68,3 +68,6 @@ docs/api-doc.md
 
 # Husky internal files
 .husky/_
+
+.playwright/*
+.playwright-cli/*
