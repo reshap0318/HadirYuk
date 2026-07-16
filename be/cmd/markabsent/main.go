@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -29,11 +28,17 @@ func main() {
 		log.Fatalf("Invalid timezone %q: %v", tz, err)
 	}
 
+	logger, err := helpers.NewLoggerWithSuffix("storage/logs", "markabsent")
+	if err != nil {
+		log.Fatalf("[markabsent] failed to initialize logger: %v", err)
+	}
+	defer logger.Close()
+
 	var targetDate time.Time
 	if *dateStr != "" {
 		targetDate, err = time.ParseInLocation("2006-01-02", *dateStr, loc)
 		if err != nil {
-			log.Fatalf("Invalid date %q, expected YYYY-MM-DD", *dateStr)
+			logger.Fatalf("Invalid date %q, expected YYYY-MM-DD", *dateStr)
 		}
 	} else {
 		now := time.Now().In(loc)
@@ -41,9 +46,9 @@ func main() {
 	}
 
 	dateLabel := targetDate.Format("2006-01-02")
-	log.Printf("[markabsent] target date: %s (dry-run: %v)", dateLabel, *dryRun)
+	logger.Printf("[markabsent] target date: %s (dry-run: %v)", dateLabel, *dryRun)
 
-	db := initDB()
+	db := initDB(logger)
 
 	// Use start/end of day range — consistent with how the attendance repo queries dates.
 	startOfDay := time.Date(targetDate.Year(), targetDate.Month(), targetDate.Day(), 0, 0, 0, 0, loc)
@@ -52,7 +57,7 @@ func main() {
 	// Find the default office (needed for the absent record's required office_id).
 	var defaultOffice models.OfficeLocation
 	if err := db.Where("is_active = true").First(&defaultOffice).Error; err != nil {
-		log.Fatalf("[markabsent] no active office location found — cannot create absent records: %v", err)
+		logger.Fatalf("[markabsent] no active office location found — cannot create absent records: %v", err)
 	}
 
 	// All active shift assignments that cover the target date.
@@ -61,10 +66,10 @@ func main() {
 		Where("is_active = true AND start_date <= ? AND (end_date IS NULL OR end_date >= ?)",
 			startOfDay, startOfDay).
 		Find(&assignments).Error; err != nil {
-		log.Fatalf("[markabsent] failed to fetch shift assignments: %v", err)
+		logger.Fatalf("[markabsent] failed to fetch shift assignments: %v", err)
 	}
 
-	log.Printf("[markabsent] %d active shift assignment(s) on %s", len(assignments), dateLabel)
+	logger.Printf("[markabsent] %d active shift assignment(s) on %s", len(assignments), dateLabel)
 
 	created, skipped, failed := 0, 0, 0
 
@@ -82,7 +87,7 @@ func main() {
 		}
 
 		if *dryRun {
-			fmt.Printf("  [dry-run] absent  user_id=%-4d  shift_id=%-3d  date=%s\n",
+			logger.Printf("  [dry-run] absent  user_id=%-4d  shift_id=%-3d  date=%s",
 				assignment.UserID, assignment.ShiftID, dateLabel)
 			created++
 			continue
@@ -97,24 +102,24 @@ func main() {
 		}
 
 		if err := db.Create(record).Error; err != nil {
-			log.Printf("[markabsent] ERROR  user_id=%d  shift_id=%d  date=%s  err=%v",
+			logger.Printf("[markabsent] ERROR  user_id=%d  shift_id=%d  date=%s  err=%v",
 				assignment.UserID, assignment.ShiftID, dateLabel, err)
 			failed++
 			continue
 		}
 
-		fmt.Printf("  marked absent  user_id=%-4d  shift_id=%-3d  date=%s\n",
+		logger.Printf("  marked absent  user_id=%-4d  shift_id=%-3d  date=%s",
 			assignment.UserID, assignment.ShiftID, dateLabel)
 		created++
 	}
 
-	log.Printf("[markabsent] done — created: %d, skipped: %d, failed: %d", created, skipped, failed)
+	logger.Printf("[markabsent] done — created: %d, skipped: %d, failed: %d", created, skipped, failed)
 	if failed > 0 {
 		os.Exit(1)
 	}
 }
 
-func initDB() *gorm.DB {
+func initDB(logger *helpers.Logger) *gorm.DB {
 	cfg := database.MySQLConfig{
 		Host:     helpers.GetEnv("DB_HOST", "127.0.0.1"),
 		Port:     helpers.GetEnv("DB_PORT", "3306"),
@@ -124,7 +129,7 @@ func initDB() *gorm.DB {
 	}
 	db, err := database.NewMySQL(cfg)
 	if err != nil {
-		log.Fatalf("[markabsent] failed to connect to database: %v", err)
+		logger.Fatalf("[markabsent] failed to connect to database: %v", err)
 	}
 	return db
 }

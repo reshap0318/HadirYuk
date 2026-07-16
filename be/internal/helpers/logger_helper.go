@@ -13,18 +13,11 @@ import (
 // Logger holds logger configuration.
 type Logger struct {
 	logDir      string
+	suffix      string
 	currentFile string
 	file        *os.File
 	logger      *log.Logger
 	mu          sync.Mutex
-}
-
-// LogEntry represents a structured log entry.
-type LogEntry struct {
-	Function  string
-	Message   string
-	Level     string
-	Timestamp time.Time
 }
 
 // NewLogger creates a new logger instance.
@@ -52,13 +45,38 @@ func NewLogger(logDir string) (*Logger, error) {
 	return l, nil
 }
 
+// NewLoggerWithSuffix creates a logger for one-shot CLI commands (e.g. cron jobs
+// like markabsent/cleartmp). Log files are named <date>-<suffix>.log — e.g.
+// storage/logs/2026-07-16-markabsent.log. No background rotation/cleanup
+// goroutines are started since the process exits after a single run.
+func NewLoggerWithSuffix(logDir, suffix string) (*Logger, error) {
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create log directory: %w", err)
+	}
+
+	l := &Logger{
+		logDir: logDir,
+		suffix: suffix,
+	}
+
+	if err := l.rotateFile(); err != nil {
+		return nil, fmt.Errorf("failed to rotate log file: %w", err)
+	}
+
+	return l, nil
+}
+
 // rotateFile opens a new log file for the current date.
 func (l *Logger) rotateFile() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	today := time.Now().Format("2006-01-02")
-	logPath := filepath.Join(l.logDir, fmt.Sprintf("%s.log", today))
+	filename := fmt.Sprintf("%s.log", today)
+	if l.suffix != "" {
+		filename = fmt.Sprintf("%s-%s.log", today, l.suffix)
+	}
+	logPath := filepath.Join(l.logDir, filename)
 
 	// Check if already using today's file
 	if l.currentFile == logPath && l.file != nil {
@@ -158,22 +176,13 @@ func (l *Logger) cleanupOldLogs(maxAgeDays int) error {
 	return nil
 }
 
-// formatLog formats a log message with timestamp and function context.
-func (l *Logger) formatLog(function, message string) string {
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	if function != "" {
-		return fmt.Sprintf("%s [%s] %s", timestamp, function, message)
-	}
-	return fmt.Sprintf("%s %s", timestamp, message)
-}
-
 // Printf prints formatted message to log with timestamp.
 func (l *Logger) Printf(format string, v ...interface{}) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.logger != nil {
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		l.logger.Println(fmt.Sprintf("%s %s", timestamp, fmt.Sprintf(format, v...)))
+		l.logger.Printf("%s %s", timestamp, fmt.Sprintf(format, v...))
 	}
 }
 
@@ -183,7 +192,7 @@ func (l *Logger) Println(v ...interface{}) {
 	defer l.mu.Unlock()
 	if l.logger != nil {
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		l.logger.Println(fmt.Sprintf("%s %s", timestamp, fmt.Sprint(v...)))
+		l.logger.Printf("%s %s", timestamp, fmt.Sprint(v...))
 	}
 }
 
@@ -193,7 +202,7 @@ func (l *Logger) Fatal(v ...interface{}) {
 	defer l.mu.Unlock()
 	if l.logger != nil {
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		l.logger.Fatal(fmt.Sprintf("%s %s", timestamp, fmt.Sprint(v...)))
+		l.logger.Fatalf("%s %s", timestamp, fmt.Sprint(v...))
 	}
 }
 
@@ -203,7 +212,7 @@ func (l *Logger) Fatalf(format string, v ...interface{}) {
 	defer l.mu.Unlock()
 	if l.logger != nil {
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		l.logger.Fatal(fmt.Sprintf("%s %s", timestamp, fmt.Sprintf(format, v...)))
+		l.logger.Fatalf("%s %s", timestamp, fmt.Sprintf(format, v...))
 	}
 }
 
@@ -231,12 +240,6 @@ func (l *Logger) LogStep(function, format string, v ...interface{}) {
 	l.Printf("[%s]   ├─ %s", function, fmt.Sprintf(format, v...))
 }
 
-// LogStepWithPrefix logs a step with custom prefix.
-// Usage: logger.LogStepWithPrefix("AuthLogin", "[OK]", "Password validated")
-func (l *Logger) LogStepWithPrefix(function, prefix, format string, v ...interface{}) {
-	l.Printf("[%s]   %s %s", function, prefix, fmt.Sprintf(format, v...))
-}
-
 // LogEnd logs the successful end of a function/operation.
 // Usage: logger.LogEnd("AuthLogin", "Login successful (duration: %v)", duration)
 func (l *Logger) LogEnd(function, format string, v ...interface{}) {
@@ -255,20 +258,8 @@ func (l *Logger) LogEndWithError(function, format string, v ...interface{}) {
 	l.Printf("[%s] ✗ [END] %s", function, fmt.Sprintf(format, v...))
 }
 
-// LogInfo logs an info message.
-// Usage: logger.LogInfo("AuthLogin", "User logged in successfully")
-func (l *Logger) LogInfo(function, format string, v ...interface{}) {
-	l.Printf("[%s] [INFO] %s", function, fmt.Sprintf(format, v...))
-}
-
 // LogWarn logs a warning message.
 // Usage: logger.LogWarn("AuthLogin", "Multiple failed login attempts")
 func (l *Logger) LogWarn(function, format string, v ...interface{}) {
 	l.Printf("[%s] [WARN] %s", function, fmt.Sprintf(format, v...))
-}
-
-// LogDebug logs a debug message.
-// Usage: logger.LogDebug("AuthLogin", "Token payload: %+v", payload)
-func (l *Logger) LogDebug(function, format string, v ...interface{}) {
-	l.Printf("[%s] [DEBUG] %s", function, fmt.Sprintf(format, v...))
 }

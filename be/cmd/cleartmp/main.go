@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,18 +16,24 @@ func main() {
 	dryRun := flag.Bool("dry-run", false, "Print files that would be deleted without deleting")
 	flag.Parse()
 
+	logger, err := helpers.NewLoggerWithSuffix("storage/logs", "cleartmp")
+	if err != nil {
+		log.Fatalf("[cleartmp] failed to initialize logger: %v", err)
+	}
+	defer logger.Close()
+
 	threshold := time.Now().Add(-time.Duration(*age) * time.Hour)
 
-	log.Printf("Scanning: %s (files older than %dh)", *dir, *age)
+	logger.Printf("Scanning: %s (files older than %dh)", *dir, *age)
 	if *dryRun {
-		log.Println("DRY RUN — no files will be deleted")
+		logger.Println("DRY RUN — no files will be deleted")
 	}
 
 	deleted, skipped, errors := 0, 0, 0
 
-	err := filepath.WalkDir(*dir, func(path string, d os.DirEntry, err error) error {
+	err = filepath.WalkDir(*dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			log.Printf("Error accessing %s: %v", path, err)
+			logger.Printf("Error accessing %s: %v", path, err)
 			errors++
 			return nil
 		}
@@ -40,7 +45,7 @@ func main() {
 
 		info, err := d.Info()
 		if err != nil {
-			log.Printf("Error reading info %s: %v", path, err)
+			logger.Printf("Error reading info %s: %v", path, err)
 			errors++
 			return nil
 		}
@@ -51,27 +56,27 @@ func main() {
 		}
 
 		if *dryRun {
-			fmt.Printf("  [dry-run] would delete: %s (modified: %s)\n", path, info.ModTime().Format(time.DateTime))
+			logger.Printf("  [dry-run] would delete: %s (modified: %s)", path, info.ModTime().Format(time.DateTime))
 			deleted++
 			return nil
 		}
 
 		if err := helpers.DeleteFile(path); err != nil {
-			log.Printf("Failed to delete %s: %v", path, err)
+			logger.Printf("Failed to delete %s: %v", path, err)
 			errors++
 			return nil
 		}
 
-		fmt.Printf("  deleted: %s\n", path)
+		logger.Printf("  deleted: %s", path)
 		deleted++
 		return nil
 	})
 
 	if err != nil {
-		log.Fatalf("Failed to walk directory %s: %v", *dir, err)
+		logger.Fatalf("Failed to walk directory %s: %v", *dir, err)
 	}
 
-	log.Printf("Done — deleted: %d, skipped: %d, errors: %d", deleted, skipped, errors)
+	logger.Printf("Done — deleted: %d, skipped: %d, errors: %d", deleted, skipped, errors)
 	if errors > 0 {
 		os.Exit(1)
 	}
