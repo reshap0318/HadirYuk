@@ -700,6 +700,45 @@ export const useAttendanceStore = defineStore('attendance', () => {
   }
 
   /**
+   * Export attendance report to Excel, returns the file blob or null on failure.
+   */
+  async function exportReport(params: IHistoryParams = {}): Promise<Blob | null> {
+    loading.value.Export = true
+    try {
+      const response = await get<Blob>('/attendance/reports/export', {
+        params: {
+          date_from: params.date_from,
+          date_to: params.date_to,
+          user_id: params.user_id,
+          status: params.status,
+        },
+        responseType: 'blob',
+        hideError: true,
+      })
+      return response.data
+    } catch (error: any) {
+      // Error responses also come back as a Blob because of responseType, so
+      // the JSON message has to be read out of it manually.
+      let message = 'Gagal mengekspor laporan absensi.'
+      const errorData = error?.response?.data
+      if (errorData instanceof Blob) {
+        try {
+          const parsed = JSON.parse(await errorData.text())
+          message = parsed?.message || message
+        } catch {
+          // keep default message if the blob isn't valid JSON
+        }
+      } else {
+        message = errorData?.message || message
+      }
+      swal.error('Gagal', message)
+      return null
+    } finally {
+      loading.value.Export = false
+    }
+  }
+
+  /**
    * Fetch late statistics
    */
   async function fetchLateStats(params: ILateStatsParams = {}): Promise<ILateStats | null> {
@@ -756,6 +795,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     historyPageSize,
     fetchHistory,
     fetchReport,
+    exportReport,
     // Stats
     fetchMonthlyStats,
     fetchLateStats,

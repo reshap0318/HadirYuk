@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -212,6 +213,28 @@ func (h *Handlers) AttendanceReport(c *gin.Context) {
 	}
 
 	helpers.OKWithMetadata(c, "Attendance report retrieved", result)
+}
+
+func (h *Handlers) AttendanceReportExport(c *gin.Context) {
+	var req dtos.AttendanceReportRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		helpers.BadRequest(c, "Invalid query parameters")
+		return
+	}
+
+	file, err := h.svcs.AttendanceReportExport(c.Request.Context(), req)
+	if helpers.HandleError(c, err, "") {
+		return
+	}
+
+	filename := fmt.Sprintf("laporan-absensi-%s.xlsx", time.Now().Format("2006-01-02"))
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+	if err := file.Write(c.Writer); err != nil {
+		helpers.HandleError(c, err, "Failed to write Excel file")
+		return
+	}
 }
 
 func (h *Handlers) AttendanceLateStats(c *gin.Context) {

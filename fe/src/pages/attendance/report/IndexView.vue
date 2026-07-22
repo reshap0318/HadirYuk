@@ -3,6 +3,8 @@ import { UiCard, UiButton, UiPagination, UiEmptyState, UiBadge, UiTable } from '
 import { ref, onMounted, computed } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance'
 import type { IAttendanceHistoryItem } from '@/stores/attendance'
+import { useUserStore } from '@/stores/user'
+import type { IUser } from '@/stores/user'
 import type { TTableColumn } from '@/components/utils/types'
 import { PhDownload, PhCalendar, PhPencil, PhEye } from '@phosphor-icons/vue'
 import swal from '@/plugins/swal'
@@ -10,6 +12,7 @@ import FormModal from '@/pages/attendance/correction/FormModal.vue'
 import DetailModal from '@/pages/attendance/history/DetailModal.vue'
 
 const attendanceStore = useAttendanceStore()
+const userStore = useUserStore()
 
 const correctionModal = ref<InstanceType<typeof FormModal> | null>(null)
 const detailModalRef = ref<InstanceType<typeof DetailModal> | null>(null)
@@ -17,6 +20,8 @@ const detailModalRef = ref<InstanceType<typeof DetailModal> | null>(null)
 const dateFrom = ref('')
 const dateTo = ref('')
 const statusFilter = ref('')
+const userFilter = ref<number | ''>('')
+const users = ref<IUser[]>([])
 const showFilters = ref(true)
 
 const statusOptions = [
@@ -69,6 +74,7 @@ function applyFilters() {
     date_from: dateFrom.value || undefined,
     date_to: dateTo.value || undefined,
     status: statusFilter.value || undefined,
+    user_id: userFilter.value || undefined,
   })
 }
 
@@ -76,6 +82,7 @@ function resetFilters() {
   dateFrom.value = ''
   dateTo.value = ''
   statusFilter.value = ''
+  userFilter.value = ''
   attendanceStore.fetchReport()
 }
 
@@ -84,12 +91,28 @@ function handlePageChange(page: number) {
     date_from: dateFrom.value || undefined,
     date_to: dateTo.value || undefined,
     status: statusFilter.value || undefined,
+    user_id: userFilter.value || undefined,
     page,
   })
 }
 
-function exportExcel() {
-  swal.info('Info', 'Fitur export Excel belum tersedia.')
+async function exportExcel() {
+  const blob = await attendanceStore.exportReport({
+    date_from: dateFrom.value || undefined,
+    date_to: dateTo.value || undefined,
+    status: statusFilter.value || undefined,
+    user_id: userFilter.value || undefined,
+  })
+  if (!blob) return
+
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `laporan-absensi-${new Date().toISOString().slice(0, 10)}.xlsx`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }
 
 function exportPDF() {
@@ -100,8 +123,9 @@ function onCorrectionSuccess() {
   applyFilters()
 }
 
-onMounted(() => {
+onMounted(async () => {
   attendanceStore.fetchReport()
+  users.value = await userStore.fetchAllUsers()
 })
 </script>
 
@@ -117,15 +141,16 @@ onMounted(() => {
       </div>
       <div class="flex gap-2">
         <UiButton
+          v-permission="['report.export-excel']"
           size="sm"
           outline
-          :disabled="attendanceStore.history.length === 0"
+          :disabled="attendanceStore.history.length === 0 || attendanceStore.loading.Export"
           @click="exportExcel"
         >
           <template #icon>
             <PhDownload class="w-4 h-4" />
           </template>
-          Excel
+          {{ attendanceStore.loading.Export ? 'Mengekspor...' : 'Excel' }}
         </UiButton>
         <UiButton
           size="sm"
@@ -143,7 +168,7 @@ onMounted(() => {
 
     <!-- Filters -->
     <UiCard v-if="showFilters" class="mb-6">
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
           <input
@@ -159,6 +184,18 @@ onMounted(() => {
             type="date"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
           />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Karyawan</label>
+          <select
+            v-model="userFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          >
+            <option value="">Semua Karyawan</option>
+            <option v-for="user in users" :key="user.id" :value="user.id">
+              {{ user.name }}
+            </option>
+          </select>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>

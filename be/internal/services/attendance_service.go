@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 
 	"github.com/reshap0318/hadirYuk/internal/dtos"
@@ -1245,6 +1246,120 @@ func (s *Services) AttendanceReport(ctx context.Context, req dtos.AttendanceRepo
 		PageSize:   result.PageSize,
 		TotalPages: result.TotalPages,
 	}, nil
+}
+
+// maxReportExportRows caps how many rows a single Excel export may contain.
+// Reports larger than this must be narrowed (e.g. by date range) instead of exported wholesale.
+const maxReportExportRows = 10000
+
+// AttendanceReportExport builds an Excel workbook for the attendance report (HR only).
+func (s *Services) AttendanceReportExport(ctx context.Context, req dtos.AttendanceReportRequest) (*excelize.File, error) {
+	s.Logger.LogStart("AttendanceReportExport", "Exporting attendance report to Excel")
+
+	dateFrom := validDateFilter(req.DateFrom)
+	dateTo := validDateFilter(req.DateTo)
+
+	// Fetch up to maxReportExportRows in one page — if the true total exceeds
+	// that, reject instead of silently exporting a truncated file.
+	var result *repositories.PagedResult[models.Attendance]
+	var err error
+
+	if req.UserID != nil {
+		result, err = s.repo.Attendance.FindHistory(nil, *req.UserID, dateFrom, dateTo, req.Status, 1, maxReportExportRows, "User", "Shift", "Office")
+	} else {
+		result, err = s.repo.Attendance.FindHistoryAll(nil, dateFrom, dateTo, req.Status, 1, maxReportExportRows, "User", "Shift", "Office")
+	}
+
+	if err != nil {
+		s.Logger.LogEndWithError("AttendanceReportExport", "Failed to fetch report: %v", err)
+		return nil, err
+	}
+
+	if result.Total > maxReportExportRows {
+		s.Logger.LogEndWithError("AttendanceReportExport", "Report too large: %d rows", result.Total)
+		return nil, &helpers.CustomError{Message: fmt.Sprintf("Data terlalu banyak untuk diekspor (%d baris, maks %d). Silakan persempit rentang tanggal atau filter lainnya.", result.Total, maxReportExportRows)}
+	}
+
+	f := excelize.NewFile()
+	const sheet = "Laporan Absensi"
+	f.SetSheetName(f.GetSheetName(0), sheet)
+
+	headers := []string{"Tanggal", "Nama Karyawan", "Shift", "Kantor", "Check-in", "Check-out", "Durasi", "Lembur (menit)", "Status"}
+	for col, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(col+1, 1)
+		f.SetCellValue(sheet, cell, h)
+	}
+
+	colWidths := []float64{14, 24, 16, 20, 12, 12, 12, 16, 14}
+	for col, w := range colWidths {
+		colName, _ := excelize.ColumnNumberToName(col + 1)
+		f.SetColWidth(sheet, colName, colName, w)
+	}
+
+	headerStyle, styleErr := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"4472C4"}},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	if styleErr == nil {
+		lastCol, _ := excelize.ColumnNumberToName(len(headers))
+		f.SetCellStyle(sheet, "A1", lastCol+"1", headerStyle)
+	}
+
+	statusLabels := map[string]string{"present": "Hadir", "late": "Terlambat", "absent": "Tidak Hadir"}
+
+	for i, att := range result.Data {
+		row := i + 2
+
+		userName := ""
+		if att.User.ID != 0 {
+			userName = att.User.Name
+		}
+		shiftName := ""
+		if att.Shift.ID != 0 {
+			shiftName = att.Shift.Name
+		}
+		officeName := ""
+		if att.Office.ID != 0 {
+			officeName = att.Office.Name
+		}
+		timeIn, timeOut := "-", "-"
+		if att.TimeIn != nil {
+			timeIn = att.TimeIn.Format("15:04")
+		}
+		if att.TimeOut != nil {
+			timeOut = att.TimeOut.Format("15:04")
+		}
+		status := statusLabels[att.Status]
+		if status == "" {
+			status = att.Status
+		}
+
+		values := []interface{}{
+			att.Date.Format("2006-01-02"),
+			userName,
+			shiftName,
+			officeName,
+			timeIn,
+			timeOut,
+			att.Duration,
+			att.OvertimeMinutes,
+			status,
+		}
+		for col, v := range values {
+			cell, _ := excelize.CoordinatesToCellName(col+1, row)
+			f.SetCellValue(sheet, cell, v)
+		}
+	}
+
+	s.Logger.LogEnd("AttendanceReportExport", "Exported %d rows", len(result.Data))
+	return f, nil
 }
 
 // AttendanceLateStats returns late attendance statistics (HR only).

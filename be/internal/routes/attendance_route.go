@@ -27,5 +27,6 @@ func RegisterAttendanceRoutes(r *gin.RouterGroup, handlers *handlers.Handlers, a
 	reports := r.Group("/attendance/reports")
 	{
 		reports.GET("", middleware.RequirePermission(acc, "report.view"), handlers.AttendanceReport)
+		reports.GET("/export", middleware.RequirePermission(acc, "report.export-excel"), handlers.AttendanceReportExport)
 	}
 }
