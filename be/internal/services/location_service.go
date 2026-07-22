@@ -107,18 +107,19 @@ func (s *Services) LocationGetByID(ctx context.Context, id uint) (*dtos.Location
 func (s *Services) LocationUpdate(ctx context.Context, id uint, req dtos.LocationRequest) (*dtos.LocationDTO, error) {
 	s.Logger.LogStart("LocationUpdate", "Updating location ID: %d", id)
 
-	location := &models.OfficeLocation{ID: id}
-	location.Name = req.Name
-	location.Address = req.Address
-	location.Latitude = req.Latitude
-	location.Longitude = req.Longitude
-	location.RadiusMeters = req.RadiusMeters
-	location.IsActive = req.IsActive
+	updates := map[string]interface{}{
+		"name":          req.Name,
+		"address":       req.Address,
+		"latitude":      req.Latitude,
+		"longitude":     req.Longitude,
+		"radius_meters": req.RadiusMeters,
+		"is_active":     req.IsActive,
+	}
 
 	var result *models.OfficeLocation
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
 		var err error
-		result, err = s.repo.OfficeLocation.Update(tx, &models.OfficeLocation{ID: id}, location)
+		result, err = s.repo.OfficeLocation.UpdateMap(tx, &models.OfficeLocation{ID: id}, updates)
 		if err != nil {
 			return nil, err
 		}

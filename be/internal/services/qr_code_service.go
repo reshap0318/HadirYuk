@@ -113,9 +113,9 @@ func (s *Services) QRCodeRevoke(ctx context.Context, id uint) (*dtos.QRCodeDTO, 
 		}
 
 		now := time.Now()
-		result, err = s.repo.QRCode.Update(tx, &models.QRCode{ID: id}, &models.QRCode{
-			IsActive:  false,
-			RevokedAt: &now,
+		result, err = s.repo.QRCode.UpdateMap(tx, &models.QRCode{ID: id}, map[string]interface{}{
+			"is_active":  false,
+			"revoked_at": &now,
 		})
 		if err != nil {
 			return err
