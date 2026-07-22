@@ -906,6 +906,19 @@ func (s *Services) findNearestOffice(lat, lng float64) (*models.OfficeLocation, 
 	return nearestOffice, minDistance, nil
 }
 
+// validDateFilter returns s if it's a valid YYYY-MM-DD date string, otherwise nil.
+// The raw string is passed straight through to the query so MySQL parses it directly
+// as a DATE literal, avoiding Go's time.Time timezone conversion entirely.
+func validDateFilter(s *string) *string {
+	if s == nil {
+		return nil
+	}
+	if _, err := time.Parse("2006-01-02", *s); err != nil {
+		return nil
+	}
+	return s
+}
+
 // calculateDuration calculates the duration between two times and returns a human-readable string.
 func calculateDuration(start, end time.Time) string {
 	diff := end.Sub(start)
@@ -946,19 +959,8 @@ func (s *Services) AttendanceHistory(ctx context.Context, req dtos.AttendanceHis
 		return nil, helpers.ErrInvalidToken
 	}
 
-	var dateFrom, dateTo *time.Time
-	if req.DateFrom != nil {
-		parsed, err := time.ParseInLocation("2006-01-02", *req.DateFrom, time.Local)
-		if err == nil {
-			dateFrom = &parsed
-		}
-	}
-	if req.DateTo != nil {
-		parsed, err := time.ParseInLocation("2006-01-02", *req.DateTo, time.Local)
-		if err == nil {
-			dateTo = &parsed
-		}
-	}
+	dateFrom := validDateFilter(req.DateFrom)
+	dateTo := validDateFilter(req.DateTo)
 
 	page := req.Page
 	pageSize := req.PageSize
@@ -1008,19 +1010,8 @@ func (s *Services) AttendanceHistory(ctx context.Context, req dtos.AttendanceHis
 func (s *Services) AttendanceHistoryAll(ctx context.Context, req dtos.AttendanceHistoryRequest) (*repositories.PagedResult[dtos.AttendanceHistoryDTO], error) {
 	s.Logger.LogStart("AttendanceHistoryAll", "Fetching all attendance history")
 
-	var dateFrom, dateTo *time.Time
-	if req.DateFrom != nil {
-		parsed, err := time.ParseInLocation("2006-01-02", *req.DateFrom, time.Local)
-		if err == nil {
-			dateFrom = &parsed
-		}
-	}
-	if req.DateTo != nil {
-		parsed, err := time.ParseInLocation("2006-01-02", *req.DateTo, time.Local)
-		if err == nil {
-			dateTo = &parsed
-		}
-	}
+	dateFrom := validDateFilter(req.DateFrom)
+	dateTo := validDateFilter(req.DateTo)
 
 	page := req.Page
 	pageSize := req.PageSize
@@ -1200,19 +1191,8 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 func (s *Services) AttendanceReport(ctx context.Context, req dtos.AttendanceReportRequest) (*repositories.PagedResult[dtos.AttendanceHistoryDTO], error) {
 	s.Logger.LogStart("AttendanceReport", "Fetching attendance report")
 
-	var dateFrom, dateTo *time.Time
-	if req.DateFrom != nil {
-		parsed, err := time.ParseInLocation("2006-01-02", *req.DateFrom, time.Local)
-		if err == nil {
-			dateFrom = &parsed
-		}
-	}
-	if req.DateTo != nil {
-		parsed, err := time.ParseInLocation("2006-01-02", *req.DateTo, time.Local)
-		if err == nil {
-			dateTo = &parsed
-		}
-	}
+	dateFrom := validDateFilter(req.DateFrom)
+	dateTo := validDateFilter(req.DateTo)
 
 	page := req.Page
 	pageSize := req.PageSize
@@ -1271,19 +1251,8 @@ func (s *Services) AttendanceReport(ctx context.Context, req dtos.AttendanceRepo
 func (s *Services) AttendanceLateStats(ctx context.Context, dateFrom, dateTo *string, userID *uint, page, pageSize int) (*dtos.LateStatsResponse, error) {
 	s.Logger.LogStart("AttendanceLateStats", "Fetching late statistics")
 
-	var df, dt *time.Time
-	if dateFrom != nil {
-		parsed, err := time.ParseInLocation("2006-01-02", *dateFrom, time.Local)
-		if err == nil {
-			df = &parsed
-		}
-	}
-	if dateTo != nil {
-		parsed, err := time.ParseInLocation("2006-01-02", *dateTo, time.Local)
-		if err == nil {
-			dt = &parsed
-		}
-	}
+	df := validDateFilter(dateFrom)
+	dt := validDateFilter(dateTo)
 
 	if page <= 0 {
 		page = 1

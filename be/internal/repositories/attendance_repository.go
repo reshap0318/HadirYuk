@@ -86,7 +86,7 @@ func (r *AttendanceRepository) FindByUserDateShift(tx *gorm.DB, userID uint, dat
 }
 
 // FindHistory finds attendance records with filters and pagination.
-func (r *AttendanceRepository) FindHistory(tx *gorm.DB, userID uint, dateFrom, dateTo *time.Time, status string, page, pageSize int, preloads ...string) (*PagedResult[models.Attendance], error) {
+func (r *AttendanceRepository) FindHistory(tx *gorm.DB, userID uint, dateFrom, dateTo *string, status string, page, pageSize int, preloads ...string) (*PagedResult[models.Attendance], error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -101,7 +101,7 @@ func (r *AttendanceRepository) FindHistory(tx *gorm.DB, userID uint, dateFrom, d
 		query = query.Where("date >= ?", *dateFrom)
 	}
 	if dateTo != nil {
-		query = query.Where("date < ?", dateTo.AddDate(0, 0, 1))
+		query = query.Where("date <= ?", *dateTo)
 	}
 	if status != "" {
 		query = query.Where("status = ?", status)
@@ -141,7 +141,7 @@ func (r *AttendanceRepository) FindHistory(tx *gorm.DB, userID uint, dateFrom, d
 }
 
 // FindHistoryAll finds attendance records for all users with filters and pagination.
-func (r *AttendanceRepository) FindHistoryAll(tx *gorm.DB, dateFrom, dateTo *time.Time, status string, page, pageSize int, preloads ...string) (*PagedResult[models.Attendance], error) {
+func (r *AttendanceRepository) FindHistoryAll(tx *gorm.DB, dateFrom, dateTo *string, status string, page, pageSize int, preloads ...string) (*PagedResult[models.Attendance], error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -156,7 +156,7 @@ func (r *AttendanceRepository) FindHistoryAll(tx *gorm.DB, dateFrom, dateTo *tim
 		query = query.Where("date >= ?", *dateFrom)
 	}
 	if dateTo != nil {
-		query = query.Where("date < ?", dateTo.AddDate(0, 0, 1))
+		query = query.Where("date <= ?", *dateTo)
 	}
 	if status != "" {
 		query = query.Where("status = ?", status)
@@ -245,7 +245,7 @@ func (r *AttendanceRepository) FindByDateAll(tx *gorm.DB, date time.Time, preloa
 }
 
 // FindLateStats finds late attendance records with filters.
-func (r *AttendanceRepository) FindLateStats(tx *gorm.DB, dateFrom, dateTo *time.Time, userID *uint, page, pageSize int, preloads ...string) (*PagedResult[models.Attendance], error) {
+func (r *AttendanceRepository) FindLateStats(tx *gorm.DB, dateFrom, dateTo *string, userID *uint, page, pageSize int, preloads ...string) (*PagedResult[models.Attendance], error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -260,7 +260,7 @@ func (r *AttendanceRepository) FindLateStats(tx *gorm.DB, dateFrom, dateTo *time
 		query = query.Where("date >= ?", *dateFrom)
 	}
 	if dateTo != nil {
-		query = query.Where("date < ?", dateTo.AddDate(0, 0, 1))
+		query = query.Where("date <= ?", *dateTo)
 	}
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)
