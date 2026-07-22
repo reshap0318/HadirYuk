@@ -101,7 +101,7 @@ func (r *AttendanceRepository) FindHistory(tx *gorm.DB, userID uint, dateFrom, d
 		query = query.Where("date >= ?", *dateFrom)
 	}
 	if dateTo != nil {
-		query = query.Where("date <= ?", *dateTo)
+		query = query.Where("date < ?", dateTo.AddDate(0, 0, 1))
 	}
 	if status != "" {
 		query = query.Where("status = ?", status)
@@ -156,7 +156,7 @@ func (r *AttendanceRepository) FindHistoryAll(tx *gorm.DB, dateFrom, dateTo *tim
 		query = query.Where("date >= ?", *dateFrom)
 	}
 	if dateTo != nil {
-		query = query.Where("date <= ?", *dateTo)
+		query = query.Where("date < ?", dateTo.AddDate(0, 0, 1))
 	}
 	if status != "" {
 		query = query.Where("status = ?", status)
@@ -260,7 +260,7 @@ func (r *AttendanceRepository) FindLateStats(tx *gorm.DB, dateFrom, dateTo *time
 		query = query.Where("date >= ?", *dateFrom)
 	}
 	if dateTo != nil {
-		query = query.Where("date <= ?", *dateTo)
+		query = query.Where("date < ?", dateTo.AddDate(0, 0, 1))
 	}
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)

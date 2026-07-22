@@ -948,13 +948,13 @@ func (s *Services) AttendanceHistory(ctx context.Context, req dtos.AttendanceHis
 
 	var dateFrom, dateTo *time.Time
 	if req.DateFrom != nil {
-		parsed, err := time.Parse("2006-01-02", *req.DateFrom)
+		parsed, err := time.ParseInLocation("2006-01-02", *req.DateFrom, time.Local)
 		if err == nil {
 			dateFrom = &parsed
 		}
 	}
 	if req.DateTo != nil {
-		parsed, err := time.Parse("2006-01-02", *req.DateTo)
+		parsed, err := time.ParseInLocation("2006-01-02", *req.DateTo, time.Local)
 		if err == nil {
 			dateTo = &parsed
 		}
@@ -1010,13 +1010,13 @@ func (s *Services) AttendanceHistoryAll(ctx context.Context, req dtos.Attendance
 
 	var dateFrom, dateTo *time.Time
 	if req.DateFrom != nil {
-		parsed, err := time.Parse("2006-01-02", *req.DateFrom)
+		parsed, err := time.ParseInLocation("2006-01-02", *req.DateFrom, time.Local)
 		if err == nil {
 			dateFrom = &parsed
 		}
 	}
 	if req.DateTo != nil {
-		parsed, err := time.Parse("2006-01-02", *req.DateTo)
+		parsed, err := time.ParseInLocation("2006-01-02", *req.DateTo, time.Local)
 		if err == nil {
 			dateTo = &parsed
 		}
@@ -1202,13 +1202,13 @@ func (s *Services) AttendanceReport(ctx context.Context, req dtos.AttendanceRepo
 
 	var dateFrom, dateTo *time.Time
 	if req.DateFrom != nil {
-		parsed, err := time.Parse("2006-01-02", *req.DateFrom)
+		parsed, err := time.ParseInLocation("2006-01-02", *req.DateFrom, time.Local)
 		if err == nil {
 			dateFrom = &parsed
 		}
 	}
 	if req.DateTo != nil {
-		parsed, err := time.Parse("2006-01-02", *req.DateTo)
+		parsed, err := time.ParseInLocation("2006-01-02", *req.DateTo, time.Local)
 		if err == nil {
 			dateTo = &parsed
 		}
@@ -1273,13 +1273,13 @@ func (s *Services) AttendanceLateStats(ctx context.Context, dateFrom, dateTo *st
 
 	var df, dt *time.Time
 	if dateFrom != nil {
-		parsed, err := time.Parse("2006-01-02", *dateFrom)
+		parsed, err := time.ParseInLocation("2006-01-02", *dateFrom, time.Local)
 		if err == nil {
 			df = &parsed
 		}
 	}
 	if dateTo != nil {
-		parsed, err := time.Parse("2006-01-02", *dateTo)
+		parsed, err := time.ParseInLocation("2006-01-02", *dateTo, time.Local)
 		if err == nil {
 			dt = &parsed
 		}
