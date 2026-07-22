@@ -586,15 +586,15 @@ func (s *Services) AttendanceQRCheckOut(ctx context.Context, req dtos.Attendance
 	durationMinutes := int(now.Sub(durationStart).Minutes())
 
 	// Update attendance record
-	activeSession.TimeOut = &now
-	activeSession.Duration = duration
-	activeSession.DurationMinutes = durationMinutes
-	activeSession.OvertimeMinutes = overtimeMinutes
-
 	var result *models.Attendance
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
 		var err error
-		result, err = s.repo.Attendance.Update(tx, &models.Attendance{ID: activeSession.ID}, activeSession)
+		result, err = s.repo.Attendance.UpdateMap(tx, &models.Attendance{ID: activeSession.ID}, map[string]interface{}{
+			"time_out":         &now,
+			"duration":         duration,
+			"duration_minutes": durationMinutes,
+			"overtime_minutes": overtimeMinutes,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -734,18 +734,18 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 	durationMinutes := int(now.Sub(durationStart).Minutes())
 
 	// Update attendance record
-	activeSession.TimeOut = &now
-	activeSession.LatOut = &req.Lat
-	activeSession.LngOut = &req.Lng
-	activeSession.ImageOut = fotoPath
-	activeSession.Duration = duration
-	activeSession.DurationMinutes = durationMinutes
-	activeSession.OvertimeMinutes = overtimeMinutes
-
 	var result *models.Attendance
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
 		var err error
-		result, err = s.repo.Attendance.Update(tx, &models.Attendance{ID: activeSession.ID}, activeSession)
+		result, err = s.repo.Attendance.UpdateMap(tx, &models.Attendance{ID: activeSession.ID}, map[string]interface{}{
+			"time_out":         &now,
+			"lat_out":          &req.Lat,
+			"lng_out":          &req.Lng,
+			"image_out":        fotoPath,
+			"duration":         duration,
+			"duration_minutes": durationMinutes,
+			"overtime_minutes": overtimeMinutes,
+		})
 		if err != nil {
 			return nil, err
 		}

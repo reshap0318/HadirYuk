@@ -75,20 +75,18 @@ func (s *Services) PermissionGetByID(ctx context.Context, id uint) (*dtos.Permis
 func (s *Services) PermissionUpdate(ctx context.Context, id uint, req dtos.PermissionRequest) (*dtos.PermissionDTO, error) {
 	s.Logger.LogStart("PermissionUpdate", "Updating permission ID: %d", id)
 
-	permission := &models.Permission{
-		ID: id,
-	}
+	updates := map[string]interface{}{}
 	if req.Name != "" {
-		permission.Name = req.Name
+		updates["name"] = req.Name
 	}
 	if req.Description != nil {
-		permission.Description = req.Description
+		updates["description"] = req.Description
 	}
 
 	var result *models.Permission
 	if err := s.repo.TxManager.WithinTransaction(func(tx *gorm.DB) error {
 		var err error
-		result, err = s.repo.Permission.Update(tx, &models.Permission{ID: id}, permission)
+		result, err = s.repo.Permission.UpdateMap(tx, &models.Permission{ID: id}, updates)
 		return err
 	}); err != nil {
 		s.Logger.LogEndWithError("PermissionUpdate", "Failed to update permission: %v", err)

@@ -98,18 +98,18 @@ func (s *Services) RoleGetByID(ctx context.Context, id uint) (*dtos.RoleDTO, err
 func (s *Services) RoleUpdate(ctx context.Context, id uint, req dtos.RoleRequest) (*dtos.RoleDTO, error) {
 	s.Logger.LogStart("RoleUpdate", "Updating role ID: %d", id)
 
-	role := &models.Role{ID: id}
+	updates := map[string]interface{}{}
 	if req.Name != "" {
-		role.Name = req.Name
+		updates["name"] = req.Name
 	}
 	if req.Description != nil {
-		role.Description = req.Description
+		updates["description"] = req.Description
 	}
 
 	var result *models.Role
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
 		var err error
-		result, err = s.repo.Role.Update(tx, &models.Role{ID: id}, role)
+		result, err = s.repo.Role.UpdateMap(tx, &models.Role{ID: id}, updates)
 		if err != nil {
 			return nil, err
 		}

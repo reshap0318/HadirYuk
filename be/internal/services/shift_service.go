@@ -162,21 +162,20 @@ func (s *Services) ShiftUpdate(ctx context.Context, id uint, req dtos.ShiftReque
 		return nil, &helpers.FieldError{Field: "name", Message: "Shift name already exists"}
 	}
 
-	shift := &models.Shift{
-		ID:            id,
-		Name:          req.Name,
-		StartTime:     req.StartTime,
-		EndTime:       req.EndTime,
-		BreakDuration: req.BreakDuration,
-		FlexiMinutes:  req.FlexiMinutes,
-		ColorCode:     req.ColorCode,
-		TotalHours:    calculateTotalHours(req.StartTime, req.EndTime, req.BreakDuration),
+	updates := map[string]interface{}{
+		"name":           req.Name,
+		"start_time":     req.StartTime,
+		"end_time":       req.EndTime,
+		"break_duration": req.BreakDuration,
+		"flexi_minutes":  req.FlexiMinutes,
+		"color_code":     req.ColorCode,
+		"total_hours":    calculateTotalHours(req.StartTime, req.EndTime, req.BreakDuration),
 	}
 
 	var result *models.Shift
 	res, err := s.repo.TxManager.WithinTransactionWithResult(func(tx *gorm.DB) (interface{}, error) {
 		var err error
-		result, err = s.repo.Shift.Update(tx, &models.Shift{ID: id}, shift)
+		result, err = s.repo.Shift.UpdateMap(tx, &models.Shift{ID: id}, updates)
 		if err != nil {
 			return nil, err
 		}

@@ -350,13 +350,13 @@ func (s *Services) AuthResetPassword(ctx context.Context, token, newPassword str
 			return nil, err
 		}
 
-		// Update user password using generic Update
-		if _, err := s.repo.User.Update(tx, &models.User{Email: reset.Email}, &models.User{Password: string(hashedPassword)}); err != nil {
+		// Update user password using generic UpdateMap
+		if _, err := s.repo.User.UpdateMap(tx, &models.User{Email: reset.Email}, map[string]interface{}{"password": string(hashedPassword)}); err != nil {
 			return nil, err
 		}
 
-		// Invalidate the token using generic Update
-		if _, err := s.repo.PasswordReset.Update(tx, &models.PasswordReset{Token: reset.Token}, &models.PasswordReset{Used: true}); err != nil {
+		// Invalidate the token using generic UpdateMap
+		if _, err := s.repo.PasswordReset.UpdateMap(tx, &models.PasswordReset{Token: reset.Token}, map[string]interface{}{"used": true}); err != nil {
 			return nil, err
 		}
 
