@@ -14,14 +14,14 @@ services:
     volumes:
       - ./be:/app
       - /app/tmp
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 1G
-        reservations:
-          cpus: "0.5"
-          memory: 512M
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "1"
+    #       memory: 1G
+    #     reservations:
+    #       cpus: "0.5"
+    #       memory: 512M
     networks:
       - hadiryuk-net
       - mysql-network
