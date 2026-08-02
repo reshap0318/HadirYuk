@@ -1,12 +1,15 @@
 # ═══════════════════════════════════════════════════════════════
 #  HadirYuk — Production Overrides
 #  Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#  mkdir -p be/storage   (host dir bind-mounted into the container —
+#  survives `docker compose down` and image rebuilds; back it up like
+#  any other server directory)
 # ═══════════════════════════════════════════════════════════════
 
 services:
   backend:
     volumes:
-      - hadiryuk-storage:/app/storage
+      - ./be/storage:/app/storage
     networks:
       - hadiryuk-net
       - mysql-network
@@ -55,10 +58,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  hadiryuk-storage:
-    driver: local
 
 networks:
   mysql-network:
