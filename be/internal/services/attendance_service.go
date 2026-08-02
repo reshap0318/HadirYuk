@@ -16,8 +16,6 @@ import (
 	"github.com/reshap0318/hadirYuk/internal/repositories"
 )
 
-const attendanceBufferMinutes = 15
-
 // GetTodayStatus returns the enriched attendance status for the current user today.
 func (s *Services) GetTodayStatus(ctx context.Context) (*dtos.AttendanceTodayResponse, error) {
 	s.Logger.LogStart("GetTodayStatus", "Fetching today's attendance status")
@@ -326,7 +324,7 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 	shiftStartTime := time.Date(shiftDate.Year(), shiftDate.Month(), shiftDate.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
 	shiftEndTime := shiftResult.WindowEnd
 
-	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
+	buffer := time.Duration(applicableShift.Shift.FlexiMinutes) * time.Minute
 	flexiStart := shiftStartTime.Add(-buffer)
 	flexiThreshold := shiftStartTime.Add(buffer)
 
@@ -461,7 +459,7 @@ func (s *Services) AttendanceQRCheckIn(ctx context.Context, req dtos.AttendanceQ
 	shiftStartTime := time.Date(shiftDate.Year(), shiftDate.Month(), shiftDate.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
 	shiftEndTime := shiftResult.WindowEnd
 
-	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
+	buffer := time.Duration(applicableShift.Shift.FlexiMinutes) * time.Minute
 	flexiStart := shiftStartTime.Add(-buffer)
 	flexiThreshold := shiftStartTime.Add(buffer)
 
@@ -562,7 +560,7 @@ func (s *Services) AttendanceQRCheckOut(ctx context.Context, req dtos.Attendance
 	}
 	shiftEndTime := time.Date(shiftEndDay.Year(), shiftEndDay.Month(), shiftEndDay.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
 
-	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
+	buffer := time.Duration(activeSession.Shift.FlexiMinutes) * time.Minute
 	earliestCheckout := shiftEndTime.Add(-buffer)
 
 	if now.Before(earliestCheckout) {
@@ -689,7 +687,7 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 	}
 	shiftEndTime := time.Date(shiftEndDay.Year(), shiftEndDay.Month(), shiftEndDay.Day(), shiftEnd.Hour(), shiftEnd.Minute(), 0, 0, now.Location())
 
-	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
+	buffer := time.Duration(activeSession.Shift.FlexiMinutes) * time.Minute
 	earliestCheckout := shiftEndTime.Add(-buffer)
 
 	if now.Before(earliestCheckout) {
@@ -824,7 +822,6 @@ func (s *Services) findApplicableShift(userID uint, now time.Time) *shiftMatch {
 		return nil
 	}
 
-	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
 	var best *shiftMatch
 
 	for i := range deduped {
@@ -835,6 +832,7 @@ func (s *Services) findApplicableShift(userID uint, now time.Time) *shiftMatch {
 			continue
 		}
 
+		buffer := time.Duration(assignment.Shift.FlexiMinutes) * time.Minute
 		var windowStart, windowEnd, shiftDate time.Time
 
 		if shiftEnd.Before(shiftStart) {
@@ -1116,7 +1114,7 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 
 	// Recalculate status based on new time_in vs shift start + buffer
 	// Gunakan existing.Date sebagai base (benar untuk cross-midnight check-in setelah tengah malam)
-	buffer := time.Duration(attendanceBufferMinutes) * time.Minute
+	buffer := time.Duration(existing.Shift.FlexiMinutes) * time.Minute
 	shiftStart, _ := time.Parse("15:04", existing.Shift.StartTime)
 	shiftStartTime := time.Date(existing.Date.Year(), existing.Date.Month(), existing.Date.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, req.TimeIn.Location())
 	flexiThreshold := shiftStartTime.Add(buffer)
