@@ -21,6 +21,7 @@ interface IAttendanceDetail {
   office_id: number
   office_name: string
   status: string
+  status_out?: string
   time_in?: string
   time_out?: string
   duration?: string
@@ -48,6 +49,19 @@ const statusMap: Record<
 const statusBadge = computed(() => {
   if (!detail.value) return { label: '-', color: 'primary' as const }
   return statusMap[detail.value.status] || { label: detail.value.status, color: 'primary' as const }
+})
+
+const statusOutMap: Record<
+  string,
+  { label: string; color: 'primary' | 'danger' | 'info' | 'warning' }
+> = {
+  on_time: { label: 'Tepat Waktu', color: 'primary' },
+  early_leave: { label: 'Pulang Cepat', color: 'warning' },
+}
+
+const statusOutBadge = computed(() => {
+  if (!detail.value?.status_out) return null
+  return statusOutMap[detail.value.status_out] || null
 })
 
 function show(item: IAttendanceDetail) {
@@ -84,6 +98,9 @@ defineExpose({ show })
       <!-- Status -->
       <div class="flex items-center gap-2">
         <UiBadge :color="statusBadge.color" size="lg">{{ statusBadge.label }}</UiBadge>
+        <UiBadge v-if="statusOutBadge" :color="statusOutBadge.color" size="lg">
+          {{ statusOutBadge.label }}
+        </UiBadge>
         <span v-if="detail.overtime_minutes" class="text-xs text-orange-600">
           (+{{ detail.overtime_minutes }}m lembur)
         </span>

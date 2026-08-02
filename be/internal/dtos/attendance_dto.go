@@ -49,6 +49,7 @@ type AttendanceDTO struct {
 	Date           time.Time  `json:"date"`
 	OfficeID       uint       `json:"office_id"`
 	Status         string     `json:"status"`
+	StatusOut      string     `json:"status_out"`
 
 	// Check-in
 	TimeIn         *time.Time `json:"time_in"`
@@ -79,6 +80,7 @@ func ToAttendanceDTO(a *models.Attendance) AttendanceDTO {
 		Date:           a.Date,
 		OfficeID:       a.OfficeID,
 		Status:         a.Status,
+		StatusOut:      a.StatusOut,
 		TimeIn:         a.TimeIn,
 		LatIn:          a.LatIn,
 		LngIn:          a.LngIn,

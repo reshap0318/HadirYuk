@@ -326,7 +326,6 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 
 	buffer := time.Duration(applicableShift.Shift.FlexiMinutes) * time.Minute
 	flexiStart := shiftStartTime.Add(-buffer)
-	flexiThreshold := shiftStartTime.Add(buffer)
 
 	if now.Before(flexiStart) || now.After(shiftEndTime) {
 		s.Logger.LogEndWithError("AttendanceCheckIn", "Check-in outside shift window: %s not in %s-%s", now.Format("15:04"), flexiStart.Format("15:04"), shiftEndTime.Format("15:04"))
@@ -334,7 +333,7 @@ func (s *Services) AttendanceCheckIn(ctx context.Context, req dtos.AttendanceChe
 	}
 
 	status := "present"
-	if now.After(flexiThreshold) {
+	if now.After(shiftStartTime) {
 		status = "late"
 	}
 
@@ -461,7 +460,6 @@ func (s *Services) AttendanceQRCheckIn(ctx context.Context, req dtos.AttendanceQ
 
 	buffer := time.Duration(applicableShift.Shift.FlexiMinutes) * time.Minute
 	flexiStart := shiftStartTime.Add(-buffer)
-	flexiThreshold := shiftStartTime.Add(buffer)
 
 	if now.Before(flexiStart) || now.After(shiftEndTime) {
 		s.Logger.LogEndWithError("AttendanceQRCheckIn", "Check-in outside window")
@@ -469,7 +467,7 @@ func (s *Services) AttendanceQRCheckIn(ctx context.Context, req dtos.AttendanceQ
 	}
 
 	status := "present"
-	if now.After(flexiThreshold) {
+	if now.After(shiftStartTime) {
 		status = "late"
 	}
 
@@ -575,6 +573,12 @@ func (s *Services) AttendanceQRCheckOut(ctx context.Context, req dtos.Attendance
 		s.Logger.LogStep("AttendanceQRCheckOut", "Overtime detected: %d minutes", overtimeMinutes)
 	}
 
+	// status_out: checkout sebelum shift end (dalam window flexi) = early_leave
+	statusOut := "on_time"
+	if now.Before(shiftEndTime) {
+		statusOut = "early_leave"
+	}
+
 	// Duration dihitung dari max(checkIn, shiftStart) — early check-in tidak dihitung
 	shiftStartTime := time.Date(activeSession.Date.Year(), activeSession.Date.Month(), activeSession.Date.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, now.Location())
 	durationStart := *activeSession.TimeIn
@@ -590,6 +594,7 @@ func (s *Services) AttendanceQRCheckOut(ctx context.Context, req dtos.Attendance
 		var err error
 		result, err = s.repo.Attendance.UpdateMap(tx, &models.Attendance{ID: activeSession.ID}, map[string]interface{}{
 			"time_out":         &now,
+			"status_out":       statusOut,
 			"duration":         duration,
 			"duration_minutes": durationMinutes,
 			"overtime_minutes": overtimeMinutes,
@@ -702,6 +707,12 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 		s.Logger.LogStep("AttendanceCheckOut", "Overtime detected: %d minutes (checkout %s > shiftEnd %s)", overtimeMinutes, now.Format("15:04"), shiftEndTime.Format("15:04"))
 	}
 
+	// status_out: checkout sebelum shift end (dalam window flexi) = early_leave
+	statusOut := "on_time"
+	if now.Before(shiftEndTime) {
+		statusOut = "early_leave"
+	}
+
 	// Find nearest active office location
 	nearestOffice, minDistance, err := s.findNearestOffice(req.Lat, req.Lng)
 	if err != nil {
@@ -738,6 +749,7 @@ func (s *Services) AttendanceCheckOut(ctx context.Context, req dtos.AttendanceCh
 		var err error
 		result, err = s.repo.Attendance.UpdateMap(tx, &models.Attendance{ID: activeSession.ID}, map[string]interface{}{
 			"time_out":         &now,
+			"status_out":       statusOut,
 			"lat_out":          &req.Lat,
 			"lng_out":          &req.Lng,
 			"image_out":        fotoPath,
@@ -1112,15 +1124,13 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 		return nil, &helpers.CustomError{Message: "time_in dan time_out wajib diisi"}
 	}
 
-	// Recalculate status based on new time_in vs shift start + buffer
+	// Recalculate status based on new time_in vs shift start
 	// Gunakan existing.Date sebagai base (benar untuk cross-midnight check-in setelah tengah malam)
-	buffer := time.Duration(existing.Shift.FlexiMinutes) * time.Minute
 	shiftStart, _ := time.Parse("15:04", existing.Shift.StartTime)
 	shiftStartTime := time.Date(existing.Date.Year(), existing.Date.Month(), existing.Date.Day(), shiftStart.Hour(), shiftStart.Minute(), 0, 0, req.TimeIn.Location())
-	flexiThreshold := shiftStartTime.Add(buffer)
 
 	status := "present"
-	if req.TimeIn.After(flexiThreshold) {
+	if req.TimeIn.After(shiftStartTime) {
 		status = "late"
 	}
 
@@ -1142,6 +1152,11 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 		overtimeMinutes = int(req.TimeOut.Sub(shiftEndTime).Minutes())
 	}
 
+	statusOut := "on_time"
+	if req.TimeOut.Before(shiftEndTime) {
+		statusOut = "early_leave"
+	}
+
 	now := time.Now()
 	var result *models.Attendance
 
@@ -1151,6 +1166,7 @@ func (s *Services) AttendanceCorrect(ctx context.Context, id uint, req dtos.Atte
 			"time_in":           req.TimeIn,
 			"time_out":          req.TimeOut,
 			"status":            status,
+			"status_out":        statusOut,
 			"duration":          duration,
 			"duration_minutes":  durationMinutes,
 			"overtime_minutes":  overtimeMinutes,

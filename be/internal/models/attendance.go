@@ -13,6 +13,7 @@ type Attendance struct {
 	Date           time.Time      `gorm:"type:date;not null;index" json:"date"`
 	OfficeID       uint           `gorm:"not null;index" json:"office_id"`
 	Status         string         `gorm:"type:varchar(20);not null;default:'absent'" json:"status"`
+	StatusOut      string         `gorm:"type:varchar(20)" json:"status_out"`
 
 	// Check-in
 	TimeIn         *time.Time     `json:"time_in"`
