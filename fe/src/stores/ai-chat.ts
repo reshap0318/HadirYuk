@@ -40,9 +40,11 @@ export const useAiChatStore = defineStore('ai-chat', () => {
     loading.value.Send = true
     messages.value.push({ role: 'user', content: message, created_at: new Date().toISOString() })
     try {
-      const { data } = await post<IApiResponse<IAiChatMessageResponse>>('/ai-chat/message', {
-        message,
-      })
+      const { data } = await post<IApiResponse<IAiChatMessageResponse>>(
+        '/ai-chat/message',
+        { message },
+        { timeout: 125000 }, // backend's own budget is 120s, stay above it
+      )
       messages.value.push({
         role: 'assistant',
         content: data.data.answer,

@@ -221,6 +221,7 @@ func NewContainer() (*Container, error) {
 	)
 	container.Services.AiChatCfg = &services.AiChatConfig{
 		QueryTimeout:       time.Duration(helpers.GetEnvInt("AI_CHAT_QUERY_TIMEOUT_SECONDS", 10)) * time.Second,
+		LLMTimeout:         120 * time.Second, // hardcoded, not from .env - see AiChatConfig doc comment
 		MaxRows:            helpers.GetEnvInt("AI_CHAT_MAX_ROWS", 100),
 		MaxContextMessages: helpers.GetEnvInt("AI_CHAT_MAX_CONTEXT_MESSAGES", 10),
 	}

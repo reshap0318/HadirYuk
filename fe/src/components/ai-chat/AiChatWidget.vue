@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/vue'
 import { UiButton } from '@/components/utils'
 import { useAiChatStore } from '@/stores'
+import { renderChatMarkdown } from '@/helpers/markdown'
 import swal from '@/plugins/swal'
 
 const chat = useAiChatStore()
@@ -56,7 +57,7 @@ async function handleReset() {
       class="mb-3 flex h-[28rem] w-[22rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl sm:h-[32rem] sm:w-96"
     >
       <div class="flex items-center justify-between border-b border-gray-200 bg-blue-600 px-4 py-3">
-        <span class="font-semibold text-white">AI Customer Service</span>
+        <span class="font-semibold text-white">Hadi · AI Assistant</span>
         <div class="flex items-center gap-1">
           <button
             title="Reset percakapan"
@@ -88,12 +89,13 @@ async function handleReset() {
           :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']"
         >
           <div
-            :class="[
-              'max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm',
-              msg.role === 'user'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-800 border border-gray-200',
-            ]"
+            v-if="msg.role === 'assistant'"
+            class="max-w-[85%] rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 [&_p]:m-0 [&_ul]:my-1"
+            v-html="renderChatMarkdown(msg.content)"
+          />
+          <div
+            v-else
+            class="max-w-[85%] whitespace-pre-wrap rounded-lg bg-blue-600 px-3 py-2 text-sm text-white"
           >
             {{ msg.content }}
           </div>
@@ -127,7 +129,7 @@ async function handleReset() {
 
     <button
       class="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700"
-      title="AI Customer Service"
+      title="Hadi · AI Assistant"
       @click="toggle"
     >
       <PhX v-if="isOpen" class="h-6 w-6" />

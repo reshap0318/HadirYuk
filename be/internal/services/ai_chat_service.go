@@ -13,13 +13,18 @@ import (
 )
 
 // AiChatConfig holds the tunables for the AI chat feature (see FSD §7).
+//
+// LLMTimeout is set once in di.NewContainer, not read from .env - it's an
+// internal safety net (bounds one whole chat turn: generate_query + DB query
+// + format_answer), not meant to vary per deployment.
 type AiChatConfig struct {
 	QueryTimeout       time.Duration
+	LLMTimeout         time.Duration
 	MaxRows            int
 	MaxContextMessages int
 }
 
-const aiChatSystemPrompt = `Kamu adalah asisten data untuk sistem absensi karyawan HadirYuk.
+const aiChatSystemPrompt = `Namamu adalah Hadi, asisten data untuk sistem absensi karyawan HadirYuk. Kalau ditanya siapa namamu, jawab "Hadi".
 Tugasmu: jawab pertanyaan Super Admin/HR Admin seputar data absensi, karyawan, shift, dan lokasi kantor.
 Jika pertanyaan butuh data dari database, panggil tool generate_query dengan SATU query SELECT saja.
 Jangan pernah menulis SQL di teks jawaban biasa - HARUS lewat tool generate_query.
@@ -39,6 +44,9 @@ Tabel password_resets, roles, permissions, role_has_permissions, user_has_roles 
 // AiChatMessage handles one chat turn: rate limit -> generate_query -> SQL guard -> execute -> format answer.
 func (s *Services) AiChatMessage(ctx context.Context, userID uint, message string) (string, error) {
 	s.Logger.LogStart("AiChatMessage", "User %d asked: %s", userID, message)
+
+	ctx, cancel := context.WithTimeout(ctx, s.AiChatCfg.LLMTimeout)
+	defer cancel()
 
 	if !s.AiChatGlobalLimiter.Allow("ai_chat_global").Allowed {
 		return "", &helpers.CustomError{Status: http.StatusTooManyRequests, Message: "Batas penggunaan AI global tercapai, coba lagi nanti"}
