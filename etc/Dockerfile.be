@@ -51,7 +51,7 @@ COPY --from=builder /opt/server     /server
 COPY --from=builder /opt/genkey     /genkey
 COPY --from=builder /opt/cleartmp   /cleartmp
 COPY --from=builder /opt/markabsent /markabsent
-COPY etc/entrypoint-prod.sh         /entrypoint.sh
+COPY etc/entrypoint.sh              /entrypoint.sh
 COPY etc/crontab                    /etc/crontabs/root
 
 RUN chmod +x /entrypoint.sh && mkdir -p /var/log

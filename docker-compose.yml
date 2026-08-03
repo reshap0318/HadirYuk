@@ -1,6 +1,10 @@
 # ═══════════════════════════════════════════════════════════════
-#  HadirYuk — Base Compose
+#  HadirYuk — Production Compose
 #  Semua env variable dari file .env (root)
+#  Usage: docker compose up -d
+#  mkdir -p be/storage   (host dir bind-mounted into the container —
+#  survives `docker compose down` and image rebuilds; back it up like
+#  any other server directory)
 # ═══════════════════════════════════════════════════════════════
 
 services:
@@ -13,8 +17,31 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      - ./be/storage:/app/storage
     networks:
       - hadiryuk-net
+      - mysql-network
+      - redis-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "2"
+    #       memory: 1G
+    #     reservations:
+    #       cpus: "1"
+    #       memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   frontend:
     build:
@@ -28,10 +55,35 @@ services:
         condition: service_started
     env_file:
       - .env
+    ports:
+      - "9010:80"
     networks:
       - hadiryuk-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   hadiryuk-net:
     driver: bridge
     name: hadiryuk-net
+  mysql-network:
+    external: true
+  redis-network:
+    external: true
