@@ -179,20 +179,24 @@ onMounted(() => {
                 <template #default="{ close }">
                   <button
                     class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    @click="() => {
-                      openEdit(user)
-                      close()
-                    }"
+                    @click="
+                      () => {
+                        openEdit(user)
+                        close()
+                      }
+                    "
                   >
                     <PhPencil class="w-4 h-4 text-blue-600" />
                     <span>Edit</span>
                   </button>
                   <button
                     class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    @click="() => {
-                      openFacePhoto(user)
-                      close()
-                    }"
+                    @click="
+                      () => {
+                        openFacePhoto(user)
+                        close()
+                      }
+                    "
                   >
                     <PhIdentificationCard class="w-4 h-4 text-emerald-600" />
                     <span>Foto Wajah</span>
@@ -200,10 +204,12 @@ onMounted(() => {
                   <button
                     class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     :disabled="userStore.loading.Delete"
-                    @click="() => {
-                      handleDelete(user.id)
-                      close()
-                    }"
+                    @click="
+                      () => {
+                        handleDelete(user.id)
+                        close()
+                      }
+                    "
                   >
                     <PhTrash class="w-4 h-4" />
                     <span>Hapus</span>

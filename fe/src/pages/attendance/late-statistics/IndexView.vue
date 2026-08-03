@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { UiCard, UiButton, UiPagination, UiEmptyState, UiSkeleton, UiBadge, UiTable } from '@/components/utils'
+import {
+  UiCard,
+  UiButton,
+  UiPagination,
+  UiEmptyState,
+  UiSkeleton,
+  UiBadge,
+  UiTable,
+} from '@/components/utils'
 import { ref, onMounted } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance'
 import type { ILateStats } from '@/stores/attendance'
@@ -56,14 +64,16 @@ function resetFilters() {
 
 function handlePageChange(page: number) {
   currentPage.value = page
-  attendanceStore.fetchLateStats({
-    date_from: dateFrom.value || undefined,
-    date_to: dateTo.value || undefined,
-    page,
-    page_size: pageSize,
-  }).then((result) => {
-    lateStats.value = result
-  })
+  attendanceStore
+    .fetchLateStats({
+      date_from: dateFrom.value || undefined,
+      date_to: dateTo.value || undefined,
+      page,
+      page_size: pageSize,
+    })
+    .then((result) => {
+      lateStats.value = result
+    })
 }
 
 onMounted(() => {

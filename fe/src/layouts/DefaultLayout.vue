@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SidebarMenu from '@/components/layouts/SidebarMenu.vue'
 import TopBar from '@/components/layouts/TopBar.vue'
+import AiChatWidget from '@/components/ai-chat/AiChatWidget.vue'
 import { ref, computed } from 'vue'
 import { usePermission } from '@/composables'
 import {
@@ -95,8 +96,11 @@ function filterMenuItems(items: IMenuItem[]): IMenuItem[] {
     if (item.isTitle) {
       // Only scan items within this section (until next isTitle or end)
       const sectionEnd = processed.findIndex((n, idx) => idx > i && n.isTitle)
-      const section = sectionEnd === -1 ? processed.slice(i + 1) : processed.slice(i + 1, sectionEnd)
-      const hasAccessible = section.some((n) => (n.to || n.children?.length) && canAccess(n.permissions))
+      const section =
+        sectionEnd === -1 ? processed.slice(i + 1) : processed.slice(i + 1, sectionEnd)
+      const hasAccessible = section.some(
+        (n) => (n.to || n.children?.length) && canAccess(n.permissions),
+      )
       if (hasAccessible) {
         result.push(item)
       }
@@ -146,5 +150,7 @@ const toggleSidebar = () => {
         <router-view />
       </main>
     </div>
+
+    <AiChatWidget v-if="hasAnyPermission(['ai-chat.query'])" />
   </div>
 </template>

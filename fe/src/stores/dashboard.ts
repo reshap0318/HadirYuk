@@ -1,12 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { get, type IApiResponse } from '@/plugins/axios'
-import type {
-  IAttendanceSession,
-  ITodaysShift,
-  ICurrentAction,
-  IMonthlyStats,
-} from './attendance'
+import type { IAttendanceSession, ITodaysShift, ICurrentAction, IMonthlyStats } from './attendance'
 
 export interface IUpcomingShift {
   date: string
@@ -107,7 +102,12 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   }
 
-  async function fetchSchedule(dateFrom: string, dateTo: string, page = 1, pageSize = 50): Promise<void> {
+  async function fetchSchedule(
+    dateFrom: string,
+    dateTo: string,
+    page = 1,
+    pageSize = 50,
+  ): Promise<void> {
     loading.value.schedule = true
     try {
       const { data } = await get<IApiResponse<IScheduleEmployee[]>>('/shifts/schedule', {

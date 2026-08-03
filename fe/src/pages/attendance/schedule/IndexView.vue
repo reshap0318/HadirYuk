@@ -2,11 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import { UiCard, UiSkeleton } from '@/components/utils'
-import {
-  PhCaretLeft,
-  PhCaretRight,
-  PhUsers,
-} from '@phosphor-icons/vue'
+import { PhCaretLeft, PhCaretRight, PhUsers } from '@phosphor-icons/vue'
 import type { IScheduleEmployee } from '@/stores/dashboard'
 
 const dashboardStore = useDashboardStore()
@@ -20,8 +16,18 @@ const currentPage = ref(1)
 const pageSize = 50
 
 const monthNames = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
 ]
 
 const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
@@ -67,7 +73,12 @@ function formatDate(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-function getCalendarDays(): { date: Date; dateStr: string; isToday: boolean; isCurrentMonth: boolean }[] {
+function getCalendarDays(): {
+  date: Date
+  dateStr: string
+  isToday: boolean
+  isCurrentMonth: boolean
+}[] {
   const firstDay = new Date(currentYear.value, currentMonth.value, 1)
   const lastDay = new Date(currentYear.value, currentMonth.value + 1, 0)
   const startPad = firstDay.getDay() // 0=Sun, 1=Mon...
@@ -80,20 +91,35 @@ function getCalendarDays(): { date: Date; dateStr: string; isToday: boolean; isC
   const prevMonthLastDay = new Date(currentYear.value, currentMonth.value, 0).getDate()
   for (let i = startPad - 1; i >= 0; i--) {
     const d = new Date(currentYear.value, currentMonth.value - 1, prevMonthLastDay - i)
-    days.push({ date: d, dateStr: formatDate(d), isToday: formatDate(d) === todayStr, isCurrentMonth: false })
+    days.push({
+      date: d,
+      dateStr: formatDate(d),
+      isToday: formatDate(d) === todayStr,
+      isCurrentMonth: false,
+    })
   }
 
   // Current month
   for (let i = 1; i <= lastDay.getDate(); i++) {
     const d = new Date(currentYear.value, currentMonth.value, i)
-    days.push({ date: d, dateStr: formatDate(d), isToday: formatDate(d) === todayStr, isCurrentMonth: true })
+    days.push({
+      date: d,
+      dateStr: formatDate(d),
+      isToday: formatDate(d) === todayStr,
+      isCurrentMonth: true,
+    })
   }
 
   // Next month padding (fill to 42 cells = 6 weeks)
   const remaining = 42 - days.length
   for (let i = 1; i <= remaining; i++) {
     const d = new Date(currentYear.value, currentMonth.value + 1, i)
-    days.push({ date: d, dateStr: formatDate(d), isToday: formatDate(d) === todayStr, isCurrentMonth: false })
+    days.push({
+      date: d,
+      dateStr: formatDate(d),
+      isToday: formatDate(d) === todayStr,
+      isCurrentMonth: false,
+    })
   }
 
   return days
@@ -102,17 +128,19 @@ function getCalendarDays(): { date: Date; dateStr: string; isToday: boolean; isC
 const calendarDays = computed(getCalendarDays)
 
 function getShiftsForDate(employee: IScheduleEmployee, dateStr: string) {
-  return employee.shifts.filter(s => s.date === dateStr)
+  return employee.shifts.filter((s) => s.date === dateStr)
 }
 
-function getEmployeesForDate(dateStr: string): { user: IScheduleEmployee; shifts: IScheduleEmployee['shifts'] }[] {
+function getEmployeesForDate(
+  dateStr: string,
+): { user: IScheduleEmployee; shifts: IScheduleEmployee['shifts'] }[] {
   return schedule.value
-    .filter(emp => emp.shifts.some(s => s.date === dateStr))
-    .map(emp => ({
+    .filter((emp) => emp.shifts.some((s) => s.date === dateStr))
+    .map((emp) => ({
       user: emp,
       shifts: getShiftsForDate(emp, dateStr),
     }))
-    .filter(item => item.shifts.length > 0)
+    .filter((item) => item.shifts.length > 0)
 }
 
 function selectDate(dateStr: string) {
@@ -123,8 +151,6 @@ const selectedDateEmployees = computed(() => {
   if (!selectedDate.value) return []
   return getEmployeesForDate(selectedDate.value)
 })
-
-
 </script>
 
 <template>
@@ -145,7 +171,9 @@ const selectedDateEmployees = computed(() => {
 
     <template v-else>
       <!-- Calendar Navigation -->
-      <div class="flex items-center justify-between mb-4 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+      <div
+        class="flex items-center justify-between mb-4 bg-white rounded-xl p-3 shadow-sm border border-gray-100"
+      >
         <button
           class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
           @click="prevMonth"
@@ -228,7 +256,14 @@ const selectedDateEmployees = computed(() => {
               <h3 class="text-lg font-semibold text-gray-900">
                 Detail Jadwal —
                 <span class="text-gray-500 font-normal">
-                  {{ new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }}
+                  {{
+                    new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })
+                  }}
                 </span>
               </h3>
             </div>
@@ -261,9 +296,15 @@ const selectedDateEmployees = computed(() => {
                         v-for="shift in item.shifts"
                         :key="shift.shift_id"
                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-                        :style="{ backgroundColor: shift.color_code + '20', color: shift.color_code }"
+                        :style="{
+                          backgroundColor: shift.color_code + '20',
+                          color: shift.color_code,
+                        }"
                       >
-                        <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: shift.color_code }" />
+                        <span
+                          class="w-1.5 h-1.5 rounded-full"
+                          :style="{ backgroundColor: shift.color_code }"
+                        />
                         {{ shift.shift_name }} ({{ shift.start_time }} - {{ shift.end_time }})
                       </span>
                     </div>

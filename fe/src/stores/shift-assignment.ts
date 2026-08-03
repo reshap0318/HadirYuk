@@ -74,7 +74,12 @@ export const useShiftAssignmentStore = defineStore('shiftAssignment', () => {
     }
   }
 
-  async function fetchAllWithSearch(page?: number, search?: string, startDate?: string, endDate?: string) {
+  async function fetchAllWithSearch(
+    page?: number,
+    search?: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
     crud.loading.value.Index = true
     const currentPage = page ?? crud.indexData.value.pagination.page
     try {

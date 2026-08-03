@@ -67,6 +67,8 @@ func SeedPermissions(db *gorm.DB) map[string]uint {
 		// Audit & Statistics
 		{"audit.view", "Can view audit log"},
 		{"late-statistic.view", "Can view late statistics"},
+		// AI CS Chatbot
+		{"ai-chat.query", "Can use AI customer service chatbot"},
 	}
 
 	resultMap := make(map[string]uint)
