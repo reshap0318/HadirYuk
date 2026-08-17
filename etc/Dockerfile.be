@@ -36,6 +36,15 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -tags timetzdata \
     -o /opt/markabsent ./cmd/markabsent
 
+# DEMO/DEV ONLY — fabricates attendance rows for the portfolio demo
+# employees. Built into the image so it can be run manually (`docker exec
+# <container> /dummy`) on a demo/staging deployment, but deliberately NOT
+# added to etc/crontab — it must never auto-run against a real database.
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w" \
+    -tags timetzdata \
+    -o /opt/dummy ./cmd/dummy
+
 # ── Runtime ───────────────────────────────────────────────────────
 FROM alpine:3.21
 
@@ -51,6 +60,7 @@ COPY --from=builder /opt/server     /server
 COPY --from=builder /opt/genkey     /genkey
 COPY --from=builder /opt/cleartmp   /cleartmp
 COPY --from=builder /opt/markabsent /markabsent
+COPY --from=builder /opt/dummy      /dummy
 COPY etc/entrypoint.sh              /entrypoint.sh
 COPY etc/crontab                    /etc/crontabs/root
 
