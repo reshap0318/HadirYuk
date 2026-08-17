@@ -9,3 +9,6 @@
 
 # Clean up stale tmp uploads — runs daily at 02:00 WIB, removes files older than 24h.
 0 2 * * * cd /app && /cleartmp >> /var/log/cleartmp.log 2>&1
+
+# docker exec -it hadiryuk-be sh -c "echo '10 0 * * * cd /app && /dummy >> /var/log/dummy.log 2>&1' >> /etc/crontabs/root"
+# docker restart hadiryuk-be
