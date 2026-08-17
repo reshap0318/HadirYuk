@@ -11,6 +11,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -82,6 +83,8 @@ func main() {
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
+	closeOutStaleCheckins(db, logger, rng, shift, today, loc, *dryRun)
+
 	created, skipped := 0, 0
 	for _, email := range targetEmails {
 		var user models.User
@@ -134,6 +137,94 @@ func main() {
 	if *dryRun {
 		os.Exit(0)
 	}
+}
+
+// closeOutStaleCheckins finds attendance rows from PRIOR days (belonging to
+// the dummy employees) that were left with time_out NULL — e.g. yesterday's
+// "still clocked in" row this same script created, or a "today" row from
+// cmd/migration/seeders/dummy_data.sql that nothing ever closed out — and
+// gives each one a randomized checkout before today's records are generated.
+// Without this, every day this script runs would leave another employee
+// permanently "checked in" in the attendance history.
+func closeOutStaleCheckins(db *gorm.DB, logger *helpers.Logger, rng *rand.Rand, shift models.Shift, today time.Time, loc *time.Location, dryRun bool) {
+	var stale []models.Attendance
+	err := db.Joins("JOIN users ON users.id = attendances.user_id").
+		Where("users.email IN ? AND attendances.date < ? AND attendances.time_out IS NULL", targetEmails, today).
+		Find(&stale).Error
+	if err != nil {
+		logger.Printf("[dummy] failed to query stale check-ins: %v", err)
+		return
+	}
+	if len(stale) == 0 {
+		return
+	}
+
+	shiftEndHour, shiftEndMinute := parseHHMM(shift.EndTime)
+
+	closed := 0
+	for _, rec := range stale {
+		if rec.TimeIn == nil {
+			continue // nothing to compute duration from, leave it alone
+		}
+
+		shiftEnd := time.Date(rec.Date.Year(), rec.Date.Month(), rec.Date.Day(), shiftEndHour, shiftEndMinute, 0, 0, loc)
+
+		var timeOut time.Time
+		var statusOut string
+		switch roll := rng.Intn(100); {
+		case roll < 15:
+			timeOut = shiftEnd.Add(-time.Duration(5+rng.Intn(20)) * time.Minute) // 5-24 min early leave
+			statusOut = "early_leave"
+		case roll < 30:
+			timeOut = shiftEnd.Add(time.Duration(10+rng.Intn(60)) * time.Minute) // 10-69 min overtime
+			statusOut = "on_time"
+		default:
+			timeOut = shiftEnd.Add(time.Duration(rng.Intn(11)) * time.Minute) // 0-10 min after shift end
+			statusOut = "on_time"
+		}
+
+		durationMinutes := int(timeOut.Sub(*rec.TimeIn).Minutes())
+		if durationMinutes < 0 {
+			durationMinutes = 0
+		}
+		overtimeMinutes := int(timeOut.Sub(shiftEnd).Minutes())
+		if overtimeMinutes < 0 {
+			overtimeMinutes = 0
+		}
+		duration := fmt.Sprintf("%dh %dm", durationMinutes/60, durationMinutes%60)
+
+		if dryRun {
+			logger.Printf("  [dry-run] close-out id=%d date=%s -> checkout %s (%s)",
+				rec.ID, rec.Date.Format("2006-01-02"), timeOut.Format("15:04"), statusOut)
+			closed++
+			continue
+		}
+
+		err := db.Model(&models.Attendance{}).Where("id = ?", rec.ID).Updates(map[string]interface{}{
+			"time_out":         timeOut,
+			"status_out":       statusOut,
+			"duration":         duration,
+			"duration_minutes": durationMinutes,
+			"overtime_minutes": overtimeMinutes,
+		}).Error
+		if err != nil {
+			logger.Printf("[dummy] ERROR closing out attendance id=%d: %v", rec.ID, err)
+			continue
+		}
+		logger.Printf("  closed out id=%d date=%s -> checkout %s (%s)",
+			rec.ID, rec.Date.Format("2006-01-02"), timeOut.Format("15:04"), statusOut)
+		closed++
+	}
+	logger.Printf("[dummy] closed out %d stale check-in(s) from previous days", closed)
+}
+
+// parseHHMM parses a "HH:MM" shift time string, falling back to 17:00.
+func parseHHMM(s string) (hour, minute int) {
+	t, err := time.Parse("15:04", s)
+	if err != nil {
+		return 17, 0
+	}
+	return t.Hour(), t.Minute()
 }
 
 // buildRecord randomly rolls today's attendance outcome for one employee.
