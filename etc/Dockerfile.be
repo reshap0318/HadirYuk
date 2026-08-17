@@ -45,6 +45,16 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -tags timetzdata \
     -o /opt/dummy ./cmd/dummy
 
+# Migration CLI (up/down/seed/dummy/refresh). Built into the image for manual
+# use (`docker exec <container> /migration up`), but deliberately NOT called
+# from entrypoint.sh — its "up" command unconditionally drops the
+# attendances table on every run (see cmd/migration/main.go), so auto-running
+# it on every container start would wipe attendance data on every restart.
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w" \
+    -tags timetzdata \
+    -o /opt/migration ./cmd/migration
+
 # ── Runtime ───────────────────────────────────────────────────────
 FROM alpine:3.21
 
@@ -61,6 +71,7 @@ COPY --from=builder /opt/genkey     /genkey
 COPY --from=builder /opt/cleartmp   /cleartmp
 COPY --from=builder /opt/markabsent /markabsent
 COPY --from=builder /opt/dummy      /dummy
+COPY --from=builder /opt/migration  /migration
 COPY etc/entrypoint.sh              /entrypoint.sh
 COPY etc/crontab                    /etc/crontabs/root
 
