@@ -38,6 +38,7 @@ export interface IAttendanceSession {
   time_in?: string // ISO datetime
   time_out?: string // ISO datetime
   status?: 'present' | 'late'
+  status_out?: 'on_time' | 'early_leave'
   duration?: string
   overtime_minutes?: number
   distance_meters?: number
@@ -116,6 +117,7 @@ export interface IAttendanceHistoryItem {
   office_id: number
   office_name: string
   status: string
+  status_out?: string
   time_in?: string
   time_out?: string
   duration?: string

@@ -69,6 +69,18 @@ function getStatusBadge(status: string): {
   return map[status] || { label: status, color: 'primary' }
 }
 
+function getStatusOutBadge(statusOut?: string): {
+  label: string
+  color: 'primary' | 'danger' | 'info' | 'warning'
+} | null {
+  if (!statusOut) return null
+  const map: Record<string, { label: string; color: 'primary' | 'danger' | 'info' | 'warning' }> = {
+    on_time: { label: 'Tepat Waktu', color: 'primary' },
+    early_leave: { label: 'Pulang Cepat', color: 'warning' },
+  }
+  return map[statusOut] || null
+}
+
 function applyFilters() {
   attendanceStore.fetchReport({
     date_from: dateFrom.value || undefined,
@@ -249,6 +261,12 @@ onMounted(async () => {
         <div class="flex items-center gap-1.5">
           <UiBadge :color="getStatusBadge(value as string).color">
             {{ getStatusBadge(value as string).label }}
+          </UiBadge>
+          <UiBadge
+            v-if="getStatusOutBadge(item.status_out as string | undefined)"
+            :color="getStatusOutBadge(item.status_out as string | undefined)!.color"
+          >
+            {{ getStatusOutBadge(item.status_out as string | undefined)!.label }}
           </UiBadge>
           <span
             v-if="item.correction_reason"

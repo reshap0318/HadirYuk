@@ -52,6 +52,9 @@ export type {
 export { useQrcodeStore } from './qrcode'
 export type { IQRCode, IQRCodeGeneratePayload } from './qrcode'
 
+export { useAiChatStore } from './ai-chat'
+export type { IAiChatMessage } from './ai-chat'
+
 export { useDashboardStore } from './dashboard'
 export type {
   IEmployeeDashboard,

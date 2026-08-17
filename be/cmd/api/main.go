@@ -68,6 +68,7 @@ func main() {
 		routes.RegisterQRCodeRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterDashboardRoutes(protected, container.Handlers, container.Access)
 		routes.RegisterScheduleRoutes(protected, container.Handlers, container.Access)
+		routes.RegisterAiChatRoutes(protected, container.Handlers, container.Access)
 	}
 
 	addr := host + ":" + port

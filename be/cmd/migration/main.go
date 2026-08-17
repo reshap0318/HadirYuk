@@ -49,6 +49,8 @@ func main() {
 		runMigration(db, "down")
 	case "seed":
 		runSeed(db)
+	case "dummy":
+		runDummySeed(db)
 	case "refresh":
 		runMigration(db, "down")
 		runMigration(db, "up")
@@ -66,12 +68,14 @@ func printUsage() {
 	fmt.Println("  up       Apply all migrations (create/update tables)")
 	fmt.Println("  down     Drop all migrated tables")
 	fmt.Println("  seed     Insert default data")
+	fmt.Println("  dummy    Insert dummy portfolio/demo data (employees, shifts, attendance history)")
 	fmt.Println("  refresh  Drop all tables, recreate, and seed data")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  go run cmd/migration/main.go up")
 	fmt.Println("  go run cmd/migration/main.go down")
 	fmt.Println("  go run cmd/migration/main.go seed")
+	fmt.Println("  go run cmd/migration/main.go dummy")
 	fmt.Println("  go run cmd/migration/main.go refresh")
 }
 
@@ -148,6 +152,17 @@ func runSeed(db *gorm.DB) {
 	seeders.SeedRolePermissions(db, roleIDs, permIDs)
 	seeders.SeedUserRoles(db, userEmails, roleIDs)
 	fmt.Println("\n✅ Seeding completed!")
+}
+
+func runDummySeed(db *gorm.DB) {
+	fmt.Println("\n🌱 Seeding dummy portfolio data...")
+	fmt.Println("")
+
+	if err := seeders.SeedDummyData(db); err != nil {
+		log.Fatalf("Dummy seed failed: %v", err)
+	}
+
+	fmt.Println("\n✅ Dummy data seeding completed!")
 }
 
 func initDB(dbConnection, dbHost, dbPort, dbUser, dbPassword, dbName string) *gorm.DB {

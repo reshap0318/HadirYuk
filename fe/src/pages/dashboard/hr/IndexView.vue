@@ -31,15 +31,55 @@ function pct(value: number): string {
 }
 
 const highlightStats = computed(() => [
-  { label: 'Hadir', value: hr.value?.present || 0, pct: pct(hr.value?.present || 0), color: 'bg-emerald-500', textColor: 'text-white', icon: PhCheckCircle },
-  { label: 'Terlambat', value: hr.value?.late || 0, pct: pct(hr.value?.late || 0), color: 'bg-amber-500', textColor: 'text-white', icon: PhClock },
-  { label: 'Tidak Hadir', value: hr.value?.absent || 0, pct: pct(hr.value?.absent || 0), color: 'bg-red-500', textColor: 'text-white', icon: PhXCircle },
+  {
+    label: 'Hadir',
+    value: hr.value?.present || 0,
+    pct: pct(hr.value?.present || 0),
+    color: 'bg-emerald-500',
+    textColor: 'text-white',
+    icon: PhCheckCircle,
+  },
+  {
+    label: 'Terlambat',
+    value: hr.value?.late || 0,
+    pct: pct(hr.value?.late || 0),
+    color: 'bg-amber-500',
+    textColor: 'text-white',
+    icon: PhClock,
+  },
+  {
+    label: 'Tidak Hadir',
+    value: hr.value?.absent || 0,
+    pct: pct(hr.value?.absent || 0),
+    color: 'bg-red-500',
+    textColor: 'text-white',
+    icon: PhXCircle,
+  },
 ])
 
 const secondaryStats = computed(() => [
-  { label: 'Total Karyawan', value: hr.value?.total_employees || 0, icon: PhUsers, color: 'text-slate-600', bg: 'bg-slate-100' },
-  { label: 'Belum Check-in', value: hr.value?.not_yet_check_in || 0, icon: PhQuestion, color: 'text-slate-400', bg: 'bg-slate-100' },
-  { label: 'Total Lembur', value: hr.value?.total_overtime || 0, suffix: 'm', icon: PhClockCountdown, color: 'text-orange-500', bg: 'bg-orange-100' },
+  {
+    label: 'Total Karyawan',
+    value: hr.value?.total_employees || 0,
+    icon: PhUsers,
+    color: 'text-slate-600',
+    bg: 'bg-slate-100',
+  },
+  {
+    label: 'Belum Check-in',
+    value: hr.value?.not_yet_check_in || 0,
+    icon: PhQuestion,
+    color: 'text-slate-400',
+    bg: 'bg-slate-100',
+  },
+  {
+    label: 'Total Lembur',
+    value: hr.value?.total_overtime || 0,
+    suffix: 'm',
+    icon: PhClockCountdown,
+    color: 'text-orange-500',
+    bg: 'bg-orange-100',
+  },
 ])
 
 function relativeTime(dateStr: string): string {
@@ -52,11 +92,16 @@ function relativeTime(dateStr: string): string {
 
 onMounted(() => {
   dashboardStore.fetchHRDashboard()
-  timer = setInterval(() => { now.value = new Date() }, 1000)
+  timer = setInterval(() => {
+    now.value = new Date()
+  }, 1000)
 })
 
 onUnmounted(() => {
-  if (timer) { clearInterval(timer); timer = null }
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
 })
 
 function getInitials(name: string): string {
@@ -76,7 +121,9 @@ function avatarColor(name: string): string {
     'bg-cyan-100 text-cyan-700',
   ]
   let hash = 0
-  for (let i = 0; i < name.length; i++) { hash = name.charCodeAt(i) + ((hash << 5) - hash) }
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
   return colors[Math.abs(hash) % colors.length]
 }
 </script>
@@ -92,7 +139,9 @@ function avatarColor(name: string): string {
         </p>
       </div>
       <div class="text-right shrink-0">
-        <p class="text-2xl sm:text-3xl font-bold text-blue-600 tabular-nums tracking-tight">{{ now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }}</p>
+        <p class="text-2xl sm:text-3xl font-bold text-blue-600 tabular-nums tracking-tight">
+          {{ now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }}
+        </p>
         <p class="text-xs text-gray-400 mt-0.5">WIB</p>
       </div>
     </div>
@@ -135,17 +184,24 @@ function avatarColor(name: string): string {
           :key="stat.label"
           class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center gap-5"
         >
-          <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0" :class="[stat.bg, stat.color]">
+          <div
+            class="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+            :class="[stat.bg, stat.color]"
+          >
             <component :is="stat.icon" class="w-6 h-6" />
           </div>
           <div>
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ stat.label }}</p>
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              {{ stat.label }}
+            </p>
             <p class="text-2xl font-bold text-gray-800">
-              {{ stat.value }}<span v-if="stat.suffix" class="text-base font-normal text-gray-400 ml-0.5">{{ stat.suffix }}</span>
+              {{ stat.value
+              }}<span v-if="stat.suffix" class="text-base font-normal text-gray-400 ml-0.5">{{
+                stat.suffix
+              }}</span>
             </p>
           </div>
         </div>
-
       </div>
 
       <!-- Bottom 2-col -->
@@ -171,30 +227,83 @@ function avatarColor(name: string): string {
                 <circle cx="32" cy="32" r="24" fill="none" stroke="#e5e7eb" stroke-width="10" />
                 <g v-if="dept.present + dept.late + dept.absent > 0">
                   <circle
-                    cx="32" cy="32" r="24" fill="none" stroke="#10b981" stroke-width="10"
-                    :stroke-dasharray="(dept.present / (dept.present + dept.late + dept.absent || 1)) * 150.8 + ' 150.8'"
-                    stroke-dashoffset="0" transform="rotate(-90 32 32)"
+                    cx="32"
+                    cy="32"
+                    r="24"
+                    fill="none"
+                    stroke="#10b981"
+                    stroke-width="10"
+                    :stroke-dasharray="
+                      (dept.present / (dept.present + dept.late + dept.absent || 1)) * 150.8 +
+                      ' 150.8'
+                    "
+                    stroke-dashoffset="0"
+                    transform="rotate(-90 32 32)"
                   />
                   <circle
                     v-if="dept.late"
-                    cx="32" cy="32" r="24" fill="none" stroke="#f59e0b" stroke-width="10"
-                    :stroke-dasharray="(dept.late / (dept.present + dept.late + dept.absent || 1)) * 150.8 + ' 150.8'"
-                    :stroke-dashoffset="-(dept.present / (dept.present + dept.late + dept.absent || 1)) * 150.8" transform="rotate(-90 32 32)"
+                    cx="32"
+                    cy="32"
+                    r="24"
+                    fill="none"
+                    stroke="#f59e0b"
+                    stroke-width="10"
+                    :stroke-dasharray="
+                      (dept.late / (dept.present + dept.late + dept.absent || 1)) * 150.8 + ' 150.8'
+                    "
+                    :stroke-dashoffset="
+                      -(dept.present / (dept.present + dept.late + dept.absent || 1)) * 150.8
+                    "
+                    transform="rotate(-90 32 32)"
                   />
                   <circle
                     v-if="dept.absent"
-                    cx="32" cy="32" r="24" fill="none" stroke="#ef4444" stroke-width="10"
-                    :stroke-dasharray="(dept.absent / (dept.present + dept.late + dept.absent || 1)) * 150.8 + ' 150.8'"
-                    :stroke-dashoffset="-((dept.present + dept.late) / (dept.present + dept.late + dept.absent || 1)) * 150.8" transform="rotate(-90 32 32)"
+                    cx="32"
+                    cy="32"
+                    r="24"
+                    fill="none"
+                    stroke="#ef4444"
+                    stroke-width="10"
+                    :stroke-dasharray="
+                      (dept.absent / (dept.present + dept.late + dept.absent || 1)) * 150.8 +
+                      ' 150.8'
+                    "
+                    :stroke-dashoffset="
+                      -(
+                        (dept.present + dept.late) /
+                        (dept.present + dept.late + dept.absent || 1)
+                      ) * 150.8
+                    "
+                    transform="rotate(-90 32 32)"
                   />
                 </g>
-                <text x="32" y="32" text-anchor="middle" dy="0.3em" class="text-xs font-bold" fill="#1f2937">{{ dept.total_employees }}</text>
+                <text
+                  x="32"
+                  y="32"
+                  text-anchor="middle"
+                  dy="0.3em"
+                  class="text-xs font-bold"
+                  fill="#1f2937"
+                >
+                  {{ dept.total_employees }}
+                </text>
               </svg>
 
               <div class="flex flex-wrap gap-1.5 justify-center mt-2">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">{{ dept.present }} Hadir</span>
-                <span v-if="dept.late" class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">{{ dept.late }} Telat</span>
-                <span v-if="dept.absent" class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">{{ dept.absent }} Absen</span>
+                <span
+                  class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700"
+                  >{{ dept.present }} Hadir</span
+                >
+                <span
+                  v-if="dept.late"
+                  class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700"
+                  >{{ dept.late }} Telat</span
+                >
+                <span
+                  v-if="dept.absent"
+                  class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700"
+                  >{{ dept.absent }} Absen</span
+                >
               </div>
             </div>
           </div>
@@ -248,7 +357,9 @@ function avatarColor(name: string): string {
                   <span class="font-semibold">{{ activity.user_name }}</span>
                   {{ activity.action === 'checkin' ? 'check-in' : 'check-out' }}
                 </p>
-                <p class="text-xs text-gray-400">{{ activity.shift_name }} &middot; {{ relativeTime(activity.time) }}</p>
+                <p class="text-xs text-gray-400">
+                  {{ activity.shift_name }} &middot; {{ relativeTime(activity.time) }}
+                </p>
               </div>
             </div>
           </div>

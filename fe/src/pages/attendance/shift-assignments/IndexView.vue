@@ -144,7 +144,7 @@ onMounted(() => {
           Kelola penugasan shift untuk karyawan.
         </p>
       </div>
-      <UiButton size="sm" @click="openCreate" v-permission="['shift-assign.create']">
+      <UiButton v-permission="['shift-assign.create']" size="sm" @click="openCreate">
         <template #icon>
           <PhPlus class="w-4 h-4" />
         </template>
@@ -154,7 +154,13 @@ onMounted(() => {
 
     <!-- Search + Date Filter -->
     <div
-      v-if="!shiftAssignmentStore.loading.Index && (shiftAssignmentStore.indexData.items.length > 0 || searchQuery || filterStartDate || filterEndDate)"
+      v-if="
+        !shiftAssignmentStore.loading.Index &&
+        (shiftAssignmentStore.indexData.items.length > 0 ||
+          searchQuery ||
+          filterStartDate ||
+          filterEndDate)
+      "
       class="mb-6"
     >
       <div class="flex flex-col sm:flex-row gap-3">
@@ -230,12 +236,17 @@ onMounted(() => {
 
     <!-- Empty State -->
     <UiEmptyState
-      v-else-if="shiftAssignmentStore.indexData.items.length === 0 && !searchQuery && !filterStartDate && !filterEndDate"
+      v-else-if="
+        shiftAssignmentStore.indexData.items.length === 0 &&
+        !searchQuery &&
+        !filterStartDate &&
+        !filterEndDate
+      "
       :icon="PhCalendar"
       title="Belum ada Penugasan Shift"
       description="Silakan buat penugasan shift baru untuk mulai mengatur jadwal karyawan."
     >
-      <UiButton size="lg" @click="openCreate" v-permission="['shift-assign.create']">
+      <UiButton v-permission="['shift-assign.create']" size="lg" @click="openCreate">
         <template #icon>
           <PhPlus class="w-5 h-5" />
         </template>
@@ -296,7 +307,10 @@ onMounted(() => {
                 </p>
               </div>
               <!-- Three-dot Menu -->
-              <div class="relative shrink-0" v-if="hasAnyPermission(['shift-assign.update', 'shift-assign.delete'])">
+              <div
+                v-if="hasAnyPermission(['shift-assign.update', 'shift-assign.delete'])"
+                class="relative shrink-0"
+              >
                 <button
                   class="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                   @click="toggleMenu($event, assignment.id)"
@@ -420,5 +434,8 @@ onMounted(() => {
     </template>
   </div>
 
-  <FormModal ref="formModalRef" v-if="hasAnyPermission(['shift-assign.create', 'shift-assign.update'])" />
+  <FormModal
+    v-if="hasAnyPermission(['shift-assign.create', 'shift-assign.update'])"
+    ref="formModalRef"
+  />
 </template>

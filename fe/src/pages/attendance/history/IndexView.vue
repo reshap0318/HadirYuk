@@ -60,6 +60,18 @@ function getStatusBadge(status: string): {
   return map[status] || { label: status, color: 'primary' }
 }
 
+function getStatusOutBadge(statusOut?: string): {
+  label: string
+  color: 'primary' | 'danger' | 'info' | 'warning'
+} | null {
+  if (!statusOut) return null
+  const map: Record<string, { label: string; color: 'primary' | 'danger' | 'info' | 'warning' }> = {
+    on_time: { label: 'Tepat Waktu', color: 'primary' },
+    early_leave: { label: 'Pulang Cepat', color: 'warning' },
+  }
+  return map[statusOut] || null
+}
+
 function openDetail(item: IAttendanceHistoryItem) {
   detailModalRef.value?.show(item)
 }
@@ -177,9 +189,17 @@ onMounted(() => {
             <PhCalendar class="w-4 h-4 text-gray-500" />
             <span class="text-sm font-semibold text-gray-900">{{ formatDate(item.date) }}</span>
           </div>
-          <UiBadge :color="getStatusBadge(item.status).color">
-            {{ getStatusBadge(item.status).label }}
-          </UiBadge>
+          <div class="flex items-center gap-1">
+            <UiBadge :color="getStatusBadge(item.status).color">
+              {{ getStatusBadge(item.status).label }}
+            </UiBadge>
+            <UiBadge
+              v-if="getStatusOutBadge(item.status_out)"
+              :color="getStatusOutBadge(item.status_out)!.color"
+            >
+              {{ getStatusOutBadge(item.status_out)!.label }}
+            </UiBadge>
+          </div>
         </div>
 
         <!-- Time Info -->

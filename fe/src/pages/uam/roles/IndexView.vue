@@ -61,7 +61,7 @@ onMounted(() => {
         <h1 class="text-3xl font-bold text-gray-900">Roles</h1>
         <p class="hidden sm:block text-sm text-gray-600 mt-1">Kelola daftar role dalam sistem.</p>
       </div>
-      <UiButton size="sm" @click="openCreate" v-permission="['role.create']">
+      <UiButton v-permission="['role.create']" size="sm" @click="openCreate">
         <template #icon>
           <PhPlus class="w-4 h-4" />
         </template>
@@ -91,7 +91,7 @@ onMounted(() => {
       title="Belum ada Role"
       description="Silakan buat role baru untuk mulai mengatur hak akses sistem."
     >
-      <UiButton size="lg" @click="openCreate" v-permission="['role.create']">
+      <UiButton v-permission="['role.create']" size="lg" @click="openCreate">
         <template #icon>
           <PhPlus class="w-5 h-5" />
         </template>
@@ -182,5 +182,5 @@ onMounted(() => {
     </template>
   </div>
 
-  <FormModal ref="formModalRef" v-if="hasAnyPermission(['role.create', 'role.update'])"/>
+  <FormModal v-if="hasAnyPermission(['role.create', 'role.update'])" ref="formModalRef" />
 </template>

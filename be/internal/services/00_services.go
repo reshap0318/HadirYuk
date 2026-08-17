@@ -5,8 +5,11 @@ import (
 	"strconv"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/reshap0318/hadirYuk/internal/clients/email"
 	"github.com/reshap0318/hadirYuk/internal/clients/face"
+	clientOpenai "github.com/reshap0318/hadirYuk/internal/clients/openai"
 	"github.com/reshap0318/hadirYuk/internal/database"
 	"github.com/reshap0318/hadirYuk/internal/helpers"
 	"github.com/reshap0318/hadirYuk/internal/repositories"
@@ -28,6 +31,14 @@ type Services struct {
 	Access       *helpers.Access
 	FaceService  *FaceService
 	cfg          *JWTConfig
+
+	// AI chat feature (see internal/services/ai_chat_service.go)
+	AiChatClient        *clientOpenai.Client
+	AiChatStore         *clientOpenai.Store
+	AiChatCfg           *AiChatConfig
+	AiChatGlobalLimiter *helpers.RateLimiter
+	AiChatUserLimiter   *helpers.RateLimiter
+	AiReadOnlyDB        *gorm.DB
 }
 
 // NewServices creates and initializes all services.

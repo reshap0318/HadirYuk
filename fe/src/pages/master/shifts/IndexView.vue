@@ -51,7 +51,7 @@ onMounted(() => {
           Kelola daftar shift kerja karyawan.
         </p>
       </div>
-      <UiButton size="sm" @click="openCreate" v-permission="['shift.create']">
+      <UiButton v-permission="['shift.create']" size="sm" @click="openCreate">
         <template #icon>
           <PhPlus class="w-4 h-4" />
         </template>
@@ -79,7 +79,7 @@ onMounted(() => {
       title="Belum ada Shift"
       description="Silakan buat shift kerja baru untuk mulai mengatur jadwal karyawan."
     >
-      <UiButton size="lg" @click="openCreate" v-permission="['shift.create']">
+      <UiButton v-permission="['shift.create']" size="lg" @click="openCreate">
         <template #icon>
           <PhPlus class="w-5 h-5" />
         </template>

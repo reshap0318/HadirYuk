@@ -35,6 +35,8 @@ func SeedRolePermissions(db *gorm.DB, roleIDs map[string]uint, permIDs map[strin
 			"qrcode.generate", "qrcode.view", "qrcode.revoke",
 			// Statistics
 			"late-statistic.view",
+			// AI CS Chatbot
+			"ai-chat.query",
 		},
 		"Karyawan": {
 			// Attendance: hanya check-in dan check-out
