@@ -1,0 +1,114 @@
+# ═══════════════════════════════════════════════════════════════
+#  HadirYuk — Supporting Infrastructure
+#  MySQL + Redis untuk development / pendamping docker-compose.yml
+#
+#  Service & network sengaja dinamai sama dengan yang dipakai
+#  aplikasi di .env dan docker-compose.yml:
+#    DB_HOST=mysql          → service "mysql"
+#    REDIS_HOST=redis       → service "redis"
+#    mysql-network          → network "mysql-network"
+#    redis-network          → network "redis-network"
+#
+#  Usage:
+#    docker compose -f docker-compose.infra.yml up -d
+#    docker compose -f docker-compose.infra.yml ps
+#    docker compose -f docker-compose.infra.yml down
+#
+#  Setelah infra healthy, jalankan aplikasi:
+#    docker compose up -d
+#
+#  Nilai diambil dari .env (root project):
+#    DB_PASSWORD, DB_DATABASE, DB_PORT
+#    REDIS_USER, REDIS_PASSWORD, REDIS_PORT
+#
+#  Database (DB_DATABASE) dibuat otomatis oleh image MySQL saat volume
+#  mysql-data masih kosong. Tidak perlu create DB di entrypoint BE.
+# ═══════════════════════════════════════════════════════════════
+
+name: hadiryuk-infra
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    hostname: mysql
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD wajib diisi di .env}
+      # Image MySQL otomatis menjalankan CREATE DATABASE saat volume kosong.
+      MYSQL_DATABASE: ${DB_DATABASE:-hadir_yuk}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+07:00
+    ports:
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - mysql-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -uroot -p"$${MYSQL_ROOT_PASSWORD}" --silent
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging: *default-logging
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    hostname: redis
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+      REDIS_USER: ${REDIS_USER:-admin}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD wajib diisi di .env}
+    # Buat user ACL dari .env saat container start, lalu jalankan Redis.
+    # Default user tetap aktif agar redis-cli/tooling lokal mudah dipakai.
+    command:
+      - sh
+      - -c
+      - |
+        printf 'user default on >%s ~* &* +@all\nuser %s on >%s ~* &* +@all\n' \
+          "$$REDIS_PASSWORD" "$$REDIS_USER" "$$REDIS_PASSWORD" > /tmp/users.acl
+        exec redis-server --aclfile /tmp/users.acl --appendonly yes
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - redis-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - redis-cli --no-auth-warning --user "$${REDIS_USER}" --pass "$${REDIS_PASSWORD}" ping | grep -q PONG
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    logging: *default-logging
+
+volumes:
+  mysql-data:
+    name: mysql-data
+  redis-data:
+    name: redis-data
+
+networks:
+  # Dibuat di sini, di-join sebagai external oleh docker-compose.yml.
+  mysql-network:
+    name: mysql-network
+    driver: bridge
+  redis-network:
+    name: redis-network
+    driver: bridge
